@@ -9,19 +9,27 @@ open scoped Pseudofunctor.StrongTrans
 
 universe u v w v₁ v₂ u₁ u₂
 
+instance catPsudoULiftObjCategory (C : Type u₁) [Category.{v₁} C] :
+    Category.{max v₁ v₂} (ULiftHom.{v₂} (ULift.{u₂, u₁} C)) := by
+  letI : Category (ULift.{u₂, u₁} C) := uliftCategory C
+  exact ULiftHom.category (C := ULift.{u₂, u₁} C)
 
 def CatPsudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} where
   obj C := by
     rcases C with ⟨C⟩
-    fconstructor
-    · apply ULift.{u₂, u₁} C
-    · refine @ULiftHom.category.{v₁, v₂, (max u₁ u₂)} (ULift.{u₂, u₁} C) (uliftCategory C)
+    exact Cat.of (ULiftHom.{v₂} (ULift.{u₂, u₁} C))
   map F := by
+    rename_i X Y
+    rcases X with ⟨C⟩
+    rcases Y with ⟨D⟩
     fconstructor
     rcases F with ⟨F⟩
-    refine  ?_ ⋙ ULiftHom.down ⋙ F ⋙ ULiftHom.up  ⋙ ?_
-    · sorry
-    · sorry
+    letI : Category (ULift.{u₂, u₁} C) := uliftCategory C
+    letI : Category (ULift.{u₂, u₁} D) := uliftCategory D
+    change ULiftHom.{v₂} (ULift.{u₂, u₁} C) ⥤ ULiftHom.{v₂} (ULift.{u₂, u₁} D)
+    exact
+      (ULiftHom.down ⋙ ULift.downFunctor ⋙ ULiftHom.up) ⋙ ULiftHom.down ⋙ F ⋙
+        ULiftHom.up ⋙ (ULiftHom.down ⋙ ULift.upFunctor ⋙ ULiftHom.up)
   map₂ { C D } α := sorry
   mapId C := sorry
   mapComp F G := sorry
