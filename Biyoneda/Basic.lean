@@ -4,7 +4,7 @@ import Mathlib.CategoryTheory.Bicategory.Yoneda
 import Mathlib.CategoryTheory.Category.ULift
 
 
-open CategoryTheory Bicategory Bicategory.Opposite Opposite Pseudofunctor StrongTrans
+open CategoryTheory Bicategory Bicategory.Opposite Opposite Pseudofunctor StrongTrans Functor
 open scoped Pseudofunctor.StrongTrans
 
 universe u v w v₁ v₂ u₁ u₂
@@ -38,8 +38,12 @@ def CatPsudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} w
 variable {B : Type u} [Bicategory.{w, v} B]
 
 def yonedaPairing : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (max v w), max u (max v w)} where
-  obj x := @Cat.of (Pseudofunctor.StrongTrans (yoneda₀ x.fst.unop) x.snd) (Pseudofunctor.StrongTrans.homCategory)
-  map f := by sorry
+  obj x := Cat.of ((yoneda₀ x.fst.unop) ⟶ x.snd)
+  map f :=
+    Functor.toCatHom
+      { obj η := Bicategory.postcomp₂ f.1.unop ≫ (η ≫ f.2)
+        map m :=
+          StrongTrans.whiskerLeft (Bicategory.postcomp₂ f.1.unop) (StrongTrans.whiskerRight m f.2) }
   map₂ { x y f g } η := sorry
   mapId x := sorry
   mapComp f g := sorry
