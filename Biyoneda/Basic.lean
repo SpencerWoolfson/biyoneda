@@ -9,7 +9,6 @@ open scoped Pseudofunctor.StrongTrans
 
 universe u v w v₁ v₂ u₁ u₂
 
-#check ULiftHom.category.{v₁, v₂, (max u₁ u₂)}
 
 def CatPsudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} where
   obj C := by
@@ -47,15 +46,20 @@ def yonedaEvaluation' : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v}
     simp only [prod_comp, comp_app, Category.assoc]
     rename_i a b c
     fconstructor
-    · refine (f.2.app a.1) ◁ ?_
-      refine (g.2.app a.1 ◁ (c.2.mapComp f.1 g.1).hom) ≫ ?_
+    · refine (f.2.app a.1) ◁ ((g.2.app a.1 ◁ (c.2.mapComp f.1 g.1).hom) ≫ ?_)
       refine (associator (g.2.app a.1) (c.2.map f.1) (c.2.map g.1)).inv ≫ ?_ ≫ (associator (b.2.map f.1) (g.2.app b.1) (c.2.map g.1)).hom
-      refine ?_ ▷ (c.2.map g.1)
+      exact (g.2.naturality f.1).inv ▷ (c.2.map g.1)
+    · refine (f.2.app a.1) ◁ (?_ ≫ (g.2.app a.1 ◁ (c.2.mapComp f.1 g.1).inv))
+      refine  (associator (b.2.map f.1) (g.2.app b.1) (c.2.map g.1)).inv ≫ ?_ ≫ (associator (g.2.app a.1) (c.2.map f.1) (c.2.map g.1)).hom
+      exact (g.2.naturality f.1).hom ▷ (c.2.map g.1)
+    · simp
+    · simp
+  map₂_whisker_left := sorry
+  map₂_whisker_right := sorry
+  map₂_associator := sorry
+  map₂_left_unitor := sorry
+  map₂_right_unitor := sorry
 
-
-    · sorry
-    · sorry
-    · sorry
 
 def yonedaEvaluation : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (max v w), max u (max v w)} := by
   refine (Pseudofunctor.comp yonedaEvaluation' CatPsudoULift)
