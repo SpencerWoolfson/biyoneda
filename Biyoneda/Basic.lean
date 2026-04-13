@@ -46,10 +46,6 @@ def CatPsudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} w
     congr
   map₂_whisker_left {a b c} f g h η := by
     sorry
-    -- ext x
-    -- simp
-    -- congr
-    -- let rwh := ULiftHom.up.map_id (((CatLift.map (f ≫ g)).toFunctor.obj x))
   map₂_whisker_right := sorry
   map₂_associator := sorry
   map₂_left_unitor := sorry
@@ -59,7 +55,8 @@ variable {B : Type u} [Bicategory.{w, v} B]
 
 def yonedaPairing : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (max v w), max u (max v w)} where
   obj x := @Cat.of (Pseudofunctor.StrongTrans (yoneda₀ x.fst.unop) x.snd) (Pseudofunctor.StrongTrans.homCategory)
-  map {x y} f := sorry
+  map {x y} f := by
+    apply Functor.toCatHom { obj η := Bicategory.postcomp₂ f.1.unop ≫ (η ≫ f.2), map m := StrongTrans.whiskerLeft (Bicategory.postcomp₂ f.1.unop) (StrongTrans.whiskerRight m f.2) }
   map₂ { x y f g } η := sorry
   mapId x := sorry
   mapComp f g := sorry
@@ -71,7 +68,8 @@ def yonedaEvaluation' : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v}
   map₂ { x y f g } η := (η.2.as.app x.1 ▷ y.2.map f.1) ≫ (_ ◁ y.2.map₂ η.1)
   mapId x := (_root_.id (x.2.mapId x.1))
   mapComp {a b c} f g := by
-    simp only [prod_comp, comp_app, Category.assoc]
+    /- This should not be a simp-/
+    simp only [prod_comp,comp_app,Category.assoc]
     fconstructor
     · refine (f.2.app a.1) ◁ ((g.2.app a.1 ◁ (c.2.mapComp f.1 g.1).hom) ≫ ?_)
       refine (associator (g.2.app a.1) (c.2.map f.1) (c.2.map g.1)).inv ≫ ?_ ≫ (associator (b.2.map f.1) (g.2.app b.1) (c.2.map g.1)).hom
@@ -81,7 +79,8 @@ def yonedaEvaluation' : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v}
       exact (g.2.naturality f.1).hom ▷ (c.2.map g.1)
     · simp
     · simp
-  map₂_whisker_left {a b c} := by sorry
+  map₂_whisker_left {a b c} f { g h } { η }:= by
+    sorry
   map₂_whisker_right := sorry
   map₂_associator := sorry
   map₂_left_unitor := sorry
