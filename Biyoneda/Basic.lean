@@ -4,7 +4,7 @@ import Mathlib.CategoryTheory.Bicategory.Yoneda
 import Mathlib.CategoryTheory.Category.ULift
 
 
-open CategoryTheory Bicategory Bicategory.Opposite Opposite Pseudofunctor StrongTrans
+open CategoryTheory Bicategory Bicategory.Opposite Opposite Pseudofunctor StrongTrans Functor
 open scoped Pseudofunctor.StrongTrans
 
 universe u v w v₁ v₂ u₁ u₂
