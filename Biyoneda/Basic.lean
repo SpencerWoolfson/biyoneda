@@ -14,36 +14,27 @@ instance catPsudoULiftObjCategory (C : Type u₁) [Category.{v₁} C] :
   letI : Category (ULift.{u₂, u₁} C) := uliftCategory C
   exact ULiftHom.category (C := ULift.{u₂, u₁} C)
 
-def CatPsudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} where
-  obj C := by
-    rcases C with ⟨C⟩
-    exact Cat.of (ULiftHom.{v₂} (ULift.{u₂, u₁} C))
-  map F := by
-    rename_i X Y
-    rcases X with ⟨C⟩
-    rcases Y with ⟨D⟩
-    fconstructor
-    rcases F with ⟨F⟩
+def CatLift : Cat.{v₁, u₁} ⥤ Cat.{max v₁ v₂, max u₁ u₂} where
+  obj C := Cat.of (ULiftHom.{v₂} (ULift.{u₂, u₁} C.α))
+  map {C D} F := by
+    refine Functor.toCatHom ?_
+    apply ULiftHomULiftCategory.equivCongrLeft.toFun
     letI : Category (ULift.{u₂, u₁} C) := uliftCategory C
-    letI : Category (ULift.{u₂, u₁} D) := uliftCategory D
-    change ULiftHom.{v₂} (ULift.{u₂, u₁} C) ⥤ ULiftHom.{v₂} (ULift.{u₂, u₁} D)
-    exact
-      (ULiftHom.down ⋙ ULift.downFunctor ⋙ ULiftHom.up) ⋙ ULiftHom.down ⋙ F ⋙
-        ULiftHom.up ⋙ (ULiftHom.down ⋙ ULift.upFunctor ⋙ ULiftHom.up)
-  map₂ { C D } α := sorry
-  mapId C := sorry
-  mapComp F G := sorry
+    exact ULiftHom.down ⋙ ULift.downFunctor ⋙ F.toFunctor
+
+def CatPsudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} where
+  obj C := CatLift.obj C
+  map {C D} F := CatLift.map F
+  map₂ { C D } α { g } { η } := sorry
+  mapId C := Iso.refl (CatLift.map (𝟙 C))
+  mapComp F G := Iso.refl (CatLift.map (F ≫ G))
   map₂_id := sorry
 
 variable {B : Type u} [Bicategory.{w, v} B]
 
 def yonedaPairing : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (max v w), max u (max v w)} where
-  obj x := Cat.of ((yoneda₀ x.fst.unop) ⟶ x.snd)
-  map f :=
-    Functor.toCatHom
-      { obj η := Bicategory.postcomp₂ f.1.unop ≫ (η ≫ f.2)
-        map m :=
-          StrongTrans.whiskerLeft (Bicategory.postcomp₂ f.1.unop) (StrongTrans.whiskerRight m f.2) }
+  obj x := @Cat.of (Pseudofunctor.StrongTrans (yoneda₀ x.fst.unop) x.snd) (Pseudofunctor.StrongTrans.homCategory)
+  map {x y} f := by sorry
   map₂ { x y f g } η := sorry
   mapId x := sorry
   mapComp f g := sorry
@@ -66,12 +57,11 @@ def yonedaEvaluation' : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v}
       exact (g.2.naturality f.1).hom ▷ (c.2.map g.1)
     · simp
     · simp
-  map₂_whisker_left := sorry
+  map₂_whisker_left {a b c}  := by sorry
   map₂_whisker_right := sorry
   map₂_associator := sorry
   map₂_left_unitor := sorry
   map₂_right_unitor := sorry
-
 
 def yonedaEvaluation : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (max v w), max u (max v w)} := by
   refine (Pseudofunctor.comp yonedaEvaluation' CatPsudoULift)
@@ -79,3 +69,15 @@ def yonedaEvaluation : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u 
 def yonedaLemmaForward : (@yonedaEvaluation B _) ⟶ (@yonedaPairing B _) := sorry
 
 def yonedaLemmaBackward : (@yonedaPairing B _) ⟶ (@yonedaEvaluation B _):= sorry
+
+structure BiEquiv (x y : B) where
+  map : x ⟶ y
+  inv : y ⟶ x
+  homInvId : map ≫ inv ≅ 𝟙 x
+  invHomId : inv ≫ map ≅ 𝟙 y
+
+def yonedaLemma : BiEquiv (@yonedaEvaluation B _) (@yonedaPairing B _) where
+  map := yonedaLemmaForward
+  inv := yonedaLemmaBackward
+  homInvId := sorry
+  invHomId := sorry
