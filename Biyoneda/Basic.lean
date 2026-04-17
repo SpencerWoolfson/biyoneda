@@ -53,11 +53,46 @@ def CatPsudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} w
 
 variable {B : Type u} [Bicategory.{w, v} B]
 
+lemma Modification.extHelp {X : Type u₁} {Y : Type u₂} [Bicategory.{w₁, v₁} X] [Bicategory.{w₂, v₂} Y] {F G : X ⥤ᵖ Y} {η θ : F ⟶ G} {m1 m2 : η ⟶ θ} (h : m1.as = m2.as) : m1 = m2 := by
+  cases m1
+  cases m2
+  congr
+
+lemma Modification.reduce {X : Type u₁} {Y : Type u₂} [Bicategory.{w₁, v₁} X] [Bicategory.{w₂, v₂} Y]
+  {F G : X ⥤ᵖ Y} {η θ γ : F ⟶ G} {ma1 mb1 : η ⟶ θ} {ma2 mb2 : θ ⟶ γ} (h : ma1.as.vcomp ma2.as = mb1.as.vcomp mb2.as) : (ma1 ≫ ma2) = (mb1 ≫ mb2)  := by
+  cases ma1
+  cases mb1
+  cases ma2
+  cases mb2
+  congr
+
+-- set_option trace.Meta.synthInstance true
 def yonedaPairing : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (max v w), max u (max v w)} where
   obj x := @Cat.of (Pseudofunctor.StrongTrans (yoneda₀ x.fst.unop) x.snd) (Pseudofunctor.StrongTrans.homCategory)
   map {x y} f := by
     apply Functor.toCatHom { obj η := Bicategory.postcomp₂ f.1.unop ≫ (η ≫ f.2), map m := StrongTrans.whiskerLeft (Bicategory.postcomp₂ f.1.unop) (StrongTrans.whiskerRight m f.2) }
-  map₂ { x y f g } η := sorry
+  map₂ { x y f g } η := by
+    fconstructor
+    fconstructor
+    · intro a
+      fconstructor
+      · let ηa := (postcomp₂ f.1.unop ◁ (a ◁ η.2))
+        rcases ηa with ⟨ηa⟩
+        refine Modification.vcomp ηa ?_
+        let help : postcomp₂ f.1.unop ⟶ postcomp₂ g.1.unop := by
+          let help' : (postcomposing₂ y.1.unop x.1.unop).obj f.1.unop ⟶ (postcomposing₂ y.1.unop x.1.unop ).obj g.1.unop := by
+            refine (postcomposing₂ y.1.unop x.1.unop ).map ?_
+            refine Hom2.unop2 ?_
+            exact η.1
+          exact help'
+        let γ := help ▷ (a ≫ g.2)
+        rcases γ with ⟨γ⟩
+        exact γ
+    · intros _ _ h
+      simp only [Cat.of_α, toCatHom_toFunctor, Bicategory.whiskerRight_comp,StrongTrans.whiskerLeft, CategoryStruct.comp]
+      -- set l1 := @Hom.of Bᵒᵖ bicategory Cat Cat.bicategory (yoneda₀ (unop y.1)) y.2 (postcomp₂ f.1.unop ≫ _ ≫ f.2) (postcomp₂ f.1.unop ≫ _ ≫ f.2) { app := fun a ↦ (postcomp₂ f.1.unop).app a ◁ h.as.app a ▷ f.2.app a, naturality := ⋯ }
+
+      sorry
   mapId x := sorry
   mapComp f g := sorry
   map₂_id := sorry
