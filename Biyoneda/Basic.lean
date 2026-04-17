@@ -103,19 +103,20 @@ def yonedaEvaluation' : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v}
   map₂ { x y f g } η := (η.2.as.app x.1 ▷ y.2.map f.1) ≫ (_ ◁ y.2.map₂ η.1)
   mapId x := (_root_.id (x.2.mapId x.1))
   mapComp {a b c} f g := by
-    /- This should not be a simp-/
-    simp only [prod_comp,comp_app,Category.assoc]
-    fconstructor
-    · refine (f.2.app a.1) ◁ ((g.2.app a.1 ◁ (c.2.mapComp f.1 g.1).hom) ≫ ?_)
-      refine (associator (g.2.app a.1) (c.2.map f.1) (c.2.map g.1)).inv ≫ ?_ ≫ (associator (b.2.map f.1) (g.2.app b.1) (c.2.map g.1)).hom
-      exact (g.2.naturality f.1).inv ▷ (c.2.map g.1)
-    · refine (f.2.app a.1) ◁ (?_ ≫ (g.2.app a.1 ◁ (c.2.mapComp f.1 g.1).inv))
-      refine  (associator (b.2.map f.1) (g.2.app b.1) (c.2.map g.1)).inv ≫ ?_ ≫ (associator (g.2.app a.1) (c.2.map f.1) (c.2.map g.1)).hom
-      exact (g.2.naturality f.1).hom ▷ (c.2.map g.1)
-    · simp
-    · simp
-  map₂_whisker_left {a b c} f { g h } { η }:= by
-    sorry
+    let tempIso : f.2.app a.1 ≫ g.2.app a.1 ≫ c.2.map (f.1 ≫ g.1) ≅ f.2.app a.1 ≫ b.2.map f.1 ≫ g.2.app b.1 ≫ c.2.map g.1 := by
+      fconstructor
+      · refine (f.2.app a.1) ◁ ((g.2.app a.1 ◁ (c.2.mapComp f.1 g.1).hom) ≫ ?_)
+        refine (associator (g.2.app a.1) (c.2.map f.1) (c.2.map g.1)).inv ≫ ?_ ≫ (associator (b.2.map f.1) (g.2.app b.1) (c.2.map g.1)).hom
+        exact (g.2.naturality f.1).inv ▷ (c.2.map g.1)
+      · refine (f.2.app a.1) ◁ (?_ ≫ (g.2.app a.1 ◁ (c.2.mapComp f.1 g.1).inv))
+        refine  (associator (b.2.map f.1) (g.2.app b.1) (c.2.map g.1)).inv ≫ ?_ ≫ (associator (g.2.app a.1) (c.2.map f.1) (c.2.map g.1)).hom
+        exact (g.2.naturality f.1).hom ▷ (c.2.map g.1)
+      · simp
+      · simp
+    refine Iso.trans (?_) (Iso.trans tempIso ?_)
+    · exact α_ (f.2.app a.1) (g.2.app a.1) (c.2.map (f.1 ≫ g.1))
+    · exact (α_ (f.2.app a.1) (b.2.map f.1) (g.2.app b.1 ≫ c.2.map g.1)).symm
+  map₂_whisker_left {a b c} f { g h } { η }:= by sorry
   map₂_whisker_right := sorry
   map₂_associator := sorry
   map₂_left_unitor := sorry
