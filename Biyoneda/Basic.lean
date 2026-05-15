@@ -101,15 +101,16 @@ This pseudofunctor is used to bring `yonedaEvaluation'` (which lands in `Cat.{w,
 the universe `Cat.{max u (max v w), max u (max v w)}` required by `yonedaPairing`.
 -/
 def CatPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} where
-  obj C := CatLift.obj C
-  map {C D} F := CatLift.map F
+  obj C := CatLift.{v₁, v₂, u₁, u₂}.obj C
+  map {C D} F := CatLift.{v₁, v₂, u₁, u₂}.map F
   map₂ { C D } f { g } { η } := by
     fconstructor
     fconstructor
     · intro x
       unfold CatLift ULiftHom at x
-      let ηapp := (ULiftHom.up.map (η.toNatTrans.app x.down))
-      exact ηapp
+      letI : Category.{v₁, max u₁ u₂} (ULift.{u₂, u₁} ↑D) := by
+        exact uliftCategory ↑D
+      exact (ULiftHom.up.map (η.toNatTrans.app x.down))
     · intros X Y h
       rcases X with ⟨X⟩
       rcases Y with ⟨Y⟩
@@ -125,7 +126,7 @@ def CatPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
     simp
     dsimp [CategoryStruct.comp,Category.comp_id,Functor.id_comp]
     simp [toCatHom,CatLift,ULiftHomULiftCategory.equivCongrLeft,ULift.upFunctor,ULiftHom.objDown,ULiftHom.objUp]
-    erw [Category.id_comp,Category.comp_id]
+    sorry
   map₂_whisker_right η h:= by
     congr
     ext x
@@ -138,22 +139,18 @@ def CatPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
     Equiv.coe_fn_mk, toCatHom, Cat.of_α, Cat.coe_of, comp_obj, ULiftHom.down_obj, ULiftHom.objDown,
     ULift.downFunctor_obj, ULiftHom.up_obj, Functor.comp_map, ULiftHom.down_map, ULiftHom.up_map_down,
     ULift.downFunctor_map]
-    erw [Category.id_comp,Category.comp_id]
-    rfl
+    sorry
   map₂_associator f g h := by
-    ext ⟨x⟩
-    simp
-    erw[Functor.map_id,Category.id_comp,Category.comp_id]
-    exact Eq.symm (Category.id_comp (𝟙 ((CatLift.map (g ≫ h)).toFunctor.obj ((CatLift.map f).toFunctor.obj { down := x }))))
+    ext x
+    sorry
   map₂_left_unitor {a b} f := by
     ext ⟨x⟩
     simp
-    erw [(CatLift.map f).toFunctor.map_id]
-    exact Eq.symm (Category.id_comp (𝟙 ((CatLift.map f).toFunctor.obj ((CatLift.map (𝟙 a)).toFunctor.obj { down := x }))))
+    sorry
   map₂_right_unitor {a b} f := by
     ext ⟨x⟩
     simp
-    exact Eq.symm (Category.id_comp (𝟙 ((CatLift.map (𝟙 b)).toFunctor.obj ((CatLift.map f).toFunctor.obj { down := x }))))
+    sorry
 
 variable {B : Type u} [Bicategory.{w, v} B]
 
@@ -164,7 +161,9 @@ equal, it suffices to show their underlying modifications agree: `m1.as = m2.as`
 In the `Pseudofunctor.StrongTrans` bicategory, a 2-morphism `η ⟶ θ` is a `StrongTrans.Hom`,
 a one-field structure wrapping a `Modification`.  This lemma peels off that wrapper.
 -/
-lemma Modification.extHelp {X : Type u₁} {Y : Type u₂} [Bicategory.{w₁, v₁} X] [Bicategory.{w₂, v₂} Y] {F G : X ⥤ᵖ Y} {η θ : F ⟶ G} {m1 m2 : η ⟶ θ} (h : m1.as = m2.as) : m1 = m2 := by
+lemma StrongTrans.Hom.ext {X : Type u₁} {Y : Type u₂}
+    [Bicategory.{w₁, v₁} X] [Bicategory.{w₂, v₂} Y]
+    {F G : X ⥤ᵖ Y} {η θ : F ⟶ G} {m1 m2 : η ⟶ θ} (h : m1.as = m2.as) : m1 = m2 := by
   cases m1
   cases m2
   congr
@@ -449,7 +448,7 @@ Yoneda embedding functor sending `s : F.obj b₀` to the strong transformation
 `(a, f) ↦ (F.map f).obj s`.
 
 This is the inverse direction of the Yoneda equivalence.  Together with `yonedaLemmaForwards`
-and the unit/counit isos (`yonedahomInvId`, `yonedainvHomId`), it forms `yonedaLemma`.
+and the unit/counit isos (`yonedaHomInvId`, `yonedaInvHomId`), it forms `yonedaLemma`.
 -/
 def yonedaLemmaBackwards : StrongTrans (@yonedaEvaluation B _)  (@yonedaPairing B _) where
   app x := by
@@ -507,18 +506,17 @@ For a pair `a = (b₀, F)`, a component `b : Bᵒᵖ`, and a strong transformati
 Each component at `f : unop b ⟶ b₀` is `(yonedaUnitAppIso a b x f).hom`.
 
 This is the innermost layer of the unit coherence; it is assembled into a full modification
-by `yonedahomInvIdHomNatTrans` and then into the unit iso by `yonedahomInvId`.
+by `yonedaHomInvIdNatIso` and then into the unit iso by `yonedaHomInvId`.
 -/
-def yonedahomInvIdHomNatTransNatTransIso {a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)} (b : Bᵒᵖ) (x : ↑(yonedaPairing.obj a))
-  : (((yonedaLemmaBackwards.app a).toFunctor.obj ((yonedaLemmaForwards.app a).toFunctor.obj x)).app b).toFunctor ≅ (x.app b).toFunctor := by
+def yonedaHomInvIdFunctorIso {a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)} (b : Bᵒᵖ) (x : ↑(yonedaPairing.obj a)) :
+    (((yonedaLemmaBackwards.app a).toFunctor.obj
+        ((yonedaLemmaForwards.app a).toFunctor.obj x)).app b).toFunctor ≅
+    (x.app b).toFunctor := by
     fapply NatIso.ofComponents
     · exact (fun y => (yonedaUnitAppIso a b x y))
     · intros X Y h
       apply ((yonedaUnitAppIso a b x Y).comp_inv_eq.mp ?_).symm
-      -- simp [yonedaLemmaBackwards, op2, yonedaLemmaForwards]
       simp [yonedaUnitAppIso]
-      dsimp [yonedaPairing] at x
-      dsimp [yoneda₀] at X Y
       have lem : ((ρ_ X).hom ≫ h ≫ (ρ_ Y).inv) = h ▷ (𝟙 (unop a.1))  := by
         exact Eq.symm (Bicategory.whiskerRight_id h)
       erw [<- Category.assoc ((x.app b).toFunctor.map h),<- (x.app b).toFunctor.map_comp, Category.assoc, <- Category.assoc ((x.app b).toFunctor.map (ρ_ X).hom),<- (x.app b).toFunctor.map_comp,lem]
@@ -530,24 +528,56 @@ def yonedahomInvIdHomNatTransNatTransIso {a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)} (
         exact (eq_of_comp_right_eq fun {Z} ↦ congrFun rfl)
       erw [ <- lem2, hy'',<- NatTrans.comp_app,<- Category.assoc,<- Cat.Hom.toNatTrans_comp,(x.naturality X.op).inv_hom_id,<- Cat.Hom.toNatTrans_comp, Category.id_comp]
       simp [yonedaLemmaBackwards,yonedaLemmaForwards]
+
+/--
+At a fixed pair `a = (b₀, F)` and a strong transformation `x : yoneda₀ b₀ ⟶ F`, the
+isomorphism
+  `(yonedaLemmaForwards.app a ≫ yonedaLemmaBackwards.app a).toFunctor.obj x ≅ x`
+in `yonedaPairing.obj a`.
+
+This is the component of the unit natural isomorphism `yonedaHomInvIdNatIso` at the object
+`x`, assembled by applying `yonedaHomInvIdFunctorIso` at each component `b : Bᵒᵖ`.
+-/
+def yonedaHomInvIdObjIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) (x : ↑(yonedaPairing.obj a)) :
+    (yonedaLemmaForwards.app a ≫ yonedaLemmaBackwards.app a).toFunctor.obj x ≅
+    (𝟭 ↑(yonedaPairing.obj a)).obj x where
+  hom := by
+    fconstructor
+    fconstructor
+    · intro b
+      fconstructor
+      exact (yonedaHomInvIdFunctorIso b x).hom
+    · intros a b f
+      ext e
+      simp [yonedaHomInvIdFunctorIso, Functor.whiskerLeft, Functor.whiskerRight]
+      erw [NatTrans.comp_app]
+      simp [yonedaUnitAppIso,yonedaLemmaBackwards,yonedaLemmaForwards]
+      erw [NatTrans.comp_app]
+      simp
+      sorry
+  inv := by
+    fconstructor
+    fconstructor
+    · intro b
+      fconstructor
+      exact (yonedaHomInvIdFunctorIso b x).inv
+    · sorry
+
 /--
 For a pair `a = (b₀, F)`, the modification
 `(yonedaLemmaForwards.app a ≫ yonedaLemmaBackwards.app a)(x) ⟶ x`
 in `yonedaPairing.obj a`, for each `x : yonedaPairing.obj a`.
 
-This is the component of the unit morphism `yonedahomInvId.hom` at the object `a`, assembled
-component-wise using `yonedahomInvIdHomNatTransNatTrans` for each `b : Bᵒᵖ`.
+This is the component of the unit morphism `yonedaHomInvId.hom` at the object `a`, assembled
+component-wise using `yonedaHomInvIdObjIso` for each `b : Bᵒᵖ`.
 -/
-def yonedahomInvIdHomNatTrans (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) : NatTrans (yonedaLemmaForwards.app a ≫ yonedaLemmaBackwards.app a).toFunctor  (𝟭 ↑(yonedaPairing.obj a)) where
-  app x := by
-    refine {as := {app := ?_, naturality := ?_}}
-    · intro a
-      fconstructor
-      apply (yonedahomInvIdHomNatTransNatTransIso a x).hom
-    · intro c d f
-      sorry
-  naturality {x y} f := by
-    sorry
+def yonedaHomInvIdNatIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
+    (yonedaLemmaForwards.app a ≫ yonedaLemmaBackwards.app a).toFunctor ≅
+    (𝟭 ↑(yonedaPairing.obj a)) := by
+  fapply NatIso.ofComponents
+  · intro x
+    exact yonedaHomInvIdObjIso a x
+  · sorry
 
 /--
 The *unit isomorphism* `yonedaLemmaForwards ≫ yonedaLemmaBackwards ≅ 𝟙 yonedaPairing`.
@@ -556,14 +586,19 @@ This witnesses that composing the "evaluate at identity" map with the Yoneda emb
 the original strong transformation, up to a canonical isomorphism.  It is the `homInvId` field
 of `yonedaLemma`.
 -/
-def yonedahomInvId : yonedaLemmaForwards ≫ yonedaLemmaBackwards ≅ 𝟙 (@yonedaPairing B _) where
+def yonedaHomInvId : yonedaLemmaForwards ≫ yonedaLemmaBackwards ≅ 𝟙 (@yonedaPairing B _) where
   hom := by
     refine {as := {app := ?_, naturality := ?_}}
     · intro a
       fconstructor
-      exact yonedahomInvIdHomNatTrans a
+      exact (yonedaHomInvIdNatIso a).hom
     · sorry
-  inv := by sorry
+  inv := by
+    refine {as := {app := ?_, naturality := ?_}}
+    · intro a
+      fconstructor
+      exact (yonedaHomInvIdNatIso a).inv
+    · sorry
   inv_hom_id := by sorry
   hom_inv_id := by sorry
 
@@ -572,11 +607,12 @@ For a pair `a = (b₀, F)`, the natural transformation from the roundtrip functo
 `(yonedaLemmaBackwards.app a ≫ yonedaLemmaForwards.app a)` to the identity on
 `yonedaEvaluation.obj a`.
 
-This is the component of the counit morphism `yonedainvHomId.hom` at the object `a`,
+This is the component of the counit morphism `yonedaInvHomId.hom` at the object `a`,
 witnessing that `yonedaLemmaForwards(yonedaLemmaBackwards(s)) ≅ s` for `s : F.obj b₀`.
 -/
-
-def yonedaInvhomIdHomNatTrans (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) : NatTrans (yonedaLemmaBackwards.app a ≫ yonedaLemmaForwards.app a).toFunctor  (𝟭 ↑(yonedaEvaluation.obj a)) where
+def yonedaInvHomIdNatTrans (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
+    NatTrans (yonedaLemmaBackwards.app a ≫ yonedaLemmaForwards.app a).toFunctor
+    (𝟭 ↑(yonedaEvaluation.obj a)) where
   app x := by
     fconstructor
     rcases x with ⟨x⟩
@@ -587,21 +623,51 @@ def yonedaInvhomIdHomNatTrans (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) : NatTrans (
     sorry
 
 /--
+At a fixed pair `a = (b₀, F)`, the natural isomorphism from the roundtrip functor
+`(yonedaLemmaBackwards.app a ≫ yonedaLemmaForwards.app a)` to the identity on
+`yonedaEvaluation.obj a`.
+
+This is the component of the counit `yonedaInvHomId` at the object `a`, witnessing that
+`yonedaLemmaForwards(yonedaLemmaBackwards(s)) ≅ s` for `s : F.obj b₀`.
+-/
+def yonedaInvHomIdNatIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
+    (yonedaLemmaBackwards.app a ≫ yonedaLemmaForwards.app a).toFunctor ≅
+    (𝟭 ↑(yonedaEvaluation.obj a)) := by
+  fapply NatIso.ofComponents
+  · intro x
+    rcases x with ⟨x⟩
+    dsimp [yonedaLemmaForwards,ULiftHom.objDown,yonedaLemmaBackwards,Quiver.Hom]
+    let I1 := ((Cat.Hom.toNatIso (a.2.mapId (a.1))).app x)
+    letI : Category.{w, max (max u v) w} (ULift.{max (max u v) w, v} ↑(yonedaEvaluation'.obj a)) := by
+      exact uliftCategory ↑(yonedaEvaluation'.obj a)
+    let FF := ((@ULift.upFunctor.{_,_,max (max u v) w} (↑(yonedaEvaluation'.obj a)) _).mapIso I1)
+    let FFF := ULiftHom.up.mapIso FF
+    exact FFF
+  · sorry
+
+
+/--
 The *counit isomorphism* `yonedaLemmaBackwards ≫ yonedaLemmaForwards ≅ 𝟙 yonedaEvaluation`.
 
 This witnesses that composing the Yoneda embedding with "evaluate at identity" returns the
 original element of `F.obj b`, up to a canonical isomorphism.  It is the `invHomId` field
 of `yonedaLemma`.
 -/
-def yonedainvHomId : yonedaLemmaBackwards ≫ yonedaLemmaForwards ≅ 𝟙 (@yonedaEvaluation B _)  where
+def yonedaInvHomId : yonedaLemmaBackwards ≫ yonedaLemmaForwards ≅ 𝟙 (@yonedaEvaluation B _)  where
   hom := by
     refine {as := {app := ?_, naturality := ?_}}
     · intro a
       fconstructor
-      exact yonedaInvhomIdHomNatTrans a
+      exact (yonedaInvHomIdNatIso a).hom
     · intros a b f
       sorry
-  inv := by sorry
+  inv := by
+    refine {as := {app := ?_, naturality := ?_}}
+    · intro a
+      fconstructor
+      exact (yonedaInvHomIdNatIso a).inv
+    · intros a b f
+      sorry
 
 /--
 The *bicategorical Yoneda lemma*: an internal equivalence in the bicategory of pseudofunctors
@@ -618,11 +684,11 @@ The equivalence is witnessed by:
 * `map` (`yonedaLemmaForwards`): evaluate a strong transformation at the identity morphism.
 * `inv` (`yonedaLemmaBackwards`): send an element `s : F.obj b` to the strong transformation
   `(a, f) ↦ (F.map f).obj s`.
-* `homInvId` (`yonedahomInvId`): the unit iso, `backwards ∘ forwards ≅ id` on the pairing side.
-* `invHomId` (`yonedainvHomId`): the counit iso, `forwards ∘ backwards ≅ id` on evaluation.
+* `homInvId` (`yonedaHomInvId`): the unit iso, `backwards ∘ forwards ≅ id` on the pairing side.
+* `invHomId` (`yonedaInvHomId`): the counit iso, `forwards ∘ backwards ≅ id` on evaluation.
 -/
 def yonedaLemma : BiEquiv (@yonedaPairing B _) (@yonedaEvaluation B _) where
   map := yonedaLemmaForwards
   inv := yonedaLemmaBackwards
-  homInvId := yonedahomInvId
-  invHomId := yonedainvHomId
+  homInvId := yonedaHomInvId
+  invHomId := yonedaInvHomId
