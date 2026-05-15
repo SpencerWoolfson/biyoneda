@@ -104,12 +104,10 @@ def CatPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
   obj C := CatLift.{v₁, v₂, u₁, u₂}.obj C
   map {C D} F := CatLift.{v₁, v₂, u₁, u₂}.map F
   map₂ { C D } f { g } { η } := by
-    fconstructor
-    fconstructor
+    refine {toNatTrans := {app := ?_, naturality := ?_}}
     · intro x
       unfold CatLift ULiftHom at x
-      letI : Category.{v₁, max u₁ u₂} (ULift.{u₂, u₁} ↑D) := by
-        exact uliftCategory ↑D
+      letI : Category.{v₁, max u₁ u₂} (ULift.{u₂, u₁} ↑D) := uliftCategory ↑D
       exact (ULiftHom.up.map (η.toNatTrans.app x.down))
     · intros X Y h
       rcases X with ⟨X⟩
@@ -120,26 +118,18 @@ def CatPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
   map₂_id f := by
     congr
   map₂_whisker_left { a b c } f g h η := by
-    congr
+    simp 
     ext x
-    rcases x with ⟨x⟩
     simp
-    dsimp [CategoryStruct.comp,Category.comp_id,Functor.id_comp]
-    simp [toCatHom,CatLift,ULiftHomULiftCategory.equivCongrLeft,ULift.upFunctor,ULiftHom.objDown,ULiftHom.objUp]
-    sorry
+    erw [Category.comp_id, Category.id_comp]
+    congr
   map₂_whisker_right η h:= by
     congr
     ext x
     rcases x with ⟨x⟩
-    simp only [Cat.Hom.comp_toFunctor, comp_obj, ULiftHom.up_obj, Cat.whiskerRight_toNatTrans, whiskerRight_app,
-    Cat.coe_of, Iso.refl_hom, Cat.Hom.toNatTrans_id, NatTrans.id_app, Iso.refl_inv, Cat.Hom.toNatTrans_comp,
-    NatTrans.comp_app]
-    dsimp only [CategoryStruct.comp]
-    simp only [ULiftHom.objUp, CatLift, ULiftHomULiftCategory.equivCongrLeft, ULift.upFunctor, Equiv.toFun_as_coe,
-    Equiv.coe_fn_mk, toCatHom, Cat.of_α, Cat.coe_of, comp_obj, ULiftHom.down_obj, ULiftHom.objDown,
-    ULift.downFunctor_obj, ULiftHom.up_obj, Functor.comp_map, ULiftHom.down_map, ULiftHom.up_map_down,
-    ULift.downFunctor_map]
-    sorry
+    erw [Category.comp_id, Category.id_comp]
+    simp [CatLift,ULiftHomULiftCategory.equivCongrLeft]
+    exact eq_of_comp_right_eq fun {Z} ↦ congrFun rfl
   map₂_associator f g h := by
     ext x
     sorry
