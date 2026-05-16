@@ -1,0 +1,379 @@
+\documentclass[12pt]{article}
+
+\input{preamble}
+
+%% ---- Title info ----
+\title{A Lean 4 Formalization of the Bicategorical Yoneda Lemma}
+\author{Spencer Woolfson}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+  We present a formalization of the Yoneda lemma for bicategories in Lean 4, using
+  the \texttt{Mathlib} library.  The classical Yoneda lemma for ordinary categories
+  states a natural bijection $\Hom(y(b), F) \cong F(b)$ between natural transformations
+  out of the representable functor $y(b)$ and elements of $F(b)$.  In the bicategorical
+  setting this bijection is upgraded to an equivalence of categories, naturally in both
+  the representing object $b \in \B^{\op}$ and the pseudofunctor
+  $F : \B^{\op} \to \Cat$.  Concretely, we construct pseudofunctors
+  $\mathtt{yonedaPairing}$ and $\mathtt{yonedaEvaluation}$ and exhibit them as
+  equivalent via an explicit pair of strong transformations together with unit and
+  counit isomorphisms.  A nontrivial aspect of the formalization is universe management:
+  the two sides of the equivalence naturally land in different universe levels, requiring
+  an auxiliary universe-lifting pseudofunctor $\mathtt{CatPseudoULift}$.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%%============================================================
+\section{Introduction}
+%%============================================================
+
+The Yoneda lemma is one of the most fundamental results in category theory.  In its
+classical form it states that, for a locally small category $\mathcal{C}$ and a functor
+$F : \mathcal{C}^{\op} \to \mathbf{Set}$, there is a natural bijection
+\[
+  \Hom_{\mathbf{Set}^{\mathcal{C}^{\op}}}(y(c), F) \;\cong\; F(c)
+\]
+where $y : \mathcal{C} \to \mathbf{Set}^{\mathcal{C}^{\op}}$ is the Yoneda embedding.
+The lemma has wide-ranging consequences: it identifies objects with the functors they
+represent, it underlies the theory of adjunctions, and it is the engine behind most
+universal constructions in algebra and geometry.
+
+In the bicategorical setting, the appropriate notion of ``functor'' is a
+\emph{pseudofunctor} (or homomorphism of bicategories), natural transformations are
+replaced by \emph{strong (pseudo-natural) transformations}, and the Yoneda bijection is
+promoted to an \emph{equivalence of categories}: for a bicategory $\B$ with Yoneda
+embedding $\yoneda : \B \to [\B^{\op}, \Cat]_{\mathrm{ps}}$, we have
+\begin{equation}\label{eq:bi-yoneda}
+  \StrongTrans(\yo(b),\, F) \;\simeq\; F(b)
+\end{equation}
+naturally in $b \in \B^{\op}$ and $F : \B^{\op} \to \Cat$.
+
+This paper reports on a machine-checked proof of~\eqref{eq:bi-yoneda} carried out in
+Lean~4 using Mathlib~\citep{mathlib4}.  The formalization closely follows the internal
+categorical description found in~\citet{johnson-yau2021} and~\citet{leinster2004}:
+rather than constructing the equivalence object-by-object, we exhibit it as a
+biequivalence $\mathtt{yonedaPairing} \simeq \mathtt{yonedaEvaluation}$ of
+pseudofunctors $\B^{\op} \times [\B^{\op}, \Cat] \to \Cat$
+(Section~\ref{sec:main}).
+
+\medskip\noindent\textbf{Organization.}
+Section~\ref{sec:background} recalls the relevant background on bicategories,
+pseudofunctors, and strong transformations, fixing notation.
+Section~\ref{sec:yoneda-embedding} reviews the bicategorical Yoneda embedding as it
+appears in Mathlib.
+Section~\ref{sec:main} states and proves the main theorem.
+Section~\ref{sec:universes} discusses the universe issues that arise in the
+formalization and the auxiliary construction $\mathtt{CatPseudoULift}$.
+Section~\ref{sec:lean} highlights design choices in the Lean code.
+Section~\ref{sec:open} discusses directions for future formalization work.
+
+%%============================================================
+\section{Background}\label{sec:background}
+%%============================================================
+
+\subsection{Bicategories}
+
+We work with \emph{bicategories} in the sense of B{\'e}nabou~\citep{benabou1967}.
+
+\begin{definition}
+  A \emph{bicategory} $\B$ consists of:
+  \begin{enumerate}[label=(\roman*)]
+    \item a collection of \emph{objects} $\obj(\B)$;
+    \item for each pair of objects $a, b \in \B$, a category $\B(a,b)$ whose objects
+          are \emph{1-morphisms} and whose morphisms are \emph{2-morphisms};
+    \item \emph{horizontal composition} functors
+          $\circ : \B(b,c) \times \B(a,b) \to \B(a,c)$;
+    \item \emph{identity} 1-morphisms $\id_a \in \B(a,a)$;
+    \item natural isomorphisms (the \emph{associator}
+          $\alpha_{f,g,h} : (h \circ g) \circ f \cong h \circ (g \circ f)$
+          and \emph{unitors} $\lambda_f : \id \circ f \cong f$,
+          $\rho_f : f \circ \id \cong f$) satisfying the pentagon and triangle axioms.
+  \end{enumerate}
+\end{definition}
+
+In Lean/Mathlib the bicategory axioms are bundled in the \lstinline{Bicategory} typeclass.
+We use the notation $f \triangleright \sigma$ (\lstinline{whiskerLeft}) and
+$\sigma \triangleleft f$ (\lstinline{whiskerRight}) for horizontal composition of a
+1-morphism with a 2-morphism.
+
+\subsection{Pseudofunctors}
+
+\begin{definition}
+  A \emph{pseudofunctor} $F : \B \to \mathcal{C}$ between bicategories consists of:
+  \begin{enumerate}[label=(\roman*)]
+    \item an object map $F_0 : \obj(\B) \to \obj(\mathcal{C})$;
+    \item for each $a,b \in \B$, a functor $F_{a,b} : \B(a,b) \to \mathcal{C}(Fa, Fb)$;
+    \item coherence isomorphisms $F(\id_a) \cong \id_{Fa}$ and
+          $F(g \circ f) \cong F(g) \circ F(f)$, subject to coherence axioms.
+  \end{enumerate}
+\end{definition}
+
+In Mathlib pseudofunctors are called \lstinline{Pseudofunctor} and are written
+\lstinline{B ⥤ᵖ C} in Lean.
+
+\subsection{Strong Transformations}
+
+\begin{definition}
+  Let $F, G : \B \to \mathcal{C}$ be pseudofunctors.  A \emph{strong (pseudo-natural)
+  transformation} $\eta : F \to G$ consists of:
+  \begin{enumerate}[label=(\roman*)]
+    \item for each object $a \in \B$, a 1-morphism $\eta_a : Fa \to Ga$;
+    \item for each 1-morphism $f : a \to b$ in $\B$, an invertible 2-morphism
+          (the \emph{naturality isomorphism})
+          $\eta_f : G(f) \circ \eta_a \cong \eta_b \circ F(f)$;
+    \item coherence conditions with respect to identities and composition.
+  \end{enumerate}
+\end{definition}
+
+The category whose objects are strong transformations $F \to G$ and whose morphisms are
+\emph{modifications} is denoted $\StrongTrans(F, G)$ and written
+\lstinline{Pseudofunctor.StrongTrans F G} in Lean.
+
+%%============================================================
+\section{The Bicategorical Yoneda Embedding}\label{sec:yoneda-embedding}
+%%============================================================
+
+Fix a bicategory $\B$.  The \emph{Yoneda embedding} for bicategories is a pseudofunctor
+\[
+  \yoneda : \B \;\longrightarrow\; [\B^{\op}, \Cat]_{\mathrm{ps}}
+\]
+where $[\B^{\op}, \Cat]_{\mathrm{ps}}$ denotes the bicategory of pseudofunctors
+$\B^{\op} \to \Cat$.  This is provided by Mathlib as \lstinline{Bicategory.yoneda} (and
+the component at an object $b$ is written \lstinline{yoneda₀ b}).
+
+Concretely, $\yo(b) : \B^{\op} \to \Cat$ is the pseudofunctor that
+\begin{itemize}
+  \item sends an object $a \in \B^{\op}$ to the hom-category $\B(a, b)$;
+  \item sends a 1-morphism $f : a' \to a$ in $\B^{\op}$ (i.e.\ $f : a \to a'$ in $\B$)
+        to the precomposition functor $f^* : \B(a, b) \to \B(a', b)$,
+        $g \mapsto g \circ f$.
+\end{itemize}
+
+%%============================================================
+\section{The Main Theorem}\label{sec:main}
+%%============================================================
+
+\subsection{The Two Pseudofunctors}
+
+\begin{definition}[{\lstinline{yonedaPairing}}]\label{def:pairing}
+  The \emph{pairing pseudofunctor}
+  \[
+    P : \B^{\op} \times [\B^{\op}, \Cat]_{\mathrm{ps}} \;\longrightarrow\; \Cat
+  \]
+  is defined by:
+  \begin{align*}
+    P(b, F) &= \StrongTrans(\yo(b), F), \\
+    P(f : b' \to b,\; \alpha : F \to G)(\eta) &= \alpha \circ \eta \circ \yo(f).
+  \end{align*}
+\end{definition}
+
+\begin{definition}[{\lstinline{yonedaEvaluation}}]\label{def:evaluation}
+  The \emph{evaluation pseudofunctor}
+  \[
+    E : \B^{\op} \times [\B^{\op}, \Cat]_{\mathrm{ps}} \;\longrightarrow\; \Cat
+  \]
+  is defined by:
+  \begin{align*}
+    E(b, F) &= F(b), \\
+    E(f : b' \to b,\; \alpha : F \to G)(s) &= G(f)(\alpha_b(s)).
+  \end{align*}
+\end{definition}
+
+\subsection{The Equivalence}
+
+The main result is:
+
+\begin{theorem}[Bicategorical Yoneda Lemma]\label{thm:yoneda}
+  There is a biequivalence
+  \[
+    P \;\simeq\; E
+  \]
+  in the bicategory of pseudofunctors
+  $\B^{\op} \times [\B^{\op}, \Cat]_{\mathrm{ps}} \to \Cat$,
+  i.e.\ strong transformations
+  $\Phi : P \to E$ and $\Psi : E \to P$ together with invertible modifications
+  $\Phi \circ \Psi \cong \Id_E$ and $\Psi \circ \Phi \cong \Id_P$.
+\end{theorem}
+
+The equivalence is witnessed by the following data.
+
+\begin{definition}[{\lstinline{yonedaLemmaForwards}}]
+  The strong transformation $\Phi : P \to E$ has component
+  \[
+    \Phi_{(b,F)} : \StrongTrans(\yo(b), F) \;\longrightarrow\; F(b), \qquad
+    \eta \;\longmapsto\; \eta_b(\id_b).
+  \]
+  That is, we evaluate the strong transformation $\eta$ at the object $b$ and then
+  apply the resulting functor to the identity morphism $\id_b \in \B(b,b)$.
+\end{definition}
+
+\begin{definition}[{\lstinline{yonedaLemmaBackwards}}]
+  The strong transformation $\Psi : E \to P$ has component
+  \[
+    \Psi_{(b,F)} : F(b) \;\longrightarrow\; \StrongTrans(\yo(b), F), \qquad
+    s \;\longmapsto\; \bigl[(a, f) \mapsto F(f)(s)\bigr].
+  \]
+  That is, the strong transformation assigned to $s \in F(b)$ sends an object
+  $a \in \B^{\op}$ and a morphism $f \in \B(a, b)$ to $F(f)(s)$.
+\end{definition}
+
+\begin{proposition}
+  The composites $\Phi \circ \Psi$ and $\Psi \circ \Phi$ are isomorphic to the
+  respective identities via the modifications $\mathtt{yonedaInvHomId}$ and
+  $\mathtt{yonedaHomInvId}$.  These are assembled from:
+  \begin{itemize}
+    \item The \emph{unit}: for $\eta \in \StrongTrans(\yo(b), F)$, the component
+          isomorphism at $f : a \to b$ is the composite
+          $(\eta.\text{naturality}(f))^{-1}|_{\id_b} \circ \eta_a.\map(\rho_f)$,
+          where $\rho_f : f \circ \id_b \cong f$ is the right unitor.
+    \item The \emph{counit}: for $s \in F(b)$, the component is
+          $F.\text{mapId}(b)|_s$, the identity coherence of $F$ applied to $s$.
+  \end{itemize}
+\end{proposition}
+
+%%============================================================
+\section{Universe Considerations}\label{sec:universes}
+%%============================================================
+
+A subtle issue arises when comparing $P$ and $E$ as pseudofunctors into $\Cat$:
+they naturally land in different universe levels.
+
+Fix universe variables $u$, $v$, $w$ so that $\B$ has objects in $\mathtt{Type}\ u$,
+hom-categories with morphisms in $\mathtt{Type}\ v$, and 2-morphisms in
+$\mathtt{Type}\ w$.  Then:
+\begin{itemize}
+  \item $E'(b, F) = F(b)$ lands in $\Cat^{w,v}$ (i.e.\ a category with
+        hom-sets in $\mathtt{Type}\ w$ and objects in $\mathtt{Type}\ v$).
+  \item $P(b, F) = \StrongTrans(\yo(b), F)$ lands in
+        $\Cat^{\max(u,v,w), \max(u,v,w)}$.
+\end{itemize}
+These two universe levels do not match, so the naive statement
+$P \simeq E'$ is not type-correct.
+
+To resolve this we define an auxiliary pseudofunctor
+\[
+  \mathtt{CatPseudoULift} : \Cat^{v_1, u_1} \;\to\; \Cat^{\max(v_1,v_2),\, \max(u_1,u_2)}
+\]
+which promotes every small category to a larger universe by applying
+$\mathtt{ULift}$ on objects and $\mathtt{ULiftHom}$ on hom-sets.  The actual evaluation
+pseudofunctor used in the theorem is
+\[
+  \mathtt{yonedaEvaluation} = \mathtt{yonedaEvaluation'} \;;\; \mathtt{CatPseudoULift},
+\]
+where $\mathtt{yonedaEvaluation'}$ is the raw evaluation functor landing in
+$\Cat^{w,v}$.  Universe-lifting is lossless: the equivalence
+$\mathtt{CatLiftIso}$ witnesses $C \simeq \mathtt{CatLift}(C)$ for every category $C$.
+
+%%============================================================
+\section{Design Choices in the Lean Formalization}\label{sec:lean}
+%%============================================================
+
+\subsection{The \texttt{BiEquiv} Structure}
+
+Rather than working with adjoint equivalences (which carry triangle identity data), we
+introduce a lighter structure sufficient for stating the Yoneda result:
+
+\begin{lstlisting}
+structure BiEquiv (x y : B) where
+  map : x ⟶ y
+  inv : y ⟶ x
+  homInvId : map ≫ inv ≅ 𝟙 x
+  invHomId : inv ≫ map ≅ 𝟙 y
+\end{lstlisting}
+
+This records an internal equivalence in a bicategory --- a pair of 1-morphisms with
+invertible 2-morphisms witnessing the round-trips --- without requiring the triangle
+identities of an adjoint equivalence.  Every adjoint equivalence gives a
+\lstinline{BiEquiv}, but the converse requires additional work.
+
+\subsection{Opacity and Definitional Reductions}
+
+Several auxiliary lemmas use \lstinline{erw} (extended rewrite) rather than \lstinline{rw}
+because the relevant equalities hold only after definitional unfolding of universe-lift
+wrappers such as \lstinline{ULiftHom.up} and \lstinline{ULift.upFunctor}.  Replacing
+these with dedicated simp lemmas that expose the required reductions is a natural
+cleanup.
+
+\subsection{Modifications and Extensionality}
+
+The extensionality lemma
+
+\begin{lstlisting}
+lemma StrongTrans.Hom.ext {m1 m2 : η ⟶ θ} (h : m1.as = m2.as) : m1 = m2
+\end{lstlisting}
+
+is used throughout to reduce goals about 2-morphisms in $\StrongTrans(F, G)$ to
+equalities of the underlying modifications.  This avoids unfolding the single-field
+wrapper \lstinline{StrongTrans.Hom} by hand and mirrors the standard
+\lstinline{Functor.ext} pattern already present in Mathlib.
+
+%%============================================================
+\section{Future Work}\label{sec:open}
+%%============================================================
+
+The formalization established here opens several directions for further development
+of higher category theory in Lean~4 and Mathlib.
+
+\paragraph{Biadjunctions.}
+The biequivalence of Theorem~\ref{thm:yoneda} is the core ingredient in showing that
+the Yoneda embedding $\yoneda : \B \to [\B^{\op}, \Cat]_{\mathrm{ps}}$ is a
+\emph{biadjunction} --- the appropriate bicategorical analogue of a fully faithful
+functor admitting a left adjoint.  Formalizing the general theory of biadjunctions
+in Mathlib, including the bicategorical adjoint functor theorem, would be a natural
+continuation~\citep{lack2010}.
+
+\paragraph{The Grothendieck construction for bicategories.}
+The classical Grothendieck construction builds a fibration over a category $\mathcal{C}$
+from a functor $\mathcal{C} \to \Cat$.  For bicategories there is an analogous
+\emph{bicategorical Grothendieck construction}, producing a bicategration over $\B$ from
+a pseudofunctor $\B \to \Cat$~\citep{street1974}.  The pseudofunctors
+$\mathtt{yonedaPairing}$ and $\mathtt{yonedaEvaluation}$ are precisely the inputs this
+construction takes, so a formalization of bicategorical fibrations would sit naturally on
+top of the present work.
+
+\paragraph{Pseudomonads and pseudoalgebras.}
+A \emph{pseudomonad} on a bicategory $\B$ is a monoid object in the hom-bicategory of
+pseudoendofunctors, with composition and unit isomorphisms satisfying coherence
+conditions.  Pseudomonads model computational effects at a bicategorical level and
+include important examples such as the free cocompletion monad on $\Cat$.  The Yoneda
+lemma is the key tool for showing that the free cocompletion of $\B$ is the bicategory
+of presheaves $[\B^{\op}, \Cat]_{\mathrm{ps}}$.
+
+\paragraph{Tricategories and coherence.}
+Bicategories, pseudofunctors, strong transformations, and modifications themselves
+assemble into a \emph{tricategory}~\citep{gordon-power-street1995}.  Formalizing
+tricategories in Lean and proving the Gordon--Power--Street coherence theorem --- every
+tricategory is triequivalent to a Gray-category --- is a significant open problem in
+proof assistant libraries and would extend the hierarchy already present in Mathlib.
+
+\paragraph{Profunctors and enriched structures.}
+The bicategory $\mathbf{Prof}$ of small categories and profunctors (distributors) is one
+of the central objects of study in formal category theory.  The Yoneda lemma implies
+that the Yoneda embedding $y : \mathcal{C} \to [\mathcal{C}^{\op}, \mathbf{Set}]$ is the
+unit of the free cocompletion monad on $\mathbf{Prof}$, and the induced theory of
+\emph{Cauchy completion} and \emph{absolute colimits} is a natural target for
+formalization~\citep{fiore-gambino-hyland-winskel2008}.
+
+\paragraph{Yoneda structures.}
+\citet{street1974} introduced \emph{Yoneda structures} as an axiomatic framework that
+isolates the properties of the Yoneda embedding needed to develop formal category theory
+in an arbitrary 2-category.  Formalizing Yoneda structures in Lean would unify the
+treatment of ordinary, enriched, and internal category theory under a single abstract
+framework, allowing theorems to be proved once and instantiated to many settings.
+
+%%============================================================
+\section*{Acknowledgements}
+%%============================================================
+
+% Add acknowledgements here.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

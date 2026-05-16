@@ -1,0 +1,68 @@
+%% ---- Packages ----
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{mathtools}
+\usepackage{tikz-cd}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{natbib}
+\usepackage{hyperref}  % load last among packages
+\geometry{margin=1in}
+
+%% ---- Lean listings style ----
+\lstdefinelanguage{Lean4}{
+  keywords={def,theorem,lemma,structure,where,by,let,have,show,exact,refine,
+            intro,intros,apply,rw,simp,congr,ext,cases,rcases,induction,
+            open,universe,variable,instance,class,namespace,end,import,
+            fun,match,if,then,else,return,do,sorry,calc,suffices,obtain,
+            use,constructor,fconstructor,fapply,dsimp,erw,conv,at,from},
+  sensitive=true,
+  comment=[l]{--},
+  morecomment=[s]{/-}{-/},
+  morestring=[b]",
+  morekeywords=[2]{Type,Prop,Sort,true,false},
+}
+\lstset{
+  language=Lean4,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue!70!black}\bfseries,
+  keywordstyle=[2]\color{teal},
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{brown},
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!6},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=5pt,
+}
+
+%% ---- Theorem environments ----
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{notation}[theorem]{Notation}
+
+%% ---- Math macros ----
+\newcommand{\Cat}{\mathbf{Cat}}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\id}{\mathrm{id}}
+\newcommand{\Id}{\mathrm{Id}}
+\newcommand{\StrongTrans}{\mathbf{StrongTrans}}
+\newcommand{\yoneda}{\mathcal{Y}}
+\newcommand{\yo}{\yoneda_0}
+\newcommand{\Hom}{\mathrm{Hom}}
+\newcommand{\obj}{\mathrm{obj}}
+\newcommand{\map}{\mathrm{map}}
+\newcommand{\B}{\mathcal{B}}
+\newcommand{\bicatprod}{\times}
+\newcommand{\psfun}{\Rightarrow_{\mathrm{ps}}}

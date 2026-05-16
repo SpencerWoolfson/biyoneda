@@ -115,27 +115,20 @@ def CatPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
       apply (Quiver.homOfEq_injective rfl rfl (congrArg (ULiftHom.up.map) (η.toNatTrans.naturality h.down)))
   mapId C := Iso.refl (CatLift.map (𝟙 C))
   mapComp F G := Iso.refl (CatLift.map (F ≫ G))
-  map₂_id f := by
-    congr
-  map₂_whisker_left { a b c } f g h η := by
-    simp 
-    ext x
-    simp
-    erw [Category.comp_id, Category.id_comp]
-    congr
+  map₂_id f := by congr
+  map₂_whisker_left { a b c } f g h η := by ext x; erw [Category.comp_id, Category.id_comp] ; congr
   map₂_whisker_right η h:= by
     congr
-    ext x
-    rcases x with ⟨x⟩
+    ext ⟨x⟩
     erw [Category.comp_id, Category.id_comp]
-    simp [CatLift,ULiftHomULiftCategory.equivCongrLeft]
     exact eq_of_comp_right_eq fun {Z} ↦ congrFun rfl
   map₂_associator f g h := by
-    ext x
+    ext ⟨x⟩
+    erw [Category.comp_id, Category.id_comp]
     sorry
   map₂_left_unitor {a b} f := by
     ext ⟨x⟩
-    simp
+    erw [Category.comp_id]
     sorry
   map₂_right_unitor {a b} f := by
     ext ⟨x⟩
@@ -176,29 +169,39 @@ def yonedaPairing : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (ma
   obj x := @Cat.of (Pseudofunctor.StrongTrans (yoneda₀ x.fst.unop) x.snd)
     (Pseudofunctor.StrongTrans.homCategory)
   map {x y} f := by
-    apply Functor.toCatHom { obj η := Bicategory.postcomp₂ f.1.unop ≫ (η ≫ f.2), map m := StrongTrans.whiskerLeft (Bicategory.postcomp₂ f.1.unop) (StrongTrans.whiskerRight m f.2)}
+    -- I should figure out why exact will not work and fix that. I think it is an isue with useing ⟶ instead of strongtrans
+    let sol := Functor.toCatHom { obj η := Bicategory.postcomp₂ f.1.unop ≫ (η ≫ f.2), map m := StrongTrans.whiskerLeft (Bicategory.postcomp₂ f.1.unop) (StrongTrans.whiskerRight m f.2)}
+    dsimp [Quiver.Hom] at sol
+    exact sol
   map₂ { x y f g } η := by
-    fconstructor
-    dsimp
     let h1 : postcomp₂ f.1.unop ⟶ postcomp₂ g.1.unop := (postcomposing₂ y.1.unop x.1.unop).map (Hom2.unop2 η.1)
     let h2 : f.2 ⟶ g.2 := η.2
-    fconstructor
-    · intro a
-      exact (h1 ▷ (a ≫ f.2)) ≫ (postcomp₂ g.1.unop) ◁ (a ◁ h2)
+    refine { toNatTrans := { app := ?_, naturality := ?_ } }
+    · exact fun a => (h1 ▷ (a ≫ f.2)) ≫ (postcomp₂ g.1.unop) ◁ (a ◁ h2)
     · intros X Y h
-      dsimp [Pseudofunctor.StrongTrans.homCategory]
-      letI : Category.{max (max u v) w, max (max u v) w} ((yoneda₀ (unop y.1)).StrongTrans y.2) := by
-        apply (CategoryTheory.Pseudofunctor.StrongTrans.instBicategory Bᵒᵖ Cat).homCategory
-      simp [StrongTrans.whiskerLeft, StrongTrans.whiskerRight, CategoryStruct.comp, postcomp₂]
-      apply homCategory.ext
-      intro b
-      simp at this
-      dsimp [CategoryStruct.comp, Pseudofunctor.StrongTrans.Modification.vcomp]
+      -- apply homCategory.ext
+      -- intro b
+      -- refine Cat.Hom₂.ext_iff.mpr ?_
+      -- ext c
+      -- simp [StrongTrans.whiskerLeft,postcomp₂]
       sorry
-  mapId x := by  sorry
-  mapComp f g := sorry
+  mapId x := by
+    refine Cat.Hom.isoMk ?_
+    refine NatIso.ofComponents ?_ ?_
+    · intro X
+      let lem1 : postcomp₂ (𝟙 (unop x.1)) ≅ 𝟙 (yoneda₀ (unop x.1)) := by
+        sorry
+      let lem2 := (lem1 ▷ᵢ (X ≫ 𝟙 x.2))
+      refine Iso.trans lem2 ?_
+      exact (bicategoricalIso X (𝟙 (yoneda₀ (unop x.1)) ≫ X ≫ 𝟙 x.2)).symm
+    · sorry
+  mapComp f g := by
+    refine Cat.Hom.isoMk ?_
+    refine NatIso.ofComponents ?_ ?_
+    · sorry
+    · sorry
   map₂_id {a b} X := by
-    ext x
+    ext ⟨x⟩
     simp
     sorry
 
@@ -224,20 +227,11 @@ def yonedaEvaluation' : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v}
   map₂ { x y f g } η := (η.2.as.app x.1 ▷ y.2.map f.1) ≫ (_ ◁ y.2.map₂ η.1)
   mapId x := (_root_.id (x.2.mapId x.1))
   mapComp {a b c} f g := by
-    refine Iso.trans (α_ (f.2.app a.1) (g.2.app a.1) (c.2.map (f.1 ≫ g.1))) (Iso.trans ?_ (α_ (f.2.app a.1) (b.2.map f.1) (g.2.app b.1 ≫ c.2.map g.1)).symm)
-    · fconstructor
-      · refine (f.2.app a.1) ◁ ((g.2.app a.1 ◁ (c.2.mapComp f.1 g.1).hom) ≫ ?_)
-        refine (associator (g.2.app a.1) (c.2.map f.1) (c.2.map g.1)).inv ≫ ?_ ≫ (associator (b.2.map f.1) (g.2.app b.1) (c.2.map g.1)).hom
-        exact (g.2.naturality f.1).inv ▷ (c.2.map g.1)
-      · refine (f.2.app a.1) ◁ (?_ ≫ (g.2.app a.1 ◁ (c.2.mapComp f.1 g.1).inv))
-        refine  (associator (b.2.map f.1) (g.2.app b.1) (c.2.map g.1)).inv ≫ ?_ ≫ (associator (g.2.app a.1) (c.2.map f.1) (c.2.map g.1)).hom
-        exact (g.2.naturality f.1).hom ▷ (c.2.map g.1)
-      · simp
-      · simp
-  map₂_whisker_left {a b c} f { g h } { η }:= by
-    simp
-    bicategory
-    sorry
+    refine (α_ (f.2.app a.1) (g.2.app a.1) (c.2.map (f.1 ≫ g.1))) ≪≫ ?_ ≪≫ (α_ (f.2.app a.1) (b.2.map f.1) (g.2.app b.1 ≫ c.2.map g.1)).symm
+    refine (f.2.app a.1) ◁ᵢ ((g.2.app a.1 ◁ᵢ (c.2.mapComp f.1 g.1)) ≪≫ ?_)
+    refine (α_ (g.2.app a.1) (c.2.map f.1) (c.2.map g.1)).symm ≪≫ ?_ ≪≫ (α_ (b.2.map f.1) (g.2.app b.1) (c.2.map g.1))
+    exact (g.2.naturality f.1).symm ▷ᵢ (c.2.map g.1)
+  map₂_whisker_left {a b c} f { g h } { η }:= by sorry
   map₂_whisker_right := by sorry
   map₂_associator := by sorry
   map₂_left_unitor a := by sorry
@@ -273,6 +267,7 @@ def yonedaLemmaForwardsFunctor (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) : (yonedaPa
     fconstructor
     exact (f.as.app x.1).toNatTrans.app (𝟙 (unop x.1))
 
+-- set_option trace.Meta.synthInstance true
 /--
 The *forward strong transformation* `yonedaPairing ⟶ yonedaEvaluation` for the Yoneda lemma.
 
@@ -283,17 +278,16 @@ Mathematically, this is the "evaluate at identity" direction of the equivalence
   `StrongTrans(yoneda₀ b, F)  ≃  F.obj b`.
 -/
 def yonedaLemmaForwards : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B _) where
-  app x := by
-    fconstructor
-    exact yonedaLemmaForwardsFunctor x
-  naturality {a b} f := by sorry
-    -- fconstructor
-    -- · fconstructor
-    --   fconstructor
-    --   · intro x
-    --     simp [yonedaEvaluation,yonedaEvaluation',CatPseudoULift,CatLift,ULiftHomULiftCategory.equivCongrLeft,ULiftHom.objUp,ULift.upFunctor,ULiftHom.objDown]
-    --     apply?
-    --     sorry
+  app x := {toFunctor := yonedaLemmaForwardsFunctor x}
+  naturality {a b} f := by
+    refine Cat.Hom.isoMk ?_
+    refine NatIso.ofComponents ?_ ?_
+    · intro X
+      dsimp [CatPseudoULift,CatLift,ULiftHomULiftCategory.equivCongrLeft,ULiftHom.objUp,yonedaEvaluation,ULiftHom.objDown]
+      -- refine (ULift.upFunctor.mapIso ?_)
+      sorry
+    · sorry
+
 
 
 /--
@@ -539,9 +533,7 @@ def yonedaHomInvIdObjIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) (x : ↑(yonedaPa
       exact (yonedaHomInvIdFunctorIso b x).hom
     · intros a b f
       ext e
-      simp [yonedaHomInvIdFunctorIso, Functor.whiskerLeft, Functor.whiskerRight]
       erw [NatTrans.comp_app]
-      simp [yonedaUnitAppIso,yonedaLemmaBackwards,yonedaLemmaForwards]
       erw [NatTrans.comp_app]
       simp
       sorry

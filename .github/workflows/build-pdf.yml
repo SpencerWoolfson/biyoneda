@@ -1,0 +1,36 @@
+name: Build PDF
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'paper/**.tex'
+      - '.github/workflows/build-pdf.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile LaTeX
+        uses: xu-cheng/latex-action@v3
+        with:
+          working_directory: paper
+          root_file: Biyoneda.tex
+          latexmk_use_lualatex: false
+          extra_system_packages: "py-pygments"
+
+      - name: Copy PDF to root
+        run: cp paper/Biyoneda.pdf Biyoneda.pdf
+
+      - name: Commit compiled PDF
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Biyoneda.pdf
+          git diff --cached --quiet && echo "PDF unchanged, nothing to commit." || \
+            git commit -m "docs: rebuild Biyoneda.pdf [skip ci]" && git push
