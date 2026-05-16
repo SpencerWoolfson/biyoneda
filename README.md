@@ -76,8 +76,11 @@ The first `lake exe cache get` step downloads compiled Mathlib oleans so you do 
 
 Specifically, the formalization builds on:
 - `Mathlib.CategoryTheory.Bicategory.Yoneda`
-- `Mathlib.CategoryTheory.Bicategory.Adjunction.Basic`
 - `Mathlib.CategoryTheory.Category.ULift`
+
+## Notes on AI
+
+I have been experimenting with use of AI in formalization. I have had some limited success with it writing the lean code succses but I have used it for comments, documentation, and setting up the git actions in the repo. I have given a cursory look at all of the things it has written and corrected any small errors I have found. I plan to give a more detailed look at it in the future. Please be warned to take these things with a grain of salt.
 
 ## References
 
