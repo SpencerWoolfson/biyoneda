@@ -39,6 +39,18 @@
   numbers=left,
   numberstyle=\tiny\color{gray},
   numbersep=5pt,
+  % Unicode characters used in Lean 4 code — literate replacements keep
+  % listings from choking on multi-byte UTF-8 sequences in TeX Live 2025+.
+  literate=
+    {⟶}{{\ensuremath{\longrightarrow}}}1
+    {≫}{{\ensuremath{\mathbin{\gg}}}}1
+    {≅}{{\ensuremath{\cong}}}1
+    {𝟙}{{\ensuremath{\mathbb{1}}}}1
+    {η}{{\ensuremath{\eta}}}1
+    {θ}{{\ensuremath{\theta}}}1
+    {⥤}{{\ensuremath{\rightarrow}}}1
+    {ᵖ}{{\textsuperscript{p}}}1
+    {₀}{{$_0$}}1,
 }
 
 %% ---- Theorem environments ----
