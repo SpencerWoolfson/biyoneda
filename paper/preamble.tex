@@ -13,6 +13,13 @@
 \usepackage{hyperref}  % load last among packages
 \geometry{margin=1in}
 
+
+
+%% ---- Special comand for blackboard bold 1 ----
+\DeclareSymbolFont{bbold}{U}{bbold}{m}{n}
+\DeclareSymbolFontAlphabet{\mathbbold}{bbold}
+
+
 %% ---- Lean listings style ----
 \lstdefinelanguage{Lean4}{
   keywords={def,theorem,lemma,structure,where,by,let,have,show,exact,refine,
@@ -45,7 +52,7 @@
     {⟶}{{\ensuremath{\longrightarrow}}}1
     {≫}{{\ensuremath{\mathbin{\gg}}}}1
     {≅}{{\ensuremath{\cong}}}1
-    {𝟙}{{\ensuremath{\mathbb{1}}}}1
+    {𝟙}{{\ensuremath{\mathbbold{1}}}}1
     {η}{{\ensuremath{\eta}}}1
     {θ}{{\ensuremath{\theta}}}1
     {⥤}{{\ensuremath{\rightarrow}}}1
