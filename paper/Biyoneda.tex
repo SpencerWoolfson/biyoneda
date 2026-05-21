@@ -374,18 +374,6 @@ wrappers such as \lstinline{ULiftHom.up} and \lstinline{ULift.upFunctor}.  Repla
 these with dedicated simp lemmas that expose the required reductions is a natural
 cleanup.
 
-\subsection{Modifications and Extensionality}
-
-The extensionality lemma
-
-\begin{lstlisting}
-lemma StrongTrans.Hom.ext {m1 m2 : η ⟶ θ} (h : m1.as = m2.as) : m1 = m2
-\end{lstlisting}
-
-is used throughout to reduce goals about 2-morphisms in $\StrongTrans(F, G)$ to
-equalities of the underlying modifications.  This avoids unfolding the single-field
-wrapper \lstinline{StrongTrans.Hom} by hand and mirrors the standard
-\lstinline{Functor.ext} pattern already present in Mathlib.
 
 %%============================================================
 \section{Future Work}\label{sec:open}
@@ -418,28 +406,6 @@ conditions.  Pseudomonads model computational effects at a bicategorical level a
 include important examples such as the free cocompletion monad on $\Cat$.  The Yoneda
 lemma is the key tool for showing that the free cocompletion of $\B$ is the bicategory
 of presheaves $[\B^{\op}, \Cat]_{\mathrm{ps}}$.
-
-\paragraph{Tricategories and coherence.}
-Bicategories, pseudofunctors, strong transformations, and modifications themselves
-assemble into a \emph{tricategory}~\citep{gordon-power-street1995}.  Formalizing
-tricategories in Lean and proving the Gordon--Power--Street coherence theorem --- every
-tricategory is triequivalent to a Gray-category --- is a significant open problem in
-proof assistant libraries and would extend the hierarchy already present in Mathlib.
-
-\paragraph{Profunctors and enriched structures.}
-The bicategory $\mathbf{Prof}$ of small categories and profunctors (distributors) is one
-of the central objects of study in formal category theory.  The Yoneda lemma implies
-that the Yoneda embedding $y : \mathcal{C} \to [\mathcal{C}^{\op}, \mathbf{Set}]$ is the
-unit of the free cocompletion monad on $\mathbf{Prof}$, and the induced theory of
-\emph{Cauchy completion} and \emph{absolute colimits} is a natural target for
-formalization~\citep{fiore-gambino-hyland-winskel2008}.
-
-\paragraph{Yoneda structures.}
-\citet{street1974} introduced \emph{Yoneda structures} as an axiomatic framework that
-isolates the properties of the Yoneda embedding needed to develop formal category theory
-in an arbitrary 2-category.  Formalizing Yoneda structures in Lean would unify the
-treatment of ordinary, enriched, and internal category theory under a single abstract
-framework, allowing theorems to be proved once and instantiated to many settings.
 
 %%============================================================
 \section*{Acknowledgements}

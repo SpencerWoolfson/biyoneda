@@ -35,6 +35,8 @@ natural in `b : Bᵒᵖ` and `F : Bᵒᵖ ⥤ᵖ Cat`.
 used to promote `yonedaEvaluation'` to the correct universe level, yielding `yonedaEvaluation`.
 -/
 
+-- Sorry Count (20)
+
 open CategoryTheory Bicategory Bicategory.Opposite Opposite Pseudofunctor StrongTrans Functor
 open scoped Pseudofunctor.StrongTrans
 
@@ -116,18 +118,25 @@ def CatPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
   map₂_id f := by congr
   map₂_whisker_left { a b c } f g h η := by ext x; erw [Category.comp_id, Category.id_comp] ; congr
   map₂_whisker_right η h:= by congr; ext ⟨x⟩; erw [Category.comp_id, Category.id_comp] ; exact eq_of_comp_right_eq fun {Z} ↦ congrFun rfl
-  map₂_associator f g h := by
+  map₂_associator {a b c d} f g h := by
+    letI : Category.{v₁, max u₁ u₂} (ULift.{u₂, u₁} d) := uliftCategory d 
     ext ⟨x⟩
     erw [Category.comp_id, Category.id_comp]
-    sorry
+    simp
+    erw [(CatLift.map h).toFunctor.map_id, Category.id_comp, ULiftHom.up.map_id]
+    congr
   map₂_left_unitor {a b} f := by
-    ext ⟨x⟩
-    erw [Category.comp_id]
-    sorry
-  map₂_right_unitor {a b} f := by
+    letI : Category.{v₁, max u₁ u₂} (ULift.{u₂, u₁} ↑b) := uliftCategory ↑b
     ext ⟨x⟩
     simp
-    sorry
+    erw [ULiftHom.up.map_id,(CatLift.map f).toFunctor.map_id,Category.comp_id]
+    congr
+  map₂_right_unitor {a b} f := by
+    letI : Category.{v₁, max u₁ u₂} (ULift.{u₂, u₁} ↑b) := uliftCategory ↑b
+    ext ⟨x⟩
+    simp
+    erw [ULiftHom.up.map_id,Category.id_comp]
+    congr
 
 variable {B : Type u} [Bicategory.{w, v} B]
 
@@ -173,6 +182,8 @@ def yonedaPairing : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (ma
     refine { toNatTrans := { app := ?_, naturality := ?_ } }
     · exact fun a => (h1 ▷ (a ≫ f.2)) ≫ (postcomp₂ g.1.unop) ◁ (a ◁ h2)
     · intros X Y h
+      dsimp
+
       -- apply homCategory.ext
       -- intro b
       -- refine Cat.Hom₂.ext_iff.mpr ?_
@@ -365,7 +376,9 @@ def yonedaLemmaBackwardsFunctorObj (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat))
         simp
       erw [this,inv_hom]
       simp
-  naturality_naturality {a b c} f g := by sorry
+  naturality_naturality {a b c} f g := by
+    dsimp
+    sorry
   naturality_id a := by sorry
   naturality_comp {a b c} f g := by sorry
 
