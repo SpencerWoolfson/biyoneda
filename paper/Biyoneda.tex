@@ -23,7 +23,7 @@
   equivalent via an explicit pair of strong transformations together with unit and
   counit isomorphisms.  A nontrivial aspect of the formalization is universe management:
   the two sides of the equivalence naturally land in different universe levels, requiring
-  an auxiliary universe-lifting pseudofunctor $\mathtt{CatPseudoULift}$.
+  an auxiliary universe-lifting pseudofunctor $\mathtt{catPseudoULift}$.
 \end{abstract}
 
 \tableofcontents
@@ -69,7 +69,7 @@ Section~\ref{sec:yoneda-embedding} reviews the bicategorical Yoneda embedding as
 appears in Mathlib.
 Section~\ref{sec:main} states and proves the main theorem.
 Section~\ref{sec:universes} discusses the universe issues that arise in the
-formalization and the auxiliary construction $\mathtt{CatPseudoULift}$.
+formalization and the auxiliary construction $\mathtt{catPseudoULift}$.
 Section~\ref{sec:lean} highlights design choices in the Lean code.
 Section~\ref{sec:open} discusses directions for future formalization work.
 
@@ -332,17 +332,17 @@ $P \simeq E'$ is not type-correct.
 
 To resolve this we define an auxiliary pseudofunctor
 \[
-  \mathtt{CatPseudoULift} : \Cat^{v_1, u_1} \;\to\; \Cat^{\max(v_1,v_2),\, \max(u_1,u_2)}
+  \mathtt{catPseudoULift} : \Cat^{v_1, u_1} \;\to\; \Cat^{\max(v_1,v_2),\, \max(u_1,u_2)}
 \]
 which promotes every small category to a larger universe by applying
 $\mathtt{ULift}$ on objects and $\mathtt{ULiftHom}$ on hom-sets.  The actual evaluation
 pseudofunctor used in the theorem is
 \[
-  \mathtt{yonedaEvaluation} = \mathtt{yonedaEvaluation'} \;;\; \mathtt{CatPseudoULift},
+  \mathtt{yonedaEvaluation} = \mathtt{yonedaEvaluation'} \;;\; \mathtt{catPseudoULift},
 \]
 where $\mathtt{yonedaEvaluation'}$ is the raw evaluation functor landing in
 $\Cat^{w,v}$.  Universe-lifting is lossless: the equivalence
-$\mathtt{CatLiftIso}$ witnesses $C \simeq \mathtt{CatLift}(C)$ for every category $C$.
+$\mathtt{catLiftEquiv}$ witnesses $C \simeq \mathtt{catLift}(C)$ for every category $C$.
 
 %%============================================================
 \section{Design Choices in the Lean Formalization}\label{sec:lean}

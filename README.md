@@ -29,7 +29,7 @@ on the product bicategory $\mathcal{B}^{\mathrm{op}} \times [\mathcal{B}^{\mathr
 | `yonedaHomInvId` | Unit isomorphism $\Psi \circ \Phi \cong \mathrm{id}_P$ |
 | `yonedaInvHomId` | Counit isomorphism $\Phi \circ \Psi \cong \mathrm{id}_E$ |
 | `yonedaLemma` | The assembled `BiEquiv` witnessing the equivalence |
-| `CatPseudoULift` | Universe-lifting pseudofunctor needed to type-match the two sides |
+| `catPseudoULift` | Universe-lifting pseudofunctor needed to type-match the two sides |
 
 ## Repository Structure
 
