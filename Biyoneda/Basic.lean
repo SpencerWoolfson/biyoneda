@@ -176,6 +176,22 @@ lemma modification_naturality_app {C : Type u₁} [Bicategory.{w₁, v₁} C]
     Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app]
     using Cat.Hom₂.congr_app (Γ.as.naturality f) z
 
+/-- Two 2-cells of `Cat` landing in a universe-lifted category are equal as soon as their
+unlifted components agree: morphisms of `ULiftHom (ULift D)` are `ULift`-wrapped, so the
+lifting plumbing can be stripped once and for all. -/
+lemma catLift_hom₂_ext {E : Cat} {D : Cat.{v₁, u₁}}
+    {H K : E ⟶ catPseudoULift.{v₁, v₂, u₁, u₂}.obj D} {η θ : H ⟶ K}
+    (h : ∀ X : E, (η.toNatTrans.app X).down = (θ.toNatTrans.app X).down) : η = θ := by
+  apply Cat.Hom₂.ext_app
+  intro X
+  exact congrArg ULift.up (h X)
+
+/-- Components of equal 2-cells into a lifted category have equal unlifted parts. -/
+lemma catLift_hom₂_congr_down {E : Cat} {D : Cat.{v₁, u₁}}
+    {H K : E ⟶ catPseudoULift.{v₁, v₂, u₁, u₂}.obj D} {η θ : H ⟶ K}
+    (h : η = θ) (X : E) :
+    (η.toNatTrans.app X).down = (θ.toNatTrans.app X).down := by rw [h]
+
 /-- `postcomp₂` at an identity 1-morphism is isomorphic to the identity strong transformation.
 This is `Bicategory.yoneda.mapId` restated for `postcomp₂`. -/
 def postcompId₂ (a : B) : postcomp₂ (𝟙 a) ≅ 𝟙 (yoneda₀ a) := by
