@@ -3,6 +3,7 @@ import Mathlib.CategoryTheory.Bicategory.Adjunction.Basic
 import Mathlib.CategoryTheory.Bicategory.Yoneda
 import Mathlib.CategoryTheory.Category.ULift
 import Mathlib.Tactic.CategoryTheory.Bicategory.Basic
+import Mathlib.Tactic.CategoryTheory.Slice
 
 /-!
 # Bicategorical Yoneda Lemma
@@ -35,7 +36,7 @@ natural in `b : Bᵒᵖ` and `F : Bᵒᵖ ⥤ᵖ Cat`.
 used to promote `yonedaEvaluation'` to the correct universe level, yielding `yonedaEvaluation`.
 -/
 
--- Sorry Count (16)
+-- Sorry Count (15)
 
 open CategoryTheory Bicategory Bicategory.Opposite Opposite Pseudofunctor StrongTrans Functor
 open scoped Pseudofunctor.StrongTrans
@@ -318,6 +319,66 @@ def yonedaPairing : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (ma
   map₂_id {a b} X := congrArg NatTrans.toCatHom₂ (yonedaPairingMap₂_id X)
   map₂_comp {a b f g h} η θ := congrArg NatTrans.toCatHom₂ (yonedaPairingMap₂_comp η θ)
 
+/-- The cancellation core of `yonedaEvaluation'.map₂_whisker_left`, at a point `Z`. -/
+lemma evaluation_whisker_left_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
+    {g h : b ⟶ c} (η : g ⟶ h) (Z : ↑(a.2.obj a.1)) :
+    ((c.2.mapComp f.1 g.1).hom.toNatTrans.app
+        ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
+      (c.2.map g.1).toFunctor.map ((c.2.map f.1).toFunctor.map
+        ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)))) ≫
+      (c.2.map₂ η.1).toNatTrans.app
+        ((c.2.map f.1).toFunctor.obj
+          ((h.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+      (c.2.mapComp f.1 h.1).inv.toNatTrans.app
+        ((h.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) =
+    (c.2.mapComp f.1 g.1).hom.toNatTrans.app
+        ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
+      (c.2.map g.1).toFunctor.map
+        ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
+      ((c.2.map g.1).toFunctor.map
+          ((η.2.as.app b.1).toNatTrans.app
+            ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+        (c.2.map₂ η.1).toNatTrans.app
+          ((h.2.app b.1).toFunctor.obj
+            ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))) ≫
+      (c.2.map h.1).toFunctor.map
+        ((h.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
+      (c.2.mapComp f.1 h.1).inv.toNatTrans.app
+        ((h.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) := by
+  have h2 := modification_naturality_app η.2 f.1 ((f.2.app a.1).toFunctor.obj Z)
+  have h3 : (c.2.map g.1).toFunctor.map
+        ((h.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
+      (c.2.map₂ η.1).toNatTrans.app
+        ((c.2.map f.1).toFunctor.obj
+          ((h.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) =
+      (c.2.map₂ η.1).toNatTrans.app
+        ((h.2.app b.1).toFunctor.obj
+          ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+      (c.2.map h.1).toFunctor.map
+        ((h.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) :=
+    (c.2.map₂ η.1).toNatTrans.naturality
+      ((h.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))
+  have c1 : (g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) ≫
+      (g.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) = 𝟙 _ :=
+    ((Cat.Hom.toNatIso (g.2.naturality f.1)).app ((f.2.app a.1).toFunctor.obj Z)).inv_hom_id
+  simp only [Category.assoc]
+  slice_rhs 4 5 => rw [← h3]
+  slice_rhs 3 4 =>
+    erw [← Category.assoc]
+    erw [← Functor.map_comp]
+  erw [h2]
+  slice_rhs 2 3 => erw [← Functor.map_comp]
+  have c1' : (g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) ≫
+      (g.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) ≫
+      (c.2.map f.1).toFunctor.map
+        ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) =
+      (c.2.map f.1).toFunctor.map
+        ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) := by
+    rw [← Category.assoc, c1, Category.id_comp]
+  erw [c1']
+  simp only [Category.assoc]
+  rfl
+
 /--
 The *evaluation pseudofunctor* `Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat) ⥤ᵖ Cat.{w, v}`.
 
@@ -347,21 +408,39 @@ def yonedaEvaluation' : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v}
       ((g.2.naturality f.1).symm ▷ᵢ (c.2.map g.1)) ≪≫
       (α_ (b.2.map f.1) (g.2.app b.1) (c.2.map g.1))
   map₂_whisker_left {a b c} f {g h} {η} := by
-    dsimp only [prod_comp, comp_app, prod_whiskerLeft_snd, whiskerLeft_as_app, whisker_assoc,
-      prod_whiskerLeft_fst, map₂_whisker_left, Bicategory.whiskerLeft_comp, comp_whiskerLeft,
-      Iso.inv_hom_id_assoc, Iso.trans_hom, whiskerLeftIso_hom, Iso.symm_hom, whiskerRightIso_hom,
-      Iso.trans_inv, Iso.symm_inv, whiskerLeftIso_inv, whiskerRightIso_inv,
-      Iso.cancel_iso_hom_left]
-    let rw1 := associator_inv_naturality_right (f.2.app a.1) (b.2.map f.1)
-      (η.2.as.app b.1 ▷ c.2.map g.1 ≫ h.2.app b.1 ◁ c.2.map₂ η.1)
-    simp [← Category.assoc, Iso.cancel_iso_inv_right]
-    simp [Category.assoc]
-    -- let rw2 := (α_ (f.2.app a.1) (h.2.app a.1) (c.2.map (f.1 ≫ h.1))).toMono.right_cancellation
-    sorry
-  map₂_whisker_right := by sorry
-  map₂_associator := by sorry
-  map₂_left_unitor a := by sorry
-  map₂_right_unitor := by sorry
+    apply Cat.Hom₂.ext_app
+    intro Z
+    simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv, whiskerLeftIso_hom,
+      whiskerLeftIso_inv, whiskerRightIso_hom, whiskerRightIso_inv, Cat.Hom.toNatTrans_comp,
+      NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
+      whiskerLeft_app, whiskerRight_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
+      Cat.Hom₂.comp_app, Cat.associator_hom_app, Cat.associator_inv_app, eqToHom_refl,
+      Category.comp_id, Category.id_comp]
+    simp only [prod_whiskerLeft_fst, prod_whiskerLeft_snd, whiskerLeft_as_app]
+    iterate 12
+      (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
+    erw [Cat.whiskerLeft_app]
+    have hw := Cat.Hom₂.congr_app (c.2.map₂_whisker_left f.1 η.1)
+      (((f ≫ h).2.app a.1).toFunctor.obj Z)
+    dsimp at hw
+    erw [hw]
+    have h1 : (c.2.map (f ≫ g).1).toFunctor.map
+          ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
+        (c.2.mapComp f.1 g.1).hom.toNatTrans.app
+          ((h.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) =
+        (c.2.mapComp f.1 g.1).hom.toNatTrans.app
+          ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
+        (c.2.map g.1).toFunctor.map ((c.2.map f.1).toFunctor.map
+          ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))) :=
+      (c.2.mapComp f.1 g.1).hom.toNatTrans.naturality
+        ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))
+    erw [reassoc_of% h1]
+    simp only [Category.assoc]
+    exact evaluation_whisker_left_core f η Z
+  map₂_whisker_right {a b c f g h} η := by trace_state; sorry
+  map₂_associator {a b c d} f g h := by trace_state; sorry
+  map₂_left_unitor {a b} f := by trace_state; sorry
+  map₂_right_unitor {a b} f := by trace_state; sorry
 
 /--
 The *evaluation pseudofunctor* at the correct universe level,
