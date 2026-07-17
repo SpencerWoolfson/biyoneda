@@ -35,7 +35,7 @@ natural in `b : Bᵒᵖ` and `F : Bᵒᵖ ⥤ᵖ Cat`.
 used to promote `yonedaEvaluation'` to the correct universe level, yielding `yonedaEvaluation`.
 -/
 
--- Sorry Count (19)
+-- Sorry Count (16)
 
 open CategoryTheory Bicategory Bicategory.Opposite Opposite Pseudofunctor StrongTrans Functor
 open scoped Pseudofunctor.StrongTrans
@@ -108,8 +108,7 @@ def catPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
     · intro x
       unfold catLift ULiftHom at x
       exact ULiftHom.up.map (η.toNatTrans.app x.down)
-    · intro _ _ h
-      exact Quiver.homOfEq_injective rfl rfl
+    · exact fun _ _ h => Quiver.homOfEq_injective rfl rfl
         (congrArg (ULiftHom.up.map) (η.toNatTrans.naturality h.down))
   mapId C := Iso.refl (catLift.map (𝟙 C))
   mapComp F G := Iso.refl (catLift.map (F ≫ G))
@@ -157,6 +156,62 @@ variable {B : Type u} [Bicategory.{w, v} B]
 /-- Equal 2-morphisms in `Cat` have equal components at every object. -/
 lemma Cat.Hom₂.congr_app {C D : Cat} {F G : C ⟶ D} {η θ : F ⟶ G} (h : η = θ) (X : C) :
     η.toNatTrans.app X = θ.toNatTrans.app X := by rw [h]
+
+/-- Two parallel 2-morphisms in `Cat` are equal if their components agree at every object. -/
+lemma Cat.Hom₂.ext_app {C D : Cat} {F G : C ⟶ D} {η θ : F ⟶ G}
+    (h : ∀ X, η.toNatTrans.app X = θ.toNatTrans.app X) : η = θ :=
+  Cat.Hom₂.ext (NatTrans.ext (funext h))
+
+universe w₁
+
+/-- Point-level form of `Modification.naturality` for `Cat`-valued pseudofunctors: the
+naturality square of a modification, evaluated at an object of the fibre. -/
+lemma modification_naturality_app {C : Type u₁} [Bicategory.{w₁, v₁} C]
+    {F G : C ⥤ᵖ Cat.{w, v}} {η θ : F ⟶ G} (Γ : η ⟶ θ) {a b : C} (f : a ⟶ b)
+    (z : ↑(F.obj a)) :
+    (Γ.as.app b).toNatTrans.app ((F.map f).toFunctor.obj z) ≫
+      (θ.naturality f).hom.toNatTrans.app z =
+    (η.naturality f).hom.toNatTrans.app z ≫
+      (G.map f).toFunctor.map ((Γ.as.app a).toNatTrans.app z) := by
+  simpa only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app]
+    using Cat.Hom₂.congr_app (Γ.as.naturality f) z
+
+section HomFunctorIsos
+
+variable {a b c d : B}
+
+/-- Precomposition with an identity 1-morphism is naturally isomorphic to the identity. -/
+def precompIdIso (a c : B) : precomp c (𝟙 a) ≅ 𝟭 (a ⟶ c) :=
+  NatIso.ofComponents (fun f ↦ λ_ f) (fun η ↦ by simp)
+
+/-- Postcomposition with an identity 1-morphism is naturally isomorphic to the identity. -/
+def postcompIdIso (a b : B) : postcomp a (𝟙 b) ≅ 𝟭 (a ⟶ b) :=
+  NatIso.ofComponents (fun f ↦ ρ_ f) (fun η ↦ by simp)
+
+/-- Precomposition with a composite is the composite of the precompositions. -/
+def precompCompIso (f : a ⟶ b) (g : b ⟶ c) (d : B) :
+    precomp d (f ≫ g) ≅ precomp d g ⋙ precomp d f :=
+  NatIso.ofComponents (fun h ↦ α_ f g h) (fun η ↦ by simp)
+
+/-- Postcomposition with a composite is the composite of the postcompositions. -/
+def postcompCompIso (a : B) (f : b ⟶ c) (g : c ⟶ d) :
+    postcomp a (f ≫ g) ≅ postcomp a f ⋙ postcomp a g :=
+  NatIso.ofComponents (fun h ↦ (α_ h f g).symm) (fun η ↦ by simp)
+
+/-- Pre- and postcomposition commute up to natural isomorphism. -/
+def precompPostcompIso (f : a ⟶ b) (g : c ⟶ d) :
+    precomp c f ⋙ postcomp a g ≅ postcomp b g ⋙ precomp d f :=
+  NatIso.ofComponents (fun h ↦ α_ f h g) (fun η ↦ by simp)
+
+end HomFunctorIsos
+
+/-- `postcomp₂` at an identity 1-morphism is isomorphic to the identity strong transformation.
+This is `Bicategory.yoneda.mapId` restated for `postcomp₂`. -/
+def postcompId₂ (a : B) : postcomp₂ (𝟙 a) ≅ 𝟙 (yoneda₀ a) := by
+  let := Bicategory.yoneda.mapId a
+  dsimp [yoneda, postcomposing₂] at this
+  exact this
 
 /-- `postcomp₂` is functorial in the 1-morphism, up to isomorphism: `postcomp₂ (f ≫ g)` is
 isomorphic to `postcomp₂ f ≫ postcomp₂ g`.  This is `Bicategory.yoneda.mapComp` restated. -/
@@ -258,24 +313,7 @@ def yonedaPairing : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (ma
   mapId x := by
     refine Cat.Hom.isoMk (NatIso.ofComponents ?_ ?_)
     · intro X
-      let lem1 : postcomp₂ (𝟙 (unop x.1)) ≅ 𝟙 (yoneda₀ (unop x.1)) := by
-        refine StrongTrans.isoMk (fun a ↦ ?_) ?_
-        · exact Cat.Hom.isoMk
-            (NatIso.ofComponents (fun y ↦ ρ_ y) (fun {X Y} f ↦ rightUnitor_naturality f))
-        · intro a b f
-          refine Cat.Hom₂.ext_iff.mpr ?_
-          ext c
-          dsimp [postcomp₂, postcomp, Functor.leftUnitor, Functor.rightUnitor,
-            Functor.whiskerRight, Functor.whiskerLeft]
-          erw [NatTrans.comp_app, NatTrans.comp_app, NatTrans.comp_app, ← Category.assoc]
-          simp only [comp_obj,
-            yoneda₀_toPrelaxFunctor_toPrelaxFunctorStruct_toPrefunctor_map_toFunctor_obj,
-            id_obj, Category.assoc, associatorNatIsoMiddleCat_hom_toNatTrans_app,
-            whiskerLeft_rightUnitor]
-          erw [← Category.assoc ((α_ f.unop c (𝟙 (unop x.1))).hom), Category.comp_id,
-            Category.comp_id]
-          simp
-      refine Iso.trans (lem1 ▷ᵢ (X ≫ 𝟙 x.2)) ?_
+      refine Iso.trans (postcompId₂ (unop x.1) ▷ᵢ (X ≫ 𝟙 x.2)) ?_
       exact (bicategoricalIso X (𝟙 (yoneda₀ (unop x.1)) ≫ X ≫ 𝟙 x.2)).symm
     · intro X Y f
       dsimp [isoMk, NatIso.ofComponents, NatTrans.toCatHom₂]
@@ -294,7 +332,9 @@ def yonedaPairing : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (ma
       refine (?_ ▷ᵢ (x ≫ f.2))
       apply postcompComp₂
     · intro X Y f
-      simp
+      apply homCategory.ext
+      intro b
+      dsimp
       sorry
   map₂_id {a b} X := congrArg NatTrans.toCatHom₂ (yonedaPairingMap₂_id X)
   map₂_comp {a b f g h} η θ := congrArg NatTrans.toCatHom₂ (yonedaPairingMap₂_comp η θ)
@@ -371,6 +411,34 @@ def yonedaLemmaForwardsFunctor (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
   obj pair := { down := (pair.app x.1).toFunctor.obj (𝟙 (unop x.1)) }
   map {a b} f := { down := (f.as.app x.1).toNatTrans.app (𝟙 (unop x.1)) }
 
+/-- The component form of the naturality square for `yonedaLemmaForwards`. -/
+lemma forwards_naturality_component {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
+    {X Y : yoneda₀ (unop a.1) ⟶ a.2} (h : X ⟶ Y) :
+    (f.2.app b.1).toFunctor.map ((h.as.app b.1).toNatTrans.app (𝟙 (unop b.1) ≫ f.1.unop)) ≫
+      (f.2.app b.1).toFunctor.map ((Y.app b.1).toFunctor.map (λ_ f.1.unop).hom) ≫
+        (f.2.app b.1).toFunctor.map ((Y.app b.1).toFunctor.map (ρ_ f.1.unop).inv) ≫
+          (f.2.app b.1).toFunctor.map ((Y.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
+            (f.2.naturality f.1).hom.toNatTrans.app ((Y.app a.1).toFunctor.obj (𝟙 (unop a.1))) =
+    ((f.2.app b.1).toFunctor.map ((X.app b.1).toFunctor.map (λ_ f.1.unop).hom) ≫
+        (f.2.app b.1).toFunctor.map ((X.app b.1).toFunctor.map (ρ_ f.1.unop).inv) ≫
+          (f.2.app b.1).toFunctor.map ((X.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
+            (f.2.naturality f.1).hom.toNatTrans.app
+              ((X.app a.1).toFunctor.obj (𝟙 (unop a.1)))) ≫
+      (b.2.map f.1).toFunctor.map ((f.2.app a.1).toFunctor.map
+        ((h.as.app a.1).toNatTrans.app (𝟙 (unop a.1)))) := by
+  have h1 := (h.as.app b.1).toNatTrans.naturality ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)
+  have h2 := modification_naturality_app h f.1 (𝟙 (unop a.1))
+  have h3 := (f.2.naturality f.1).hom.toNatTrans.naturality
+    ((h.as.app a.1).toNatTrans.app (𝟙 (unop a.1)))
+  dsimp at h1 h2 h3
+  have h1' := congrArg (fun m ↦ (f.2.app b.1).toFunctor.map m) h1
+  have h2' := congrArg (fun m ↦ (f.2.app b.1).toFunctor.map m) h2
+  simp only [Functor.map_comp] at h1' h2'
+  rw [← reassoc_of% h1']
+  erw [reassoc_of% h2', h3]
+  simp only [Category.assoc]
+  rfl
+
 /--
 The *forward strong transformation* `yonedaPairing ⟶ yonedaEvaluation` for the Yoneda lemma.
 
@@ -396,8 +464,12 @@ def yonedaLemmaForwards : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B 
       exact ULiftHom.up.mapIso (ULift.upFunctor.mapIso lem)
     · intro X Y h
       dsimp [yonedaPairing, ULiftHom.up, yonedaEvaluation, catPseudoULift, catLift, Functor.comp]
-      simp [CategoryStruct.comp]
-      sorry
+      simp only [map_comp, Category.assoc]
+      exact Quiver.homOfEq_injective rfl rfl
+        (congrArg (ULiftHom.up.map) (forwards_naturality_component f h))
+  naturality_naturality {a b f g} η := by sorry
+  naturality_id a := by sorry
+  naturality_comp {a b c} f g := by sorry
 
 
 /--
@@ -426,6 +498,37 @@ def yonedaLemmaBackwardsFunctorObjFunctor (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat))
     exact (x.2.map₂ (op2 f)).toNatTrans.app eval
   map_id _ := by cases eval; erw [op2_id, PrelaxFunctor.map₂_id]; rfl
   map_comp _ _ := by cases eval; erw [op2_comp, PrelaxFunctor.map₂_comp]; rfl
+
+/-- Component form of `mapComp_id_right_hom`, matching the `naturality_id` obligation of
+`yonedaLemmaBackwardsFunctorObj`: composing the `mapComp` coherence with the `mapId` coherence
+is the image of the (opposite of the) left unitor. -/
+lemma mapComp_id_component (F : Bᵒᵖ ⥤ᵖ Cat.{w, v}) {b₀ a : Bᵒᵖ}
+    (X : unop a ⟶ unop b₀) (eval : ↑(F.obj b₀)) :
+    (F.mapComp (Quiver.Hom.op X) (𝟙 a)).hom.toNatTrans.app eval ≫
+      (F.mapId a).hom.toNatTrans.app ((F.map (Quiver.Hom.op X)).toFunctor.obj eval) =
+    (F.map₂ (op2 (λ_ X).hom)).toNatTrans.app eval ≫
+      𝟙 ((F.map (Quiver.Hom.op X)).toFunctor.obj eval) ≫
+        𝟙 ((F.map (Quiver.Hom.op X)).toFunctor.obj eval) := by
+  rw [Pseudofunctor.mapComp_id_right_hom]
+  simp [op2_leftUnitor_hom]
+
+/-- Component form of `mapComp_assoc_right_hom`, matching the `naturality_comp` obligation of
+`yonedaLemmaBackwardsFunctorObj`. -/
+lemma mapComp_assoc_component (F : Bᵒᵖ ⥤ᵖ Cat.{w, v}) {b₀ a b c : Bᵒᵖ}
+    (f : a ⟶ b) (g : b ⟶ c) (X : unop a ⟶ unop b₀) (eval : ↑(F.obj b₀)) :
+    (F.mapComp (Quiver.Hom.op X) (f ≫ g)).hom.toNatTrans.app eval ≫
+      (F.mapComp f g).hom.toNatTrans.app ((F.map (Quiver.Hom.op X)).toFunctor.obj eval) =
+    (F.map₂ (op2 (α_ g.unop f.unop X).hom)).toNatTrans.app eval ≫
+      𝟙 ((F.map ((Quiver.Hom.op X ≫ f) ≫ g)).toFunctor.obj eval) ≫
+        (F.mapComp (Quiver.Hom.op X ≫ f) g).hom.toNatTrans.app eval ≫
+          𝟙 ((F.map g).toFunctor.obj ((F.map (Quiver.Hom.op X ≫ f)).toFunctor.obj eval)) ≫
+            (F.map g).toFunctor.map
+              ((F.mapComp (Quiver.Hom.op X) f).hom.toNatTrans.app eval) ≫
+              𝟙 ((F.map g).toFunctor.obj ((F.map f).toFunctor.obj
+                ((F.map (Quiver.Hom.op X)).toFunctor.obj eval))) := by
+  simp only [op2_associator_hom]
+  simpa using Cat.Hom₂.congr_app
+    (F.mapComp_assoc_right_hom (Quiver.Hom.op X) f g) eval
 
 /--
 At a fixed pair `x = (b₀, F)` and an evaluation point `eval : F.obj b₀`, the strong
@@ -469,10 +572,15 @@ def yonedaLemmaBackwardsFunctorObj (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat))
       erw [this, inv_hom]
       simp
   naturality_naturality {a b c} f g := by
-    dsimp [NatIso.ofComponents]
-    sorry
-  naturality_id a := by sorry
-  naturality_comp {a b c} f g := by sorry
+    rcases eval with ⟨eval⟩
+    exact Cat.Hom₂.ext_app fun X ↦
+      Cat.Hom₂.congr_app (x.2.toOplax.mapComp_naturality_right (Quiver.Hom.op X) g) eval
+  naturality_id a := by
+    rcases eval with ⟨eval⟩
+    exact Cat.Hom₂.ext_app fun X ↦ mapComp_id_component x.2 X eval
+  naturality_comp {a b c} f g := by
+    rcases eval with ⟨eval⟩
+    exact Cat.Hom₂.ext_app fun X ↦ mapComp_assoc_component x.2 f g X eval
 
 /--
 At a fixed pair `x = (b₀, F)`, the *Yoneda embedding functor*
@@ -498,7 +606,7 @@ def yonedaLemmaBackwardsFunctor (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
     · intro c
       refine { toNatTrans := { app := ?_, naturality := ?_ } }
       · exact fun X ↦ (x.2.map (Quiver.Hom.op X)).toFunctor.map
-          ((catLiftEquiv ↑(yonedaEvaluation'.obj x)).inverse.map f)
+          ((catLiftEquiv.{w, max u v, v, max u (max v w)} ↑(yonedaEvaluation'.obj x)).inverse.map f)
       · intro X Y g
         simp only [yoneda₀_toPrelaxFunctor_toPrelaxFunctorStruct_toPrefunctor_obj_α,
           yonedaLemmaBackwardsFunctorObj, yonedaLemmaBackwardsFunctorObjFunctor, op_unop,
@@ -507,8 +615,298 @@ def yonedaLemmaBackwardsFunctor (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
       refine Cat.Hom₂.ext_iff.mpr ?_
       ext c
       rw [Cat.Hom.toNatTrans_comp, Cat.Hom.toNatTrans_comp]
-      simp
-      sorry
+      simp only [yoneda₀_toPrelaxFunctor_toPrelaxFunctorStruct_toPrefunctor_obj_α,
+        yonedaLemmaBackwardsFunctorObj, yonedaLemmaBackwardsFunctorObjFunctor, op_unop,
+        Cat.Hom.comp_toFunctor, comp_obj,
+        yoneda₀_toPrelaxFunctor_toPrelaxFunctorStruct_toPrefunctor_map_toFunctor_obj, op_comp,
+        Quiver.Hom.op_unop, Cat.coe_of, Cat.whiskerLeft_toNatTrans, Cat.Hom.isoMk_hom,
+        NatTrans.toCatHom₂_toNatTrans, Cat.whiskerRight_toNatTrans]
+      exact (x.2.mapComp (Quiver.Hom.op c) g).hom.toNatTrans.naturality
+        ((catLiftEquiv.{w, max u v, v, max u (max v w)} ↑(yonedaEvaluation'.obj x)).inverse.map f)
+  map_id X := by
+    obtain ⟨a⟩ := X
+    apply homCategory.ext
+    intro c
+    apply Cat.Hom₂.ext
+    apply NatTrans.ext
+    funext W
+    exact (congrArg (x.2.map (Quiver.Hom.op W)).toFunctor.map
+        ((catLiftEquiv.{w, max u v, v, max u (max v w)}
+          ↑(yonedaEvaluation'.obj x)).inverse.map_id _)).trans
+      ((x.2.map (Quiver.Hom.op W)).toFunctor.map_id _)
+  map_comp {X Y Z} f g := by
+    obtain ⟨a⟩ := X
+    obtain ⟨b⟩ := Y
+    obtain ⟨c'⟩ := Z
+    apply homCategory.ext
+    intro c
+    apply Cat.Hom₂.ext
+    apply NatTrans.ext
+    funext W
+    exact (congrArg (x.2.map (Quiver.Hom.op W)).toFunctor.map
+        ((catLiftEquiv.{w, max u v, v, max u (max v w)}
+          ↑(yonedaEvaluation'.obj x)).inverse.map_comp f g)).trans
+      ((x.2.map (Quiver.Hom.op W)).toFunctor.map_comp _ _)
+
+/-- The inner naturality square for `yonedaLemmaBackwards`: sliding a 2-cell of the
+represented object past the `mapComp` and `naturality` coherence isos.  Assembled from the
+inverse forms of `mapComp_naturality_right` (for both pseudofunctors) and
+`naturality_naturality` of the strong transformation. -/
+lemma backwards_inner_component {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) {α : Bᵒᵖ}
+    {XX YY : ↑((yoneda₀ (unop b.1)).obj α)} (h : XX ⟶ YY) (X : ↑(yonedaEvaluation'.obj a)) :
+    (b.2.map₂ (op2 h)).toNatTrans.app
+        ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj X)) ≫
+      (b.2.mapComp f.1 (Quiver.Hom.op YY)).inv.toNatTrans.app
+        ((f.2.app a.1).toFunctor.obj X) ≫
+        (f.2.naturality (f.1 ≫ Quiver.Hom.op YY)).inv.toNatTrans.app X =
+    ((b.2.mapComp f.1 (Quiver.Hom.op XX)).inv.toNatTrans.app
+        ((f.2.app a.1).toFunctor.obj X) ≫
+        (f.2.naturality (f.1 ≫ Quiver.Hom.op XX)).inv.toNatTrans.app X) ≫
+      (f.2.app α).toFunctor.map
+        (((a.2.mapComp f.1 (Quiver.Hom.op XX)).hom ≫
+            a.2.map f.1 ◁ a.2.map₂ (op2 h) ≫
+              (a.2.mapComp f.1 (Quiver.Hom.op YY)).inv).toNatTrans.app X) := by
+  have h1 := Cat.Hom₂.congr_app
+    (b.2.toOplax.mapComp_naturality_right f.1 (op2 h)) ((f.2.app a.1).toFunctor.obj X)
+  have h2 := Cat.Hom₂.congr_app (f.2.naturality_naturality (f.1 ◁ op2 h)) X
+  have h3 := Cat.Hom₂.congr_app
+    (a.2.toOplax.mapComp_naturality_right f.1 (op2 h)) X
+  dsimp at h1 h2 h3
+  -- s1: slide map₂(op2 h) past the b.2.mapComp iso (inverse form of h1)
+  have s1 : (b.2.map₂ (op2 h)).toNatTrans.app
+        ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj X)) ≫
+      (b.2.mapComp f.1 (Quiver.Hom.op YY)).inv.toNatTrans.app
+        ((f.2.app a.1).toFunctor.obj X) =
+      (b.2.mapComp f.1 (Quiver.Hom.op XX)).inv.toNatTrans.app
+        ((f.2.app a.1).toFunctor.obj X) ≫
+      (b.2.map₂ (f.1 ◁ op2 h)).toNatTrans.app ((f.2.app a.1).toFunctor.obj X) := by
+    apply (Iso.comp_inv_eq ((Cat.Hom.toNatIso
+      (b.2.mapComp f.1 (Quiver.Hom.op YY))).app ((f.2.app a.1).toFunctor.obj X))).mpr
+    erw [Category.assoc]
+    apply (Iso.eq_inv_comp ((Cat.Hom.toNatIso
+      (b.2.mapComp f.1 (Quiver.Hom.op XX))).app ((f.2.app a.1).toFunctor.obj X))).mpr
+    exact h1.symm
+  -- s2: slide b.2.map₂ (f.1 ◁ op2 h) past f.2.naturality (inverse form of h2)
+  have s2 : (b.2.map₂ (f.1 ◁ op2 h)).toNatTrans.app ((f.2.app a.1).toFunctor.obj X) ≫
+      (f.2.naturality (f.1 ≫ Quiver.Hom.op YY)).inv.toNatTrans.app X =
+      (f.2.naturality (f.1 ≫ Quiver.Hom.op XX)).inv.toNatTrans.app X ≫
+      (f.2.app α).toFunctor.map ((a.2.map₂ (f.1 ◁ op2 h)).toNatTrans.app X) := by
+    apply (Iso.comp_inv_eq ((Cat.Hom.toNatIso
+      (f.2.naturality (f.1 ≫ Quiver.Hom.op YY))).app X)).mpr
+    erw [Category.assoc]
+    apply (Iso.eq_inv_comp ((Cat.Hom.toNatIso
+      (f.2.naturality (f.1 ≫ Quiver.Hom.op XX))).app X)).mpr
+    exact h2.symm
+  -- s3: the conjugated 2-cell collapses (component form of h3)
+  have s3 : ((a.2.mapComp f.1 (Quiver.Hom.op XX)).hom ≫
+        a.2.map f.1 ◁ a.2.map₂ (op2 h) ≫
+          (a.2.mapComp f.1 (Quiver.Hom.op YY)).inv).toNatTrans.app X =
+      (a.2.map₂ (f.1 ◁ op2 h)).toNatTrans.app X := by
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app]
+    rw [← Category.assoc]
+    apply (Iso.comp_inv_eq ((Cat.Hom.toNatIso
+      (a.2.mapComp f.1 (Quiver.Hom.op YY))).app X)).mpr
+    exact h3.symm
+  rw [← Category.assoc, s1]
+  erw [Category.assoc, s2]
+  rw [← s3]
+  erw [← Category.assoc]
+  rfl
+
+/-- Component (at `α`) of the naturality iso of `yonedaLemmaBackwards` at `f : a ⟶ b`. -/
+def backwardsNaturalityIsoApp {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
+    (X : ↑(yonedaEvaluation.obj a)) (α : Bᵒᵖ) :
+    (((yonedaEvaluation.map f).toFunctor ⋙ yonedaLemmaBackwardsFunctor b).obj X).app α ≅
+      ((yonedaLemmaBackwardsFunctor a ⋙ (yonedaPairing.map f).toFunctor).obj X).app α :=
+  Cat.Hom.isoMk (NatIso.ofComponents
+    (fun XX ↦
+      (Cat.Hom.toNatIso (b.2.mapComp f.1 XX.op).symm).app
+        ((f.2.app a.1).toFunctor.obj (ULift.down X)) ≪≫
+        (Cat.Hom.toNatIso (f.2.naturality (f.1 ≫ XX.op))).symm.app (ULift.down X))
+    (fun {XX YY} h ↦ by
+      dsimp [yonedaEvaluation, catPseudoULift, catLift, Functor.comp,
+        ULiftHomULiftCategory.equivCongrLeft, ULiftHom.objUp, ULift.upFunctor,
+        ULiftHom.objDown, yonedaEvaluation']
+      erw [Pseudofunctor.map₂_whisker_left]
+      exact backwards_inner_component f h (ULift.down X)))
+
+/-- The cancellation core of the backwards naturality square: all atoms in canonical
+spelling, `X` unlifted. -/
+lemma backwards_square_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
+    (X : ↑(yonedaEvaluation'.obj a)) {a₁ b₁ : Bᵒᵖ} (f₁ : a₁ ⟶ b₁)
+    (ZZ : ↑((yoneda₀ (unop b.1)).obj a₁)) :
+    (f.2.app b₁).toFunctor.map
+        ((a.2.map₂ (α_ f.1 (Quiver.Hom.op ZZ) f₁).inv).toNatTrans.app X) ≫
+      (f.2.app b₁).toFunctor.map
+        ((a.2.mapComp (f.1 ≫ Quiver.Hom.op ZZ) f₁).hom.toNatTrans.app X) ≫
+      (f.2.naturality f₁).hom.toNatTrans.app
+        ((a.2.map (f.1 ≫ Quiver.Hom.op ZZ)).toFunctor.obj X) =
+    (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ ≫ f₁)).hom.toNatTrans.app X ≫
+      (b.2.mapComp f.1 (Quiver.Hom.op ZZ ≫ f₁)).hom.toNatTrans.app
+        ((f.2.app a.1).toFunctor.obj X) ≫
+      (b.2.mapComp (Quiver.Hom.op ZZ) f₁).hom.toNatTrans.app
+        ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj X)) ≫
+      (b.2.map f₁).toFunctor.map
+        ((b.2.mapComp f.1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+            ((f.2.app a.1).toFunctor.obj X) ≫
+          (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app X) := by
+  have h3 := Pseudofunctor.mapComp_assoc_right_hom_app b.2 f.1 (Quiver.Hom.op ZZ) f₁
+    ((f.2.app a.1).toFunctor.obj X)
+  rw [Pseudofunctor.StrongTrans.naturality_naturality_hom_app f.2
+      (α_ f.1 (Quiver.Hom.op ZZ) f₁) X,
+    Pseudofunctor.StrongTrans.naturality_comp_hom_app f.2 (f.1 ≫ Quiver.Hom.op ZZ) f₁ X]
+  simp only [Category.assoc]
+  erw [reassoc_of% h3]
+  have h1 := Pseudofunctor.StrongTrans.naturality_naturality_hom_app f.2
+    (α_ f.1 (Quiver.Hom.op ZZ) f₁) X
+  have h2 := Pseudofunctor.StrongTrans.naturality_comp_hom_app f.2
+    (f.1 ≫ Quiver.Hom.op ZZ) f₁ X
+  have c1 : (b.2.map₂ (α_ f.1 (Quiver.Hom.op ZZ) f₁).hom).toNatTrans.app
+        ((f.2.app a.1).toFunctor.obj X) ≫
+      (b.2.map₂ (α_ f.1 (Quiver.Hom.op ZZ) f₁).inv).toNatTrans.app
+        ((f.2.app a.1).toFunctor.obj X) = 𝟙 _ := by
+    rw [← Cat.Hom₂.comp_app, ← PrelaxFunctor.map₂_comp, Iso.hom_inv_id,
+      PrelaxFunctor.map₂_id, Cat.Hom₂.id_app]
+  have c2 : (b.2.mapComp (f.1 ≫ Quiver.Hom.op ZZ) f₁).inv.toNatTrans.app
+        ((f.2.app a.1).toFunctor.obj X) ≫
+      (b.2.mapComp (f.1 ≫ Quiver.Hom.op ZZ) f₁).hom.toNatTrans.app
+        ((f.2.app a.1).toFunctor.obj X) = 𝟙 _ :=
+    ((Cat.Hom.toNatIso (b.2.mapComp (f.1 ≫ Quiver.Hom.op ZZ) f₁)).app
+      ((f.2.app a.1).toFunctor.obj X)).inv_hom_id
+  have c3 : (b.2.mapComp f.1 (Quiver.Hom.op ZZ)).hom.toNatTrans.app
+        ((f.2.app a.1).toFunctor.obj X) ≫
+      (b.2.mapComp f.1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+        ((f.2.app a.1).toFunctor.obj X) = 𝟙 _ :=
+    ((Cat.Hom.toNatIso (b.2.mapComp f.1 (Quiver.Hom.op ZZ))).app
+      ((f.2.app a.1).toFunctor.obj X)).hom_inv_id
+  have c4 : (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).hom.toNatTrans.app X ≫
+      (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app X = 𝟙 _ :=
+    ((Cat.Hom.toNatIso (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ))).app X).hom_inv_id
+  have hN := h1
+  rw [h2] at hN
+  simp only [Category.assoc] at hN
+  erw [← hN]
+  erw [reassoc_of% h1]
+  erw [reassoc_of% c1]
+  erw [reassoc_of% h2]
+  erw [reassoc_of% c2]
+  rw [← Functor.map_comp, ← Functor.map_comp]
+  erw [reassoc_of% c3]
+  erw [c4]
+  erw [Functor.map_id]
+  erw [Category.comp_id]
+  rfl
+
+set_option maxHeartbeats 1600000 in
+-- the 16-step `erw` distribution pipeline below exceeds the default heartbeat budget:
+-- each step unifies at default transparency across `vcomp`/lift plumbing
+/-- Point form of the naturality square, spelled through the composite strong
+transformation (defeq to `yonedaPairing.map`'s literal pasting). -/
+lemma backwards_square_component {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
+    (X : ↑(yonedaEvaluation.obj a)) {a₁ b₁ : Bᵒᵖ} (f₁ : a₁ ⟶ b₁)
+    (ZZ : ↑((yoneda₀ (unop b.1)).obj a₁)) :
+    ((b.2.mapComp f.1 (Quiver.Hom.op ZZ ≫ f₁)).inv.toNatTrans.app
+        ((f.2.app a.1).toFunctor.obj (ULift.down X)) ≫
+      (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ ≫ f₁)).inv.toNatTrans.app (ULift.down X)) ≫
+      ((postcomp₂ f.1.unop ≫ (yonedaLemmaBackwardsFunctorObj a X ≫ f.2)).naturality
+        f₁).hom.toNatTrans.app ZZ =
+    (b.2.mapComp (Quiver.Hom.op ZZ) f₁).hom.toNatTrans.app
+        ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj (ULift.down X))) ≫
+      (b.2.map f₁).toFunctor.map
+        ((b.2.mapComp f.1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+            ((f.2.app a.1).toFunctor.obj (ULift.down X)) ≫
+          (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app (ULift.down X)) := by
+  obtain ⟨X⟩ := X
+  simp only [categoryStruct_comp_naturality_hom]
+  iterate 4 erw [Cat.Hom₂.comp_app]
+  erw [Cat.associator_inv_app]
+  erw [Cat.whiskerRight_app]
+  erw [Cat.associator_hom_app]
+  erw [Cat.whiskerLeft_app]
+  iterate 4 erw [Cat.Hom₂.comp_app]
+  erw [Cat.associator_inv_app]
+  erw [Cat.whiskerRight_app]
+  erw [Cat.associator_hom_app]
+  erw [Cat.whiskerLeft_app]
+  erw [Cat.whiskerLeft_app]
+  iterate 3 erw [eqToHom_refl]
+  iterate 3 erw [Category.id_comp]
+  erw [Cat.associator_inv_app]
+  iterate 4 (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id])
+  dsimp only [postcomp₂, postcomposingCat]
+  simp only [Category.assoc]
+  apply (Iso.inv_comp_eq ((Cat.Hom.toNatIso (b.2.mapComp f.1 (Quiver.Hom.op ZZ ≫ f₁))).app
+    ((f.2.app a.1).toFunctor.obj X))).mpr
+  apply (Iso.inv_comp_eq ((Cat.Hom.toNatIso (f.2.naturality
+    (f.1 ≫ Quiver.Hom.op ZZ ≫ f₁))).app X)).mpr
+  exact backwards_square_core f X f₁ ZZ
+
+/-- The strong-transformation naturality square for `backwardsNaturalityIsoApp`. -/
+lemma backwards_naturality_square {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
+    (X : ↑(yonedaEvaluation.obj a)) {a₁ b₁ : Bᵒᵖ} (f₁ : a₁ ⟶ b₁) :
+    (yoneda₀ (unop b.1)).map f₁ ◁ (backwardsNaturalityIsoApp f X b₁).hom ≫
+      (((yonedaLemmaBackwardsFunctor a ⋙ (yonedaPairing.map f).toFunctor).obj X).naturality
+        f₁).hom =
+    ((((yonedaEvaluation.map f).toFunctor ⋙ yonedaLemmaBackwardsFunctor b).obj X).naturality
+        f₁).hom ≫ (backwardsNaturalityIsoApp f X a₁).hom ▷ b.2.map f₁ := by
+  apply Cat.Hom₂.ext_app
+  intro ZZ
+  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app]
+  exact backwards_square_component f X f₁ ZZ
+
+/-- The naturality iso of `yonedaLemmaBackwards` at `f : a ⟶ b`, componentwise. -/
+def backwardsNaturalityIso {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
+    (X : ↑(yonedaEvaluation.obj a)) :
+    ((yonedaEvaluation.map f).toFunctor ⋙ yonedaLemmaBackwardsFunctor b).obj X ≅
+      (yonedaLemmaBackwardsFunctor a ⋙ (yonedaPairing.map f).toFunctor).obj X :=
+  StrongTrans.isoMk (fun α ↦ backwardsNaturalityIsoApp f X α)
+    (fun f₁ ↦ backwards_naturality_square f X f₁)
+
+/-- The cancellation core of `backwards_naturality_iso_natural`: two `NatTrans.naturality`
+squares of the component isos, in canonical spellings. -/
+lemma backwards_natural_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
+    {X Y : ↑(yonedaEvaluation'.obj a)} (f₁ : X ⟶ Y) {γ : Bᵒᵖ}
+    (ZZ : ↑((yoneda₀ (unop b.1)).obj γ)) :
+    (b.2.map f.1 ≫ b.2.map (Quiver.Hom.op ZZ)).toFunctor.map
+        ((f.2.app a.1).toFunctor.map f₁) ≫
+      (b.2.mapComp f.1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+        ((f.2.app a.1).toFunctor.obj Y) ≫
+      (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app Y =
+    ((b.2.mapComp f.1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+        ((f.2.app a.1).toFunctor.obj X) ≫
+      (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app X) ≫
+      (f.2.app γ).toFunctor.map ((a.2.map (f.1 ≫ Quiver.Hom.op ZZ)).toFunctor.map f₁) := by
+  have s1 := (b.2.mapComp f.1 (Quiver.Hom.op ZZ)).inv.toNatTrans.naturality
+    ((f.2.app a.1).toFunctor.map f₁)
+  have s2 : (b.2.map (f.1 ≫ Quiver.Hom.op ZZ)).toFunctor.map
+        ((f.2.app a.1).toFunctor.map f₁) ≫
+      (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app Y =
+      (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app X ≫
+      (f.2.app γ).toFunctor.map ((a.2.map (f.1 ≫ Quiver.Hom.op ZZ)).toFunctor.map f₁) :=
+    (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.naturality f₁
+  rw [reassoc_of% s1]
+  rw [s2]
+  exact (Category.assoc _ _ _).symm
+
+/-- Naturality (in `X`) of `backwardsNaturalityIso`. -/
+lemma backwards_naturality_iso_natural {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
+    {X Y : ↑(yonedaEvaluation.obj a)} (f₁ : X ⟶ Y) :
+    ((yonedaEvaluation.map f).toFunctor ⋙ yonedaLemmaBackwardsFunctor b).map f₁ ≫
+      (backwardsNaturalityIso f Y).hom =
+    (backwardsNaturalityIso f X).hom ≫
+      (yonedaLemmaBackwardsFunctor a ⋙ (yonedaPairing.map f).toFunctor).map f₁ := by
+  obtain ⟨X⟩ := X
+  obtain ⟨Y⟩ := Y
+  obtain ⟨f₁⟩ := f₁
+  apply homCategory.ext
+  intro γ
+  apply Cat.Hom₂.ext_app
+  intro ZZ
+  erw [homCategory_comp_as_app, homCategory_comp_as_app]
+  dsimp only [backwardsNaturalityIso]
+  simp only [isoMk_hom_as_app]
+  exact backwards_natural_core f f₁ ZZ
 
 /--
 The *backward strong transformation* `yonedaEvaluation ⟶ yonedaPairing` for the Yoneda lemma.
@@ -522,26 +920,12 @@ and the unit/counit isos (`yonedaHomInvId`, `yonedaInvHomId`), it forms `yonedaL
 -/
 def yonedaLemmaBackwards : StrongTrans (@yonedaEvaluation B _)  (@yonedaPairing B _) where
   app x := {toFunctor := yonedaLemmaBackwardsFunctor x}
-  naturality {a b} f := by
-    refine Cat.Hom.isoMk (NatIso.ofComponents ?_ ?_)
-    · intro X
-      refine StrongTrans.isoMk ?_ ?_
-      · intro α
-        refine Cat.Hom.isoMk (NatIso.ofComponents ?_ ?_)
-        · intro XX
-          rcases X with ⟨X⟩
-          refine (Cat.Hom.toNatIso (b.2.mapComp f.1 XX.op).symm).app
-            ((f.2.app a.1).toFunctor.obj X) ≪≫ ?_
-          exact (Cat.Hom.toNatIso ((f.2).naturality (f.1 ≫ XX.op))).symm.app X
-        · intro XX YY h
-          rcases X with ⟨X⟩
-          dsimp [yonedaEvaluation, catPseudoULift, catLift, Functor.comp,
-            ULiftHomULiftCategory.equivCongrLeft, ULiftHom.objUp, ULift.upFunctor,
-            ULiftHom.objDown, yonedaEvaluation']
-          erw [Pseudofunctor.map₂_whisker_left]
-          sorry
-      · sorry
-    · sorry
+  naturality {a b} f :=
+    Cat.Hom.isoMk (NatIso.ofComponents (fun X ↦ backwardsNaturalityIso f X)
+      (fun {X Y} f₁ ↦ backwards_naturality_iso_natural f f₁))
+  naturality_naturality {a b f g} η := by sorry
+  naturality_id a := by sorry
+  naturality_comp {a b c} f g := by sorry
 
 /--
 The data of an internal equivalence in a bicategory `B` between objects `x` and `y`.
@@ -635,6 +1019,10 @@ def yonedaHomInvIdObjIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) (x : ↑(yonedaPa
     refine StrongTrans.isoMk (fun b => (Cat.Hom.isoMk (yonedaHomInvIdFunctorIso b x))) ?_
     intro q r f
     refine Cat.Hom₂.ext_iff.mpr ?_
+    ext s
+    simp at s x
+    simp[Functor.whiskerLeft,CategoryStruct.comp,NatTrans.vcomp]
+    simp [yonedaLemmaBackwards,yonedaLemmaForwards,yonedaHomInvIdFunctorIso, yonedaUnitAppIso]
     sorry
 
 set_option linter.flexible false in
@@ -724,7 +1112,11 @@ def yonedaInvHomIdNatIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
     let I1 := (Cat.Hom.toNatIso (a.2.mapId a.1)).app x
     exact ULiftHom.up.mapIso
       ((@ULift.upFunctor.{_, _, max (max u v) w} (↑(yonedaEvaluation'.obj a)) _).mapIso I1)
-  · sorry
+  · rintro ⟨x⟩ ⟨y⟩ ⟨f⟩
+    dsimp [yonedaLemmaForwards, ULiftHom.up]
+    have h := (a.2.mapId a.1).hom.toNatTrans.naturality f
+    dsimp at h
+    exact Quiver.homOfEq_injective rfl rfl (congrArg (ULiftHom.up.map) h)
 
 /--
 The *counit isomorphism* `yonedaLemmaBackwards ≫ yonedaLemmaForwards ≅ 𝟙 yonedaEvaluation`.
