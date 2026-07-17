@@ -68,10 +68,9 @@ The pseudofunctor extension (with trivial coherence isos) is `catPseudoULift`.
 -/
 def catLift : Cat.{v₁, u₁} ⥤ Cat.{max v₁ v₂, max u₁ u₂} where
   obj C := Cat.of (ULiftHom.{v₂} (ULift.{u₂, u₁} C.α))
-  map {C D} F := by
-    refine Functor.toCatHom ?_
-    apply ULiftHomULiftCategory.equivCongrLeft.toFun
-    exact ULiftHom.down ⋙ ULift.downFunctor ⋙ F.toFunctor
+  map {C D} F :=
+    Functor.toCatHom (ULiftHomULiftCategory.equivCongrLeft.toFun
+      (ULiftHom.down ⋙ ULift.downFunctor ⋙ F.toFunctor))
 
 /--
 The equivalence of categories `C ≃ catLift.obj (Cat.of C)`.
@@ -84,8 +83,8 @@ built from `ULift.equivalence` and `ULiftHom.equiv`.
 Used in `yonedaLemmaBackwardsFunctor` to lower morphisms through the universe lift.
 -/
 def catLiftEquiv (C : Type u₁) [Category.{v₁} C] :
-    Equivalence C (catLift.{v₁, v₂, u₁, u₂}.obj (Cat.of C)) := by
-  exact (@ULift.equivalence.{v₁, u₁, u₂} C _).trans ULiftHom.equiv
+    Equivalence C (catLift.{v₁, v₂, u₁, u₂}.obj (Cat.of C)) :=
+  (@ULift.equivalence.{v₁, u₁, u₂} C _).trans ULiftHom.equiv
 
 /--
 The pseudofunctor `Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂}` that promotes every small
@@ -176,35 +175,6 @@ lemma modification_naturality_app {C : Type u₁} [Bicategory.{w₁, v₁} C]
   simpa only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
     Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app]
     using Cat.Hom₂.congr_app (Γ.as.naturality f) z
-
-section HomFunctorIsos
-
-variable {a b c d : B}
-
-/-- Precomposition with an identity 1-morphism is naturally isomorphic to the identity. -/
-def precompIdIso (a c : B) : precomp c (𝟙 a) ≅ 𝟭 (a ⟶ c) :=
-  NatIso.ofComponents (fun f ↦ λ_ f) (fun η ↦ by simp)
-
-/-- Postcomposition with an identity 1-morphism is naturally isomorphic to the identity. -/
-def postcompIdIso (a b : B) : postcomp a (𝟙 b) ≅ 𝟭 (a ⟶ b) :=
-  NatIso.ofComponents (fun f ↦ ρ_ f) (fun η ↦ by simp)
-
-/-- Precomposition with a composite is the composite of the precompositions. -/
-def precompCompIso (f : a ⟶ b) (g : b ⟶ c) (d : B) :
-    precomp d (f ≫ g) ≅ precomp d g ⋙ precomp d f :=
-  NatIso.ofComponents (fun h ↦ α_ f g h) (fun η ↦ by simp)
-
-/-- Postcomposition with a composite is the composite of the postcompositions. -/
-def postcompCompIso (a : B) (f : b ⟶ c) (g : c ⟶ d) :
-    postcomp a (f ≫ g) ≅ postcomp a f ⋙ postcomp a g :=
-  NatIso.ofComponents (fun h ↦ (α_ h f g).symm) (fun η ↦ by simp)
-
-/-- Pre- and postcomposition commute up to natural isomorphism. -/
-def precompPostcompIso (f : a ⟶ b) (g : c ⟶ d) :
-    precomp c f ⋙ postcomp a g ≅ postcomp b g ⋙ precomp d f :=
-  NatIso.ofComponents (fun h ↦ α_ f h g) (fun η ↦ by simp)
-
-end HomFunctorIsos
 
 /-- `postcomp₂` at an identity 1-morphism is isomorphic to the identity strong transformation.
 This is `Bicategory.yoneda.mapId` restated for `postcomp₂`. -/
@@ -302,14 +272,7 @@ def yonedaPairing : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (ma
       { obj η := Bicategory.postcomp₂ f.1.unop ≫ (η ≫ f.2)
         map m := StrongTrans.whiskerLeft (Bicategory.postcomp₂ f.1.unop)
           (StrongTrans.whiskerRight m f.2) }
-  map₂ {x y f g} η := by
-    let h1 : postcomp₂ f.1.unop ⟶ postcomp₂ g.1.unop :=
-      (postcomposing₂ y.1.unop x.1.unop).map (Hom2.unop2 η.1)
-    let h2 : f.2 ⟶ g.2 := η.2
-    refine { toNatTrans := { app := ?_, naturality := ?_ } }
-    · exact fun a ↦ (h1 ▷ (a ≫ f.2)) ≫ (postcomp₂ g.1.unop) ◁ (a ◁ h2)
-    · intro X Y h
-      exact (yonedaPairingMap₂ η).naturality h
+  map₂ {x y f g} η := NatTrans.toCatHom₂ (yonedaPairingMap₂ η)
   mapId x := by
     refine Cat.Hom.isoMk (NatIso.ofComponents ?_ ?_)
     · intro X
@@ -471,7 +434,6 @@ def yonedaLemmaForwards : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B 
   naturality_id a := by sorry
   naturality_comp {a b c} f g := by sorry
 
-
 /--
 At a fixed pair `x = (b₀, F)`, an evaluation point `eval : F.obj b₀`, and a component
 `a : Bᵒᵖ`, the functor `(unop a ⟶ b₀) ⥤ F.obj a` sending `f ↦ (F.map f).obj eval`.
@@ -489,15 +451,10 @@ This is the functor underlying the `a`-component of `yonedaLemmaBackwardsFunctor
 def yonedaLemmaBackwardsFunctorObjFunctor (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat))
     (eval : yonedaEvaluation.obj x) (a : Bᵒᵖ) :
     ↑((yoneda₀ (unop x.1)).obj a) ⥤ ↑(x.2.obj a) where
-  obj b := by
-    refine (x.2.map (Quiver.Hom.op b)).toFunctor.obj ?_
-    rcases eval with ⟨eval⟩
-    exact eval
-  map {X Y} f := by
-    rcases eval with ⟨eval⟩
-    exact (x.2.map₂ (op2 f)).toNatTrans.app eval
-  map_id _ := by cases eval; erw [op2_id, PrelaxFunctor.map₂_id]; rfl
-  map_comp _ _ := by cases eval; erw [op2_comp, PrelaxFunctor.map₂_comp]; rfl
+  obj b := (x.2.map (Quiver.Hom.op b)).toFunctor.obj (ULift.down eval)
+  map {X Y} f := (x.2.map₂ (op2 f)).toNatTrans.app (ULift.down eval)
+  map_id _ := by erw [op2_id, PrelaxFunctor.map₂_id]; rfl
+  map_comp _ _ := by erw [op2_comp, PrelaxFunctor.map₂_comp]; rfl
 
 /-- Component form of `mapComp_id_right_hom`, matching the `naturality_id` obligation of
 `yonedaLemmaBackwardsFunctorObj`: composing the `mapComp` coherence with the `mapId` coherence
