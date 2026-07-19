@@ -642,7 +642,18 @@ def yonedaEvaluation' : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v}
         ((h.2.as.app a.1 ▷ η.2.app a.1).toNatTrans.app Z)
     erw [reassoc_of% h1]
     exact evaluation_whisker_right_core h η Z
-  map₂_associator {a b c d} f g h := by trace_state; sorry
+  map₂_associator {a b c d} f g h := by
+    apply Cat.Hom₂.ext_app
+    intro Z
+    simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv, whiskerLeftIso_hom,
+      whiskerLeftIso_inv, whiskerRightIso_hom, whiskerRightIso_inv, Cat.Hom.toNatTrans_comp,
+      NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
+      whiskerLeft_app, whiskerRight_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
+      Cat.Hom₂.comp_app, Cat.associator_hom_app, Cat.associator_inv_app, eqToHom_refl,
+      Category.comp_id, Category.id_comp]
+    iterate 16
+      (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
+    sorry
   map₂_left_unitor {a b} f := by
     apply Cat.Hom₂.ext_app
     intro Z
