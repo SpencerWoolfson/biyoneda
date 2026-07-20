@@ -338,12 +338,10 @@ lemma evaluation_left_unitor_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})}
   dsimp at hw
   have hid := Pseudofunctor.StrongTrans.naturality_id_hom_app f.2 a.1 Z
   dsimp at hid
-  simp only [Category.id_comp, Category.comp_id]
+  simp only [Category.id_comp]
   have hl : ((λ_ f).hom.2.as.app a.1).toNatTrans.app Z =
       𝟙 ((f.2.app a.1).toFunctor.obj Z) := rfl
-  have c1 : (b.2.mapId a.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) ≫
-      (b.2.mapId a.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) = 𝟙 _ :=
-    ((Cat.Hom.toNatIso (b.2.mapId a.1)).app ((f.2.app a.1).toFunctor.obj Z)).inv_hom_id
+  have c1 := Cat.Hom.inv_hom_id_toNatTrans_app (b.2.mapId a.1) ((f.2.app a.1).toFunctor.obj Z)
   have key : (f.2.naturality (𝟙 a.1)).inv.toNatTrans.app Z ≫
       (f.2.app a.1).toFunctor.map ((a.2.mapId a.1).hom.toNatTrans.app Z) =
       (b.2.mapId a.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) := by
@@ -352,7 +350,7 @@ lemma evaluation_left_unitor_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})}
       (f.2.naturality (𝟙 a.1)).hom.toNatTrans.app Z ≫
       (b.2.mapId a.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)
     rw [hid]
-    simp only [Category.id_comp, Category.assoc]
+    simp only [Category.id_comp]
     erw [Category.assoc]
     erw [c1]
     erw [Category.comp_id]
@@ -361,7 +359,7 @@ lemma evaluation_left_unitor_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})}
   erw [Functor.map_id]
   erw [Category.id_comp]
   erw [hw]
-  simp only [Category.id_comp, Category.assoc]
+  simp only [Category.assoc]
   erw [← Functor.map_comp]
   erw [key]
   erw [Category.comp_id]
@@ -442,18 +440,9 @@ lemma evaluation_whisker_right_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
       (η.2.naturality f.1).inv.toNatTrans.app ((g.2.app a.1).toFunctor.obj Z) :=
     ((η.2.naturality f.1).inv.toNatTrans.naturality
       ((h.2.as.app a.1).toNatTrans.app Z)).symm
-  have c1 : (η.2.naturality f.1).inv.toNatTrans.app ((g.2.app a.1).toFunctor.obj Z) ≫
-      (η.2.naturality f.1).hom.toNatTrans.app ((g.2.app a.1).toFunctor.obj Z) = 𝟙 _ :=
-    ((Cat.Hom.toNatIso (η.2.naturality f.1)).app ((g.2.app a.1).toFunctor.obj Z)).inv_hom_id
-  have c1' : (η.2.naturality f.1).inv.toNatTrans.app ((g.2.app a.1).toFunctor.obj Z) ≫
-      (η.2.naturality f.1).hom.toNatTrans.app ((g.2.app a.1).toFunctor.obj Z) ≫
-      (c.2.map₂ h.1).toNatTrans.app
-        ((η.2.app a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj Z)) =
-      (c.2.map₂ h.1).toNatTrans.app
-        ((η.2.app a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj Z)) := by
-    rw [← Category.assoc]
-    erw [c1]
-    rw [Category.id_comp]
+  have c1' := Cat.Hom.inv_hom_id_toNatTrans_app_assoc (η.2.naturality f.1)
+    ((g.2.app a.1).toFunctor.obj Z)
+    ((c.2.map₂ h.1).toNatTrans.app ((η.2.app a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj Z)))
   simp only [Category.assoc]
   rw [Functor.map_comp]
   rw [Cat.Hom.comp_map, Cat.Hom.comp_map]
@@ -461,8 +450,6 @@ lemma evaluation_whisker_right_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
   simp only [Functor.map_comp] at hnnG
   have hsG := congrArg (fun m ↦ (c.2.map η.1).toFunctor.map m) hs
   simp only [Functor.map_comp] at hsG
-  have cG := congrArg (fun m ↦ (c.2.map η.1).toFunctor.map m) c1
-  simp only [Functor.map_comp, Functor.map_id] at cG
   slice_rhs 3 4 =>
     erw [Category.assoc]
     erw [hnnG]
@@ -529,9 +516,6 @@ lemma evaluation_whisker_left_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v
         ((h.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) :=
     (c.2.map₂ η.1).toNatTrans.naturality
       ((h.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))
-  have c1 : (g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) ≫
-      (g.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) = 𝟙 _ :=
-    ((Cat.Hom.toNatIso (g.2.naturality f.1)).app ((f.2.app a.1).toFunctor.obj Z)).inv_hom_id
   simp only [Category.assoc]
   slice_rhs 4 5 => rw [← h3]
   slice_rhs 3 4 =>
@@ -539,17 +523,17 @@ lemma evaluation_whisker_left_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v
     erw [← Functor.map_comp]
   erw [h2]
   slice_rhs 2 3 => erw [← Functor.map_comp]
-  have c1' : (g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) ≫
-      (g.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) ≫
-      (c.2.map f.1).toFunctor.map
-        ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) =
-      (c.2.map f.1).toFunctor.map
-        ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) := by
-    rw [← Category.assoc, c1, Category.id_comp]
+  have c1' := Cat.Hom.inv_hom_id_toNatTrans_app_assoc (g.2.naturality f.1)
+    ((f.2.app a.1).toFunctor.obj Z)
+    ((c.2.map f.1).toFunctor.map
+      ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)))
   erw [c1']
   simp only [Category.assoc]
   rfl
 
+set_option linter.unusedTactic false in
+-- the `skip` alternatives in the erosion loops are structural: `iterate` aborts at the
+-- first wholly-failing round without them
 set_option maxHeartbeats 800000 in
 -- the coherence fields close by `exact`-plugs of core lemmas whose defeq checks
 -- bridge composite/nested point spellings at default transparency
@@ -587,9 +571,7 @@ def yonedaEvaluation' : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v}
     simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv, whiskerLeftIso_hom,
       whiskerLeftIso_inv, whiskerRightIso_hom, whiskerRightIso_inv, Cat.Hom.toNatTrans_comp,
       NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
-      whiskerLeft_app, whiskerRight_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
-      Cat.Hom₂.comp_app, Cat.associator_hom_app, Cat.associator_inv_app, eqToHom_refl,
-      Category.comp_id, Category.id_comp]
+      whiskerLeft_app, whiskerRight_app, Cat.associator_hom_app, Cat.associator_inv_app]
     simp only [prod_whiskerLeft_fst, prod_whiskerLeft_snd, whiskerLeft_as_app]
     iterate 12
       (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
@@ -617,9 +599,7 @@ def yonedaEvaluation' : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v}
     simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv, whiskerLeftIso_hom,
       whiskerLeftIso_inv, whiskerRightIso_hom, whiskerRightIso_inv, Cat.Hom.toNatTrans_comp,
       NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
-      whiskerLeft_app, whiskerRight_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
-      Cat.Hom₂.comp_app, Cat.associator_hom_app, Cat.associator_inv_app, eqToHom_refl,
-      Category.comp_id, Category.id_comp]
+      whiskerLeft_app, whiskerRight_app, Cat.associator_hom_app, Cat.associator_inv_app]
     simp only [prod_whiskerRight_fst, prod_whiskerRight_snd, whiskerRight_as_app]
     iterate 12
       (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
@@ -648,35 +628,27 @@ def yonedaEvaluation' : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v}
     simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv, whiskerLeftIso_hom,
       whiskerLeftIso_inv, whiskerRightIso_hom, whiskerRightIso_inv, Cat.Hom.toNatTrans_comp,
       NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
-      whiskerLeft_app, whiskerRight_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
-      Cat.Hom₂.comp_app, Cat.associator_hom_app, Cat.associator_inv_app, eqToHom_refl,
-      Category.comp_id, Category.id_comp]
+      whiskerLeft_app, whiskerRight_app, Cat.associator_hom_app, Cat.associator_inv_app]
     iterate 16
       (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
     sorry
   map₂_left_unitor {a b} f := by
     apply Cat.Hom₂.ext_app
     intro Z
-    simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv, whiskerLeftIso_hom,
-      whiskerLeftIso_inv, whiskerRightIso_hom, whiskerRightIso_inv, Cat.Hom.toNatTrans_comp,
-      NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
-      whiskerLeft_app, whiskerRight_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
-      Cat.Hom₂.comp_app, Cat.associator_hom_app, Cat.associator_inv_app,
-      Cat.leftUnitor_hom_app, Cat.leftUnitor_inv_app, Cat.rightUnitor_hom_app,
-      Cat.rightUnitor_inv_app, eqToHom_refl, Category.comp_id, Category.id_comp]
+    simp only [Iso.trans_hom, Iso.symm_hom, whiskerLeftIso_hom, whiskerRightIso_hom,
+      Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+      Cat.associator_hom_app, Cat.associator_inv_app, Cat.leftUnitor_hom_app]
     iterate 12
       (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
     exact evaluation_left_unitor_core f Z
   map₂_right_unitor {a b} f := by
     apply Cat.Hom₂.ext_app
     intro Z
-    simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv, whiskerLeftIso_hom,
-      whiskerLeftIso_inv, whiskerRightIso_hom, whiskerRightIso_inv, Cat.Hom.toNatTrans_comp,
-      NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
-      whiskerLeft_app, whiskerRight_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
-      Cat.Hom₂.comp_app, Cat.associator_hom_app, Cat.associator_inv_app,
-      Cat.leftUnitor_hom_app, Cat.leftUnitor_inv_app, Cat.rightUnitor_hom_app,
-      Cat.rightUnitor_inv_app, eqToHom_refl, Category.comp_id, Category.id_comp]
+    simp only [Iso.trans_hom, Iso.symm_hom, whiskerLeftIso_hom, whiskerRightIso_hom,
+      Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+      Cat.associator_hom_app, Cat.associator_inv_app, Cat.rightUnitor_hom_app]
     iterate 12
       (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
     exact evaluation_right_unitor_core f Z
