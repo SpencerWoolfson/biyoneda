@@ -162,6 +162,11 @@ lemma Cat.Hom₂.ext_app {C D : Cat} {F G : C ⟶ D} {η θ : F ⟶ G}
     (h : ∀ X, η.toNatTrans.app X = θ.toNatTrans.app X) : η = θ :=
   Cat.Hom₂.ext (NatTrans.ext (funext h))
 
+/-- `NatTrans.toCatHom₂` and `.toNatTrans` are inverse: the underlying transformation of the
+2-cell built from `η` is `η` again. -/
+@[simp] lemma Cat.toCatHom₂_toNatTrans {C D : Type u₁} [Category.{v₁} C] [Category.{v₁} D]
+    {F G : C ⥤ D} (η : F ⟶ G) : (NatTrans.toCatHom₂ η).toNatTrans = η := rfl
+
 universe w₁
 
 /-- Point-level form of `Modification.naturality` for `Cat`-valued pseudofunctors: the
@@ -617,10 +622,8 @@ lemma evaluation_associator_core {a b c d : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v
     (Pseudofunctor.StrongTrans.categoryStruct_comp_naturality_hom g.2 h.2 f.1)
     ((f.2.app a.1).toFunctor.obj Z)
   rw [hD]
-  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
-    Cat.associator_hom_app, Cat.associator_inv_app, eqToHom_refl, Functor.map_id,
-    Category.id_comp, Category.comp_id, Category.assoc, Functor.map_comp, Cat.Hom.comp_map]
+  simp only [Category.id_comp, Category.comp_id, Category.assoc, Functor.map_comp,
+    Cat.Hom.comp_map]
   iterate 12 (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
   have hsplit : ((g.2.naturality f.1).hom ▷ h.2.app b.1 ≫
       g.2.app a.1 ◁ (h.2.naturality f.1).hom).toNatTrans.app
@@ -690,14 +693,10 @@ lemma evaluation_associator_core {a b c d : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v
   first
     | rw [← Functor.map_comp_assoc]
     | erw [← Functor.map_comp_assoc]
-    | rw [← Functor.map_comp]
-    | erw [← Functor.map_comp]
   simp only [Category.assoc]
   first
     | rw [← Functor.map_comp_assoc]
     | erw [← Functor.map_comp_assoc]
-    | rw [← Functor.map_comp]
-    | erw [← Functor.map_comp]
   first
     | rw [Cat.Hom.inv_hom_id_toNatTrans_app_assoc]
     | erw [Cat.Hom.inv_hom_id_toNatTrans_app_assoc]
@@ -799,8 +798,9 @@ lemma evaluation_associator_core {a b c d : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v
   rfl
 
 set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
 -- the `skip` alternatives in the erosion loops are structural: `iterate` aborts at the
--- first wholly-failing round without them
+-- first wholly-failing round without them, and are unreachable on the successful path
 set_option maxHeartbeats 800000 in
 -- the coherence fields close by `exact`-plugs of core lemmas whose defeq checks
 -- bridge composite/nested point spellings at default transparency
@@ -974,6 +974,34 @@ lemma forwards_naturality_component {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}
   erw [reassoc_of% h2', h3]
   simp only [Category.assoc]
   rfl
+
+/-- Reduction: the identity coherence of the lifted evaluation pseudofunctor, evaluated at a
+lifted point, is the unlifted `yonedaEvaluation'.mapId` component.  `catPseudoULift` is strict,
+so the lift is transparent up to a trivial `≫ 𝟙`. -/
+lemma yonedaEvaluation_mapId_app_down {a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})}
+    (x : ↑(yonedaEvaluation'.obj a)) :
+    (yonedaEvaluation.mapId a).hom.toNatTrans.app { down := x }
+      = { down := (yonedaEvaluation'.mapId a).hom.toNatTrans.app x } := by
+  dsimp [yonedaEvaluation, Pseudofunctor.comp, catPseudoULift, catLift, ULiftHom.up]
+  erw [Category.comp_id]; rfl
+
+/-- Reduction: the 2-morphism image of the lifted evaluation pseudofunctor at a lifted point is
+the unlifted `yonedaEvaluation'.map₂` component. -/
+lemma yonedaEvaluation_map₂_app_down {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} {f g : a ⟶ b}
+    (η : f ⟶ g) (x : ↑(yonedaEvaluation'.obj a)) :
+    (yonedaEvaluation.map₂ η).toNatTrans.app { down := x }
+      = { down := (yonedaEvaluation'.map₂ η).toNatTrans.app x } := by
+  dsimp [yonedaEvaluation, Pseudofunctor.comp, catPseudoULift, catLift, ULiftHom.up]
+  rfl
+
+/-- Reduction: the composition coherence of the lifted evaluation pseudofunctor, evaluated at a
+lifted point, is the unlifted `yonedaEvaluation'.mapComp` component. -/
+lemma yonedaEvaluation_mapComp_app_down {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
+    (g : b ⟶ c) (x : ↑(yonedaEvaluation'.obj a)) :
+    (yonedaEvaluation.mapComp f g).hom.toNatTrans.app { down := x }
+      = { down := (yonedaEvaluation'.mapComp f g).hom.toNatTrans.app x } := by
+  dsimp [yonedaEvaluation, Pseudofunctor.comp, catPseudoULift, catLift, ULiftHom.up]
+  erw [Category.comp_id]; rfl
 
 /--
 The *forward strong transformation* `yonedaPairing ⟶ yonedaEvaluation` for the Yoneda lemma.
