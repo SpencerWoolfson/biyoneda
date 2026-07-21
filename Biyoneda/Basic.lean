@@ -1345,11 +1345,14 @@ lemma backwards_square_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : 
   erw [Category.comp_id]
   rfl
 
-set_option maxHeartbeats 1600000 in
--- the 16-step `erw` distribution pipeline below exceeds the default heartbeat budget:
--- each step unifies at default transparency across `vcomp`/lift plumbing
 /-- Point form of the naturality square, spelled through the composite strong
-transformation (defeq to `yonedaPairing.map`'s literal pasting). -/
+transformation (defeq to `yonedaPairing.map`'s literal pasting).
+
+The proof distributes the strong-transformation component through the whiskered/associated
+composite from `categoryStruct_comp_naturality_hom`. This is an ordered `erw` chain rather
+than a `simp only`: the `≫`/`α_`/`▷` come from the `postcomp₂` bicategory and are only *defeq*
+to `Cat`'s operations (an instance diamond), so the `Cat.*_app` distribution lemmas match at
+default transparency but not reducible. The order is fixed by the composite's shape. -/
 lemma backwards_square_component {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
     (X : ↑(yonedaEvaluation.obj a)) {a₁ b₁ : Bᵒᵖ} (f₁ : a₁ ⟶ b₁)
     (ZZ : ↑((yoneda₀ (unop b.1)).obj a₁)) :
