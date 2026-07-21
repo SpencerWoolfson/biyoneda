@@ -1325,21 +1325,11 @@ lemma backwards_square_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : 
         ((f.2.app a.1).toFunctor.obj X) = 𝟙 _ := by
     rw [← Cat.Hom₂.comp_app, ← PrelaxFunctor.map₂_comp, Iso.hom_inv_id,
       PrelaxFunctor.map₂_id, Cat.Hom₂.id_app]
-  have c2 : (b.2.mapComp (f.1 ≫ Quiver.Hom.op ZZ) f₁).inv.toNatTrans.app
-        ((f.2.app a.1).toFunctor.obj X) ≫
-      (b.2.mapComp (f.1 ≫ Quiver.Hom.op ZZ) f₁).hom.toNatTrans.app
-        ((f.2.app a.1).toFunctor.obj X) = 𝟙 _ :=
-    ((Cat.Hom.toNatIso (b.2.mapComp (f.1 ≫ Quiver.Hom.op ZZ) f₁)).app
-      ((f.2.app a.1).toFunctor.obj X)).inv_hom_id
-  have c3 : (b.2.mapComp f.1 (Quiver.Hom.op ZZ)).hom.toNatTrans.app
-        ((f.2.app a.1).toFunctor.obj X) ≫
-      (b.2.mapComp f.1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
-        ((f.2.app a.1).toFunctor.obj X) = 𝟙 _ :=
-    ((Cat.Hom.toNatIso (b.2.mapComp f.1 (Quiver.Hom.op ZZ))).app
-      ((f.2.app a.1).toFunctor.obj X)).hom_inv_id
-  have c4 : (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).hom.toNatTrans.app X ≫
-      (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app X = 𝟙 _ :=
-    ((Cat.Hom.toNatIso (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ))).app X).hom_inv_id
+  have c2 := Cat.Hom.inv_hom_id_toNatTrans_app (b.2.mapComp (f.1 ≫ Quiver.Hom.op ZZ) f₁)
+    ((f.2.app a.1).toFunctor.obj X)
+  have c3 := Cat.Hom.hom_inv_id_toNatTrans_app (b.2.mapComp f.1 (Quiver.Hom.op ZZ))
+    ((f.2.app a.1).toFunctor.obj X)
+  have c4 := Cat.Hom.hom_inv_id_toNatTrans_app (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)) X
   have hN := h1
   rw [h2] at hN
   simp only [Category.assoc] at hN
@@ -1443,8 +1433,7 @@ lemma backwards_natural_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f :
       (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app X ≫
       (f.2.app γ).toFunctor.map ((a.2.map (f.1 ≫ Quiver.Hom.op ZZ)).toFunctor.map f₁) :=
     (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.naturality f₁
-  rw [reassoc_of% s1]
-  rw [s2]
+  rw [reassoc_of% s1, s2]
   exact (Category.assoc _ _ _).symm
 
 /-- Naturality (in `X`) of `backwardsNaturalityIso`. -/
