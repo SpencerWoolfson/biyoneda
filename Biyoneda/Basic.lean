@@ -1116,6 +1116,200 @@ lemma forwards_naturality_id_core (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}))
   erw [NatTrans.comp_app, NatTrans.comp_app, NatTrans.id_app, Category.id_comp]
   simp
 
+/-- Reduction: the lifted evaluation pseudofunctor's action on a lifted morphism. -/
+lemma yonedaEvaluation_map_map_down {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
+    {x y : ↑(yonedaEvaluation'.obj a)} (m : x ⟶ y) :
+    (yonedaEvaluation.map f).toFunctor.map { down := m }
+      = { down := (yonedaEvaluation'.map f).toFunctor.map m } := by
+  dsimp [yonedaEvaluation, Pseudofunctor.comp, catPseudoULift, catLift, ULiftHom.up]
+  rfl
+
+/-- Component form of the naturality constraint of a composite strong transformation. -/
+lemma strongTrans_comp_naturality_hom_app {F G H : Bᵒᵖ ⥤ᵖ Cat.{w, v}} (η : F ⟶ G) (θ : G ⟶ H)
+    {X Y : Bᵒᵖ} (k : X ⟶ Y) (x : ↑(F.obj X)) :
+    ((η ≫ θ).naturality k).hom.toNatTrans.app x =
+      (θ.app Y).toFunctor.map ((η.naturality k).hom.toNatTrans.app x) ≫
+        (θ.naturality k).hom.toNatTrans.app ((η.app X).toFunctor.obj x) := by
+  simp only [Pseudofunctor.StrongTrans.categoryStruct_comp_naturality_hom,
+    Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+    Cat.associator_hom_app, Cat.associator_inv_app]
+  iterate 8
+    (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
+  rfl
+
+/-- The head unit-coherence in `B`'s hom-categories underlying `naturality_comp`: `u_{f≫g}`
+composed with the yoneda `mapComp` equals the postcomp₂ reorganisation with `u_g`, `u_f`.  Both
+sides are pure associator/unitor data — `bicategory` after unfolding to `α_`/`λ_`/`ρ_`. -/
+lemma forwards_naturality_comp_head {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c) :
+    ((λ_ (f.1 ≫ g.1).unop).hom ≫ (ρ_ (f.1 ≫ g.1).unop).inv) ≫
+        ((yoneda₀ (unop a.1)).mapComp f.1 g.1).hom.toNatTrans.app (𝟙 (unop a.1)) =
+    (((postcompComp₂ g.1.unop f.1.unop).hom.as.app c.1).toNatTrans.app (𝟙 (unop c.1)) ≫
+        ((postcomp₂ f.1.unop).app c.1).toFunctor.map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ≫
+        ((postcomp₂ f.1.unop).naturality g.1).hom.toNatTrans.app (𝟙 (unop b.1))) ≫
+      ((yoneda₀ (unop a.1)).map g.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) := by
+  erw [show ((yoneda₀ (unop a.1)).map g.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)
+        = g.1.unop ◁ ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) from rfl,
+     show ((postcomp₂ f.1.unop).app c.1).toFunctor.map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv)
+        = ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ▷ f.1.unop from rfl]
+  dsimp only [postcompComp₂, yoneda, postcomp₂, yoneda₀,
+    associatorNatIsoRightCat, associatorNatIsoMiddleCat, associatorNatIsoLeftCat]
+  simp only [Cat.Hom.isoMk_hom, Cat.Hom.isoMk_inv, Cat.toCatHom₂_toNatTrans, Iso.symm_hom,
+    NatIso.ofComponents_hom_app, NatIso.ofComponents_inv_app,
+    homCategory_comp_as_app, isoMk_inv_as_app, isoMk_hom_as_app]
+  bicategory
+
+set_option maxHeartbeats 1600000 in
+/-- Core of `naturality_comp` for `yonedaLemmaForwards` (unlifted fibre form). -/
+lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
+    (Z : ↑(yonedaPairing.obj a)) :
+    (((f.2 ≫ g.2).app c.1).toFunctor.map
+          ((Z.app c.1).toFunctor.map
+              ((λ_ (f.1 ≫ g.1).unop).hom ≫ (ρ_ (f.1 ≫ g.1).unop).inv) ≫
+            (Z.naturality (f.1 ≫ g.1)).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
+        ((f.2 ≫ g.2).naturality (f.1 ≫ g.1)).hom.toNatTrans.app
+          ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))) ≫
+      (yonedaEvaluation'.mapComp f g).hom.toNatTrans.app
+        ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) =
+    (((yonedaPairing.mapComp f g).hom.toNatTrans.app Z).as.app c.1).toNatTrans.app
+        (𝟙 (unop c.1)) ≫
+      ((g.2.app c.1).toFunctor.map
+            ((((yonedaPairing.map f).toFunctor.obj Z).app c.1).toFunctor.map
+                ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ≫
+              (((yonedaPairing.map f).toFunctor.obj Z).naturality g.1).hom.toNatTrans.app
+                (𝟙 (unop b.1))) ≫
+          (g.2.naturality g.1).hom.toNatTrans.app
+            ((((yonedaPairing.map f).toFunctor.obj Z).app b.1).toFunctor.obj (𝟙 (unop b.1)))) ≫
+        (yonedaEvaluation'.map g).toFunctor.map
+          ((f.2.app b.1).toFunctor.map
+              ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) ≫
+                (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
+            (f.2.naturality f.1).hom.toNatTrans.app
+              ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))) := by
+  rw [strongTrans_comp_naturality_hom_app]
+  simp only [Pseudofunctor.StrongTrans.comp_app, Cat.Hom.comp_toFunctor,
+    Functor.comp_map, Functor.comp_obj]
+  dsimp only [yonedaPairing, yonedaEvaluation']
+  simp only [Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app,
+    Iso.trans_hom, Iso.symm_hom, whiskerRightIso_hom, whiskerLeftIso_hom,
+    homCategory_comp_as_app, whiskerRight_as_app, whiskerLeft_as_app,
+    associator_hom_as_app, associator_inv_as_app,
+    Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+    Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+    Iso.app_hom, Cat.Hom.toNatIso, Cat.associator_hom_app, Cat.associator_inv_app]
+  dsimp only [Functor.toCatHom]
+  rw [strongTrans_comp_naturality_hom_app, strongTrans_comp_naturality_hom_app]
+  simp only [Pseudofunctor.StrongTrans.comp_app, Cat.Hom.comp_toFunctor,
+    Functor.comp_map, Functor.comp_obj, eqToHom_refl, Category.id_comp, Category.comp_id,
+    Category.assoc]
+  simp only [Pseudofunctor.StrongTrans.naturality_comp_hom_app]
+  simp only [Category.assoc, ← Functor.map_comp_assoc, ← Functor.map_comp,
+    Cat.Hom.inv_hom_id_toNatTrans_app, Cat.Hom.inv_hom_id_toNatTrans_app_assoc,
+    Cat.Hom.hom_inv_id_toNatTrans_app, Cat.Hom.hom_inv_id_toNatTrans_app_assoc,
+    Category.id_comp, Category.comp_id, Functor.map_id]
+  iterate 6
+    (first
+      | erw [Cat.Hom.inv_hom_id_toNatTrans_app_assoc]
+      | erw [Cat.Hom.inv_hom_id_toNatTrans_app]
+      | erw [Category.assoc]
+      | skip)
+  simp only [Category.assoc, ← Functor.map_comp_assoc, ← Functor.map_comp,
+    Cat.Hom.inv_hom_id_toNatTrans_app, Cat.Hom.inv_hom_id_toNatTrans_app_assoc,
+    Category.id_comp, Category.comp_id, Functor.map_id]
+  simp only [Cat.Hom.comp_toFunctor, Functor.comp_obj, Functor.comp_map]
+  iterate 6 (first | erw [Category.comp_id] | skip)
+  iterate 4
+    (first
+      | erw [Cat.Hom.hom_inv_id_toNatTrans_app]
+      | erw [Cat.Hom.inv_hom_id_toNatTrans_app]
+      | skip)
+  erw [Functor.map_id, Category.comp_id]
+  simp only [Functor.map_comp, Category.assoc]
+  erw [(g.2.naturality g.1).hom.toNatTrans.naturality]
+  have hpush2 := congrArg (g.2.app c.1).toFunctor.map
+    ((f.2.naturality g.1).hom.toNatTrans.naturality
+      ((Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))))
+  simp only [Cat.Hom.comp_toFunctor, Functor.comp_map, Functor.comp_obj,
+    Functor.map_comp] at hpush2
+  erw [reassoc_of% hpush2]
+  erw [(g.2.naturality g.1).hom.toNatTrans.naturality_assoc]
+  simp only [Category.assoc, ← Functor.map_comp_assoc, ← Functor.map_comp]
+  have hHead_t : (Z.app c.1).toFunctor.map ((λ_ (f.1 ≫ g.1).unop).hom ≫ (ρ_ (f.1 ≫ g.1).unop).inv) ≫
+        (Z.app c.1).toFunctor.map
+            (((yoneda₀ (unop a.1)).mapComp f.1 g.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
+          (Z.naturality g.1).hom.toNatTrans.app
+            (((yoneda₀ (unop a.1)).map f.1).toFunctor.obj (𝟙 (unop a.1)))
+      = (Z.app c.1).toFunctor.map (
+          ((postcompComp₂ g.1.unop f.1.unop).hom.as.app c.1).toNatTrans.app (𝟙 (unop c.1)) ≫
+          ((postcomp₂ f.1.unop).app c.1).toFunctor.map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ≫
+          ((postcomp₂ f.1.unop).naturality g.1).hom.toNatTrans.app (𝟙 (unop b.1))) ≫
+        (Z.app c.1).toFunctor.map
+            (((yoneda₀ (unop a.1)).map g.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)) ≫
+          (Z.naturality g.1).hom.toNatTrans.app
+            (((yoneda₀ (unop a.1)).map f.1).toFunctor.obj (𝟙 (unop a.1))) := by
+    erw [← Functor.map_comp_assoc]; erw [forwards_naturality_comp_head]; erw [Functor.map_comp_assoc]; rfl
+  erw [hHead_t]
+  -- LHS now has `Zc.map(ymgu) ≫ (Z.naturality g.1)` adjacent; transport it through Z.nat g.1.
+  erw [(Z.naturality g.1).hom.toNatTrans.naturality
+    ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)]
+  -- step 2: transport the factor through `f.2.naturality g.1` (inside `G.map`).
+  have hT2 : ∀ {M : ↑(a.2.obj c.1)}
+      (A : (Z.app c.1).toFunctor.obj
+          (((postcomp₂ (g.1.unop ≫ f.1.unop)).app c.1).toFunctor.obj (𝟙 (unop c.1))) ⟶ M)
+      (Bb : M ⟶ (Z.app b.1 ≫ a.2.map g.1).toFunctor.obj (𝟙 (unop b.1) ≫ f.1.unop)),
+      (f.2.app c.1).toFunctor.map
+          (A ≫ Bb ≫ (Z.app b.1 ≫ a.2.map g.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)) ≫
+        (f.2.naturality g.1).hom.toNatTrans.app
+          ((Z.app b.1).toFunctor.obj (((yoneda₀ (unop a.1)).map f.1).toFunctor.obj (𝟙 (unop a.1))))
+      = (f.2.app c.1).toFunctor.map (A ≫ Bb) ≫
+          (f.2.naturality g.1).hom.toNatTrans.app
+            ((Z.app b.1).toFunctor.obj (𝟙 (unop b.1) ≫ f.1.unop)) ≫
+            (b.2.map g.1).toFunctor.map
+              ((f.2.app b.1).toFunctor.map
+                ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv))) := by
+    intro M A Bb
+    rw [Functor.map_comp, Functor.map_comp, Category.assoc, Category.assoc]
+    erw [(f.2.naturality g.1).hom.toNatTrans.naturality
+      ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv))]
+    erw [← Functor.map_comp_assoc]; rfl
+  erw [hT2]
+  -- step 3: transport through `g.2.naturality g.1` (top level; has a trailing tail → reassoc).
+  have hT3 : ∀ {M : ↑(b.2.obj c.1)}
+      (A' : (f.2.app c.1).toFunctor.obj ((Z.app c.1).toFunctor.obj
+          (((postcomp₂ (g.1.unop ≫ f.1.unop)).app c.1).toFunctor.obj (𝟙 (unop c.1)))) ⟶ M)
+      (Bb' : M ⟶ (b.2.map g.1).toFunctor.obj ((f.2.app b.1).toFunctor.obj
+          ((Z.app b.1).toFunctor.obj (𝟙 (unop b.1) ≫ f.1.unop)))),
+      (g.2.app c.1).toFunctor.map
+          (A' ≫ Bb' ≫ (b.2.map g.1).toFunctor.map
+            ((f.2.app b.1).toFunctor.map
+              ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)))) ≫
+        (g.2.naturality g.1).hom.toNatTrans.app
+          ((f.2.app b.1).toFunctor.obj ((Z.app b.1).toFunctor.obj
+            (((yoneda₀ (unop a.1)).map f.1).toFunctor.obj (𝟙 (unop a.1)))))
+      = (g.2.app c.1).toFunctor.map (A' ≫ Bb') ≫
+          (g.2.naturality g.1).hom.toNatTrans.app
+            ((f.2.app b.1).toFunctor.obj ((Z.app b.1).toFunctor.obj (𝟙 (unop b.1) ≫ f.1.unop))) ≫
+            (c.2.map g.1).toFunctor.map
+              ((g.2.app b.1).toFunctor.map
+                ((f.2.app b.1).toFunctor.map
+                  ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)))) := by
+    intro M A' Bb'
+    rw [Functor.map_comp, Functor.map_comp, Category.assoc, Category.assoc]
+    erw [(g.2.naturality g.1).hom.toNatTrans.naturality
+      ((f.2.app b.1).toFunctor.map
+        ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)))]
+    erw [← Functor.map_comp_assoc]; rfl
+  erw [reassoc_of% hT3]
+  erw [Category.id_comp]
+  simp only [Category.assoc, ← Functor.map_comp_assoc, ← Functor.map_comp,
+    Cat.Hom.comp_toFunctor, Functor.comp_map]
+  iterate 60 (first | erw [← Functor.map_comp_assoc] | erw [← Functor.map_comp] | skip)
+  iterate 10 (first | erw [Category.assoc] | skip)
+  iterate 20 (first | erw [← Functor.map_comp] | skip)
+  dsimp only [postcomp₂, postcomposingCat, postcomp, Functor.toCatHom]
+  iterate 20 (first | erw [← Functor.map_comp_assoc] | erw [← Functor.map_comp] | skip)
+  rfl
+
 /--
 The *forward strong transformation* `yonedaPairing ⟶ yonedaEvaluation` for the Yoneda lemma.
 
@@ -1174,7 +1368,22 @@ def yonedaLemmaForwards : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B 
       Cat.Hom.id_toFunctor, Functor.comp_obj, Functor.id_obj]
     erw [Category.comp_id]
     exact forwards_naturality_id_core a Z
-  naturality_comp {a b c} f g := by sorry
+  naturality_comp {a b c} f g := by
+    apply catLift_hom₂_ext; intro Z
+    dsimp only [yonedaLemmaForwardsFunctor]
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+      yonedaEvaluation_mapComp_app_down,
+      Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, id_eq,
+      Functor.mapIso_hom, Iso.trans_hom, Iso.symm_hom,
+      Cat.associator_hom_app, Cat.associator_inv_app]
+    dsimp only [ULiftHom.up, ULift.upFunctor, ULiftHom.objDown, Functor.comp]
+    simp only [Bicategory.prod_comp_fst, Bicategory.prod_comp_snd, Iso.app_hom, Cat.Hom.toNatIso]
+    erw [eqToHom_refl, eqToHom_refl, eqToHom_refl]
+    simp only [Category.comp_id, Category.id_comp, Cat.Hom.comp_toFunctor,
+      Cat.Hom.id_toFunctor, Functor.comp_obj, Functor.id_obj]
+    erw [yonedaEvaluation_map_map_down]
+    exact forwards_naturality_comp_core f g Z
 
 /--
 At a fixed pair `x = (b₀, F)`, an evaluation point `eval : F.obj b₀`, and a component
