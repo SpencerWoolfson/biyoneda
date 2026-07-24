@@ -1,0 +1,40 @@
+info: Biyoneda/Basic.lean:924:42: B : Type u
+inst✝ : Bicategory B
+a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)
+f g : a ⟶ b
+η : f ⟶ g
+⊢ yonedaEvaluation.map₂ η ▷ { toFunctor := yonedaLemmaBackwardsFunctor b } ≫
+      (Cat.Hom.isoMk (NatIso.ofComponents (fun X ↦ backwardsNaturalityIso g X) ⋯)).hom =
+    (Cat.Hom.isoMk (NatIso.ofComponents (fun X ↦ backwardsNaturalityIso f X) ⋯)).hom ≫
+      { toFunctor := yonedaLemmaBackwardsFunctor a } ◁ yonedaPairing.map₂ η
+info: Biyoneda/Basic.lean:925:24: B : Type u
+inst✝ : Bicategory B
+a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)
+⊢ (Cat.Hom.isoMk (NatIso.ofComponents (fun X ↦ backwardsNaturalityIso (𝟙 a) X) ⋯)).hom ≫
+      { toFunctor := yonedaLemmaBackwardsFunctor a } ◁ (yonedaPairing.mapId a).hom =
+    (yonedaEvaluation.mapId a).hom ▷ { toFunctor := yonedaLemmaBackwardsFunctor a } ≫
+      (λ_ { toFunctor := yonedaLemmaBackwardsFunctor a }).hom ≫ (ρ_ { toFunctor := yonedaLemmaBackwardsFunctor a }).inv
+info: Biyoneda/Basic.lean:926:36: B : Type u
+inst✝ : Bicategory B
+a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)
+f : a ⟶ b
+g : b ⟶ c
+⊢ (Cat.Hom.isoMk (NatIso.ofComponents (fun X ↦ backwardsNaturalityIso (f ≫ g) X) ⋯)).hom ≫
+      { toFunctor := yonedaLemmaBackwardsFunctor a } ◁ (yonedaPairing.mapComp f g).hom =
+    (yonedaEvaluation.mapComp f g).hom ▷ { toFunctor := yonedaLemmaBackwardsFunctor c } ≫
+      (α_ (yonedaEvaluation.map f) (yonedaEvaluation.map g) { toFunctor := yonedaLemmaBackwardsFunctor c }).hom ≫
+        yonedaEvaluation.map f ◁ (Cat.Hom.isoMk (NatIso.ofComponents (fun X ↦ backwardsNaturalityIso g X) ⋯)).hom ≫
+          (α_ (yonedaEvaluation.map f) { toFunctor := yonedaLemmaBackwardsFunctor b } (yonedaPairing.map g)).inv ≫
+            (Cat.Hom.isoMk (NatIso.ofComponents (fun X ↦ backwardsNaturalityIso f X) ⋯)).hom ▷ yonedaPairing.map g ≫
+              (α_ { toFunctor := yonedaLemmaBackwardsFunctor a } (yonedaPairing.map f) (yonedaPairing.map g)).hom
+warning: Biyoneda/Basic.lean:919:4: declaration uses `sorry`
+warning: Biyoneda/Basic.lean:1003:10: declaration uses `sorry`
+warning: Biyoneda/Basic.lean:1003:32: declaration uses `sorry`
+warning: Biyoneda/Basic.lean:1014:4: declaration uses `sorry`
+warning: Biyoneda/Basic.lean:1061:51: declaration uses `sorry`
+warning: Biyoneda/Basic.lean:1062:30: declaration uses `sorry`
+warning: Biyoneda/Basic.lean:1035:4: declaration uses `sorry`
+warning: Biyoneda/Basic.lean:1076:4: declaration uses `sorry`
+warning: Biyoneda/Basic.lean:1126:4: declaration uses `sorry`
+✔ [643/644] Built Biyoneda (911ms)
+Build completed successfully (644 jobs).

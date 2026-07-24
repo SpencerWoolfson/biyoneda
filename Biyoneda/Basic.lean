@@ -1004,6 +1004,119 @@ lemma yonedaEvaluation_mapComp_app_down {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.
   erw [Category.comp_id]; rfl
 
 /--
+The `Z`-side identity underlying `naturality_naturality` for `yonedaLemmaForwards`.
+
+Transporting the evaluation point `𝟙` along `η.1` and then through `Z.naturality g.1` agrees
+with going through `Z.naturality f.1` and then applying `a.2.map₂ η.1`.  It is exactly the
+2-naturality of `Z.naturality` in the 2-cell `η.1` (`Z.naturality_naturality`), combined with
+right-unitor naturality to reconcile the two unitor spellings.
+-/
+lemma forwards_naturality_naturality_Z {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} {f g : a ⟶ b}
+    (η : f ⟶ g) (Z : ↑(yonedaPairing.obj a)) :
+    (Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ η.1.unop2 ≫ (λ_ g.1.unop).inv) ≫
+      (Z.app b.1).toFunctor.map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ≫
+        (Z.naturality g.1).hom.toNatTrans.app (𝟙 (unop a.1)) =
+    ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) ≫
+        (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
+      (a.2.map₂ η.1).toNatTrans.app ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) := by
+  rw [Category.assoc]
+  have h3 := Cat.Hom₂.congr_app (Z.naturality_naturality η.1) (𝟙 (unop a.1))
+  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app] at h3
+  dsimp [yoneda₀, precomposing, precomposingCat] at h3
+  erw [← h3]
+  conv_lhs => rw [← Category.assoc, ← Functor.map_comp]
+  conv_rhs => rw [← Category.assoc, ← Functor.map_comp]
+  congr 2
+  simp only [Category.assoc]
+  erw [Iso.inv_hom_id_assoc, Bicategory.rightUnitor_inv_naturality]
+  rfl
+
+/--
+The component core of the `naturality_naturality` obligation of `yonedaLemmaForwards`, stated
+in the unlifted fibre (the `.down` of the lifted 2-cells).
+
+It says the forward naturality isomorphism is natural in the 2-cell `η = (η.1, η.2)`.  The
+proof splits `η` into its two components: the modification part `η.2` contributes
+`modification_naturality_app`, the base 2-cell `η.1` contributes `g.2.naturality_naturality`,
+and the evaluation point is handled by `forwards_naturality_naturality_Z`.
+-/
+lemma forwards_naturality_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} {f g : a ⟶ b}
+    (η : f ⟶ g) (Z : ↑(yonedaPairing.obj a)) :
+    (((yonedaPairing.map₂ η).toNatTrans.app Z).as.app b.1).toNatTrans.app (𝟙 (unop b.1)) ≫
+        ((g.2.app b.1).toFunctor.map
+            ((Z.app b.1).toFunctor.map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ≫
+              ((Cat.Hom.toNatIso (Z.naturality g.1)).app (𝟙 (unop a.1))).hom) ≫
+          ((Cat.Hom.toNatIso (g.2.naturality g.1)).app
+              ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))).hom) =
+    ((f.2.app b.1).toFunctor.map
+            ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) ≫
+              ((Cat.Hom.toNatIso (Z.naturality f.1)).app (𝟙 (unop a.1))).hom) ≫
+          ((Cat.Hom.toNatIso (f.2.naturality f.1)).app
+              ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))).hom) ≫
+      (yonedaEvaluation'.map₂ η).toNatTrans.app ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) := by
+  dsimp only [yonedaPairing, Cat.toCatHom₂_toNatTrans, yonedaPairingMap₂, yonedaEvaluation',
+    postcomposing₂, postcomposingCat]
+  simp only [NatTrans.comp_app, precomposing_map_app, postcomposing_map_app,
+    precomposing_obj, postcomposing_obj, precomp_map,
+    Cat.toCatHom₂_toNatTrans, whiskerLeft_as_app, whiskerRight_as_app,
+    homCategory_comp_as_app,
+    Cat.Hom.toNatTrans_comp, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
+    whiskerLeft_app, whiskerRight_app, Iso.app_hom, Cat.Hom.toNatIso]
+  simp only [Pseudofunctor.StrongTrans.comp_app, Functor.comp_map,
+    postcomp₂, postcomposingCat, postcomp_obj, Cat.Hom.comp_toFunctor,
+    Bicategory.id_whiskerLeft]
+  have h1 := modification_naturality_app η.2 f.1 ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))
+  have h2 := Cat.Hom₂.congr_app (g.2.naturality_naturality η.1)
+    ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))
+  dsimp at h1 h2
+  simp only [Category.assoc]
+  erw [← reassoc_of% h1, ← h2]
+  erw [(η.2.as.app b.1).toNatTrans.naturality,
+    (η.2.as.app b.1).toNatTrans.naturality_assoc]
+  erw [Category.assoc]
+  refine congrArg (fun m => (η.2.as.app b.1).toNatTrans.app _ ≫ m) ?_
+  erw [← Functor.map_comp_assoc]
+  erw [forwards_naturality_naturality_Z η Z]
+  erw [Functor.map_comp_assoc]
+  rfl
+
+/--
+The component core of the `naturality_id` obligation of `yonedaLemmaForwards`, stated in the
+unlifted fibre.
+
+This is the genuine unit coherence: it relates `yonedaPairing.mapId` to `a.2.mapId`.  The proof
+is driven by `Z.naturality_id` — the unit coherence of the strong transformation `Z` itself —
+after which both sides are pure unitor data and the remaining content is
+`Bicategory.unitors_equal` (`(λ_ (𝟙 x)).hom = (ρ_ (𝟙 x)).hom`).
+-/
+lemma forwards_naturality_id_core (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}))
+    (Z : ↑(yonedaPairing.obj a)) :
+    ((Z.app a.1).toFunctor.map ((λ_ (𝟙 a.1).unop).hom ≫ (ρ_ (𝟙 a.1).unop).inv) ≫
+        (Z.naturality (𝟙 a.1)).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
+      (yonedaEvaluation'.mapId a).hom.toNatTrans.app ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) =
+    (((yonedaPairing.mapId a).hom.toNatTrans.app Z).as.app a.1).toNatTrans.app (𝟙 (unop a.1)) := by
+  dsimp only [yonedaPairing, yonedaEvaluation']
+  simp only [Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app,
+    Iso.trans_hom, Iso.symm_hom, whiskerRightIso_hom, homCategory_comp_as_app,
+    whiskerRight_as_app, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+    Cat.whiskerRight_toNatTrans, whiskerRight_app]
+  have hZ := Cat.Hom₂.congr_app (Z.naturality_id a.1) (𝟙 (unop a.1))
+  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app] at hZ
+  simp only [Category.assoc]
+  erw [hZ]
+  simp only [Pseudofunctor.StrongTrans.comp_app,
+    Pseudofunctor.StrongTrans.categoryStruct_id_app,
+    Cat.Hom.comp_toFunctor, Cat.Hom.id_toFunctor, Functor.comp_map, Functor.id_map,
+    Cat.leftUnitor_hom_app, Cat.rightUnitor_inv_app, eqToHom_trans]
+  dsimp [postcompId₂, bicategoricalIso]
+  simp only [Bicategory.unitors_equal]
+  dsimp [Functor.leftUnitor, Functor.rightUnitor]
+  erw [NatTrans.comp_app, NatTrans.comp_app, NatTrans.id_app, Category.id_comp]
+  simp
+
+/--
 The *forward strong transformation* `yonedaPairing ⟶ yonedaEvaluation` for the Yoneda lemma.
 
 At each pair `x = (b, F)`, the component functor is `yonedaLemmaForwardsFunctor x`, which
@@ -1031,8 +1144,36 @@ def yonedaLemmaForwards : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B 
       simp only [map_comp, Category.assoc]
       exact Quiver.homOfEq_injective rfl rfl
         (congrArg (ULiftHom.up.map) (forwards_naturality_component f h))
-  naturality_naturality {a b f g} η := by sorry
-  naturality_id a := by sorry
+  naturality_naturality {a b f g} η := by
+    apply catLift_hom₂_ext; intro Z
+    dsimp only [yonedaLemmaForwardsFunctor]
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+      yonedaEvaluation_map₂_app_down,
+      Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, id_eq,
+      Functor.mapIso_hom, Iso.trans_hom, Iso.symm_hom]
+    exact forwards_naturality_naturality_core η Z
+  naturality_id a := by
+    apply catLift_hom₂_ext; intro Z
+    dsimp only [yonedaLemmaForwardsFunctor]
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+      yonedaEvaluation_mapId_app_down,
+      Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, id_eq,
+      Functor.mapIso_hom, Iso.trans_hom, Iso.symm_hom, Cat.leftUnitor_hom_app,
+      Cat.rightUnitor_inv_app]
+    dsimp only [ULiftHom.up, ULift.upFunctor, ULiftHom.objDown, Functor.comp]
+    simp only [Bicategory.prod_id_fst, Bicategory.prod_id_snd,
+      Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_map,
+      Iso.app_hom, Cat.Hom.toNatIso,
+      Pseudofunctor.StrongTrans.categoryStruct_id_naturality_hom]
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.rightUnitor_hom_app,
+      Cat.leftUnitor_inv_app, eqToHom_trans]
+    erw [eqToHom_refl, eqToHom_refl]
+    simp only [Category.comp_id, Cat.Hom.comp_toFunctor,
+      Cat.Hom.id_toFunctor, Functor.comp_obj, Functor.id_obj]
+    erw [Category.comp_id]
+    exact forwards_naturality_id_core a Z
   naturality_comp {a b c} f g := by sorry
 
 /--

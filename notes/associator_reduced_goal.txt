@@ -1,0 +1,70 @@
+case h
+B : Type u
+inst✝ : Bicategory B
+a b c d : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)
+f : a ⟶ b
+g : b ⟶ c
+h : c ⟶ d
+Z : ↑(a.2.obj a.1)
+⊢ (d.2.map ((f ≫ g) ≫ h).1).toFunctor.map (((α_ f g h).hom.2.as.app a.1).toNatTrans.app Z) ≫
+      (d.2.map₂ (α_ f g h).hom.1).toNatTrans.app (((f ≫ g ≫ h).2.app a.1).toFunctor.obj Z) =
+    ((d.2.mapComp (f ≫ g).1 h.1).hom.toNatTrans.app (((f ≫ g).2.app a.1 ≫ h.2.app a.1).toFunctor.obj Z) ≫
+        ((d.2.map h.1).toFunctor.map
+              ((h.2.naturality (f ≫ g).1).inv.toNatTrans.app (((f ≫ g).2.app a.1).toFunctor.obj Z)) ≫
+            𝟙 (((c.2.map (f ≫ g).1 ≫ h.2.app c.1) ≫ d.2.map h.1).toFunctor.obj (((f ≫ g).2.app a.1).toFunctor.obj Z))) ≫
+          𝟙 (((c.2.map (f ≫ g).1 ≫ h.2.app c.1) ≫ d.2.map h.1).toFunctor.obj (((f ≫ g).2.app a.1).toFunctor.obj Z))) ≫
+      (h.2.app c.1 ≫ d.2.map h.1).toFunctor.map
+          ((c.2.mapComp f.1 g.1).hom.toNatTrans.app ((f.2.app a.1 ≫ g.2.app a.1).toFunctor.obj Z) ≫
+            ((c.2.map g.1).toFunctor.map ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
+                𝟙 (((b.2.map f.1 ≫ g.2.app b.1) ≫ c.2.map g.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+              𝟙 (((b.2.map f.1 ≫ g.2.app b.1) ≫ c.2.map g.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+        ((((d.2.map h.1).toFunctor.map
+                  ((h.2.naturality g.1).hom.toNatTrans.app
+                    ((g.2.app b.1).toFunctor.obj ((f.2.app a.1 ≫ b.2.map f.1).toFunctor.obj Z))) ≫
+                𝟙
+                  (((h.2.app b.1 ≫ d.2.map g.1) ≫ d.2.map h.1).toFunctor.obj
+                    ((g.2.app b.1).toFunctor.obj ((f.2.app a.1 ≫ b.2.map f.1).toFunctor.obj Z)))) ≫
+              𝟙
+                (((h.2.app b.1 ≫ d.2.map g.1) ≫ d.2.map h.1).toFunctor.obj
+                  ((g.2.app b.1).toFunctor.obj ((f.2.app a.1 ≫ b.2.map f.1).toFunctor.obj Z)))) ≫
+            (d.2.mapComp g.1 h.1).inv.toNatTrans.app
+              ((g.2.app b.1 ≫ h.2.app b.1).toFunctor.obj ((f.2.app a.1 ≫ b.2.map f.1).toFunctor.obj Z))) ≫
+          (((𝟙 (((f.2.app a.1 ≫ b.2.map f.1) ≫ (g ≫ h).2.app b.1 ≫ d.2.map (g ≫ h).1).toFunctor.obj Z) ≫
+                  (d.2.map (g ≫ h).1).toFunctor.map
+                    (((g ≫ h).2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))) ≫
+                𝟙
+                  ((((g ≫ h).2.app a.1 ≫ d.2.map f.1) ≫ d.2.map (g ≫ h).1).toFunctor.obj
+                    ((f.2.app a.1).toFunctor.obj Z))) ≫
+              𝟙
+                ((((g ≫ h).2.app a.1 ≫ d.2.map f.1) ≫ d.2.map (g ≫ h).1).toFunctor.obj
+                  ((f.2.app a.1).toFunctor.obj Z))) ≫
+            (d.2.mapComp f.1 (g ≫ h).1).inv.toNatTrans.app ((f.2.app a.1 ≫ (g ≫ h).2.app a.1).toFunctor.obj Z)
+Biyoneda/Basic.lean:571:4: warning: declaration uses `sorry`
+Biyoneda/Basic.lean:590:41: warning: This simp argument is unused:
+  Cat.whiskerLeft_app
+
+Hint: Omit it from the simp argument list.
+  simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv, whiskerLeftIso_hom,
+        whiskerLeftIso_inv, whiskerRightIso_hom, whiskerRightIso_inv, Cat.Hom.toNatTrans_comp,
+        NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
+  ̵  ̵ ̵ ̵ ̵ ̵whiskerLeft_app,
+  ̲  ̲ ̲ ̲ ̲ ̲whiskerRight_app, Cat.whiskerL̵e̵f̵t̵_̵a̵p̵p̵,̵ ̵C̵a̵t̵.̵w̵h̵i̵s̵k̵e̵r̵Right_app,
+  ̵  ̵ ̵ ̵ ̵ ̵Cat.Hom₂.comp_app, Cat.associator_hom_app,
+  ̲  ̲ ̲ ̲ ̲ ̲Cat.associator_inv_app, eqToHom_refl,
+  ̵  ̵ ̵ ̵ ̵ ̵Category.comp_id, Category.id_comp]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+Biyoneda/Basic.lean:590:62: warning: This simp argument is unused:
+  Cat.whiskerRight_app
+
+Hint: Omit it from the simp argument list.
+  simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv, whiskerLeftIso_hom,
+        whiskerLeftIso_inv, whiskerRightIso_hom, whiskerRightIso_inv, Cat.Hom.toNatTrans_comp,
+        NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
+  ̵  ̵ ̵ ̵ ̵ ̵whiskerLeft_app,
+  ̲  ̲ ̲ ̲ ̲ ̲whiskerRight_app, Cat.whiskerL̵e̵f̵L̲e̲f̲t_app, Cat.w̵h̵i̵s̵k̵e̵r̵R̵i̵g̵h̵t̵_̵a̵p̵p̵,̵
+  ̵ ̵ ̵ ̵ ̵ ̵ ̵C̵a̵t̵.̵Hom₂.comp_app, Cat.associator_hom_app,
+  ̲  ̲ ̲ ̲ ̲ ̲Cat.associator_inv_app, eqToHom_refl,
+  ̵  ̵ ̵ ̵ ̵ ̵Category.comp_id, Category.id_comp]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
