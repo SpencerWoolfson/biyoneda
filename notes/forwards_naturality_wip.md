@@ -106,11 +106,49 @@ Note `forwards_naturality_id_core` reports `declaration uses sorry`. That is **i
 its statement mentions `yonedaPairing.mapId`, whose own `NatIso.ofComponents` naturality field
 is still sorried (task #1, `Biyoneda/Basic.lean` ~line 306). The core's own proof is complete.
 
-## Remaining: naturality_comp — ~85% done, partial proof saved
+## Remaining: naturality_comp — ~95% done, the hard part is PROVEN
 
-**`notes/naturality_comp_partial.lean.txt` is a compiling probe file** (only its `fnc_core`
-is `sorry`ed). Copy it to `Biyoneda/Probe.lean` and resume from the `trace_state` at the end.
-It already contains, all verified:
+**`notes/naturality_comp_partial.lean.txt` is a compiling probe file** (only the final
+`u_f`-transport of `fnc_core` is `sorry`ed). Copy it to `Biyoneda/Probe.lean` and resume.
+
+**The genuine mathematical content is done: `fnc_head` is proven and integrated.**
+`fnc_head` is the head unit-coherence in `B`'s hom-categories — `u_{f≫g}` composed with the
+yoneda `mapComp` equals the `postcompComp₂` reorganisation with `u_g`, `u_f`. The key discovery:
+`(yoneda₀).mapComp`, `postcompComp₂` (= `Bicategory.yoneda.mapComp`), and `postcomp₂.naturality`
+are all built from `associatorNatIso{Right,Middle,Left}Cat`, i.e. **pure associators/unitors**,
+so `fnc_head` closes by:
+```
+erw [show (yoneda₀ _).map g.1 |>.map u_f = g.1.unop ◁ u_f from rfl,
+     show (postcomp₂ _).app c.1 |>.map u_g = u_g ▷ f.1.unop from rfl]  -- these .map's are rfl whiskerings
+dsimp only [postcompComp₂, yoneda, postcomp₂, yoneda₀, associatorNatIso{Right,Middle,Left}Cat]
+simp only [Cat.Hom.isoMk_hom/inv, Cat.toCatHom₂_toNatTrans, Iso.symm_hom,
+  NatIso.ofComponents_hom/inv_app, homCategory_comp_as_app, isoMk_{inv,hom}_as_app]
+bicategory
+```
+
+**`fnc_head` is integrated into `fnc_core`** via `hHead_t` — a `have` stating the head equality
+*with the trailing `Z.naturality g.1` factor included* (so plain `rw` can't reach it but the
+whole `F.map`-argument subterm can), proven `erw [← Functor.map_comp_assoc]; erw [fnc_head]; rfl`,
+then `erw [hHead_t]`. This is the pattern for rewriting under `G.map (F.map _)` wrappers when the
+bicategory-hom diamond blocks combining maps: **state the full wrapper-argument subterm as a
+`have` and `erw` it.**  (Sharp lesson learned the hard way: a `str.replace`-based edit whose
+target string didn't match leaves the file unchanged and every "experiment" silently re-runs the
+old proof — verify edits actually landed before concluding a tactic "fails".)
+
+### What is left — the mechanical `u_f`-transport (verified tractable)
+After `erw [hHead_t]` both sides are postcomp-form and differ ONLY by the position of the single
+`u_f = (λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv` factor: LHS carries `(yoneda₀).map g.1 |>.map u_f`
+at the head (just before `Z.naturality g.1`); RHS carries `Z.app b.1 |>.map u_f` in the tail.
+Transport it through the three naturality squares. The three transport identities are each just
+`(_.naturality g.1).hom.toNatTrans.naturality u_f`; the first is **verified**:
+`Zc.map ((yoneda₀).map g.1 |>.map m) ≫ (Z.naturality g.1).hom.app Y
+   = (Z.naturality g.1).hom.app X ≫ (a.2.map g.1).map (Z.app b.1 |>.map m)`
+(literally `(Z.naturality g.1).hom.toNatTrans.naturality m`), then analogously through
+`f.2.naturality g.1` and `g.2.naturality g.1` to reach the tail. Do each as a `hHead_t`-style
+`have`+`erw` (state the wrapper-argument subterm including the adjacent nat factor). Both sides
+then match and it closes.
+
+### Reusable lemmas already in the partial (all verified):
 
 * `yonedaEvaluation_map_map_down` — the missing sibling of the `_app_down` family:
   `(yonedaEvaluation.map f).toFunctor.map {down := m} = {down := (yonedaEvaluation'.map f)…m}`.
@@ -122,41 +160,29 @@ It already contains, all verified:
   `categoryStruct_comp_naturality_hom` + the `iterate … erw [eqToHom_refl] …` idiom.
 * The `naturality_comp` **field proof** (descent + reduction), verified to reduce the whole
   obligation to `fnc_core` by `exact`.
-* `fnc_core`'s proof reduced to the point where **both sides align position-by-position**.
+* `fnc_head` (the head coherence, proven — see above) and its integration `hHead_t`.
 
-### The assembly that works
+### The reduction inside `fnc_core` that reaches the postcomp-form (all in the partial)
 1. `rw [comp_naturality_hom_app]` splits the LHS's `(f.2 ≫ g.2).naturality (f.1 ≫ g.1)`.
 2. Unfold `yonedaPairing`/`yonedaEvaluation'`, then `dsimp only [Functor.toCatHom]` to turn
    `(yonedaPairing.map f).obj Z` into `postcomp₂ f.1.unop ≫ Z ≫ f.2`, then
    `rw [comp_naturality_hom_app, comp_naturality_hom_app]` for the RHS's nested naturality.
-3. `simp only [Pseudofunctor.StrongTrans.naturality_comp_hom_app]` — **this is the key
-   telescoping step**. It rewrites all three `naturality (f.1 ≫ g.1)` at once (for `Z`, `f.2`,
-   `g.2`) and the `mapComp`s then cancel in a chain: `c.2.mapComp` against `g.2`'s,
-   `b.2.mapComp` against `f.2`'s, `a.2.mapComp` against `Z`'s.
-4. Cancel those three inv/hom pairs (needs `erw`, and the trailing `≫ 𝟙` needs the object
-   spelling normalised by `Cat.Hom.comp_toFunctor, Functor.comp_obj` first — same trap as
-   `naturality_id`).
-5. Push the `f.1`-parts rightward through three naturality squares. The technique that works:
-   `have h := congrArg (outerFunctor).map ((…naturality …).hom.toNatTrans.naturality m)`,
+3. `simp only [Pseudofunctor.StrongTrans.naturality_comp_hom_app]` — **the key telescoping
+   step**. Rewrites all three `naturality (f.1 ≫ g.1)` at once (for `Z`, `f.2`, `g.2`); the
+   `mapComp`s then cancel in a chain (`c.2` vs `g.2`'s, `b.2` vs `f.2`'s, `a.2` vs `Z`'s).
+4. Cancel those three inv/hom pairs (needs `erw`; trailing `≫ 𝟙` needs the object spelling
+   normalised by `Cat.Hom.comp_toFunctor, Functor.comp_obj` first — same trap as `naturality_id`).
+5. Push the `f.1`-parts rightward through the naturality squares:
+   `have h := congrArg (outerFunctor).map ((…naturality…).hom.toNatTrans.naturality m)`,
    `simp only [Cat.Hom.comp_toFunctor, Functor.comp_map, Functor.comp_obj, Functor.map_comp] at h`,
    then **`erw [reassoc_of% h]`** (plain `erw [h]` fails — the pair is `A ≫ (B ≫ rest)`).
+6. `erw [hHead_t]` — applies `fnc_head` under the wrappers (see above). Now both sides are
+   postcomp-form and only the `u_f`-transport remains (documented above).
 
-### What is left (the only remaining content)
-Both sides are now the same 7-factor chain. The single residual difference:
-* LHS head carries `Z.app c.1 |>.map ((λ_ (f.1 ≫ g.1).unop).hom ≫ (ρ_ (f.1 ≫ g.1).unop).inv)`
-  and `Z.app c.1 |>.map (((yoneda₀ _).mapComp f.1 g.1).hom.app (𝟙 _))`;
-* RHS head instead carries `Z.app c.1 |>.map ((postcompComp₂ g.1.unop f.1.unop).hom.as.app c.1 …)`,
-  `… ((postcomp₂ f.1.unop).app c.1).map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv)` and
-  `… ((postcomp₂ f.1.unop).naturality g.1).hom.app (𝟙 _)`;
-* and the RHS tail has one extra factor `Z.app b.1 |>.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)`
-  buried inside `(c.2.map g.1).map (g.2.app b.1 |>.map (f.2.app b.1 |>.map …))`.
-
-So the finish is: push that extra tail factor leftward (three more of the step-5 pushes) until
-it joins the head, then prove a **pure unitor/yoneda coherence in `B`'s hom-categories**
-relating `u_{f≫g}` to `postcompComp₂`, `postcomp₂`'s naturality and `u_f`, `u_g` — the
-composition-analogue of the `Bicategory.unitors_equal` finish that closed `naturality_id`.
-
-### Warning
-Every associativity/`Functor.map_comp` step here needs `erw`, and `simp only [Functor.map_comp]`
-eventually stops making progress because the remaining `≫` sit on the bicategory-hom instance
-path. Budget for that; it is what stalled this obligation, not the mathematics.
+### Global warning (applies to the whole obligation)
+Every associativity / `Functor.map_comp` / map-combine step needs `erw`, not `rw`/`simp`: the
+`≫` sit on the bicategory-hom instance path (a diamond), invisible at reducible transparency.
+`simp only [Functor.map_comp]` eventually "makes no progress" for that reason. To rewrite a fact
+under `G.map (F.map _)` wrappers, state the *whole wrapper-argument subterm* (including adjacent
+factors so it is a genuine subterm) as a `have` and `erw` it — this is what `hHead_t` does.
+Budget for this friction; it is the whole difficulty, not the mathematics.

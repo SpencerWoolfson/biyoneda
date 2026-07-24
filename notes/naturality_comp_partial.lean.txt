@@ -31,6 +31,27 @@ lemma comp_naturality_hom_app {F G H : Bᵒᵖ ⥤ᵖ Cat.{w, v}} (η : F ⟶ G)
     (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
   rfl
 
+/-- The head unit-coherence in `B`'s hom-categories underlying `naturality_comp`: `u_{f≫g}`
+composed with the yoneda `mapComp` equals the postcomp₂ reorganisation with `u_g`, `u_f`.  Both
+sides are pure associator/unitor data — `bicategory` after unfolding to `α_`/`λ_`/`ρ_`. -/
+lemma fnc_head {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c) :
+    ((λ_ (f.1 ≫ g.1).unop).hom ≫ (ρ_ (f.1 ≫ g.1).unop).inv) ≫
+        ((yoneda₀ (unop a.1)).mapComp f.1 g.1).hom.toNatTrans.app (𝟙 (unop a.1)) =
+    ((postcompComp₂ g.1.unop f.1.unop).hom.as.app c.1).toNatTrans.app (𝟙 (unop c.1)) ≫
+      ((postcomp₂ f.1.unop).app c.1).toFunctor.map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ≫
+        ((postcomp₂ f.1.unop).naturality g.1).hom.toNatTrans.app (𝟙 (unop b.1)) ≫
+          ((yoneda₀ (unop a.1)).map g.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) := by
+  erw [show ((yoneda₀ (unop a.1)).map g.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)
+        = g.1.unop ◁ ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) from rfl,
+     show ((postcomp₂ f.1.unop).app c.1).toFunctor.map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv)
+        = ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ▷ f.1.unop from rfl]
+  dsimp only [postcompComp₂, yoneda, postcomp₂, yoneda₀,
+    associatorNatIsoRightCat, associatorNatIsoMiddleCat, associatorNatIsoLeftCat]
+  simp only [Cat.Hom.isoMk_hom, Cat.Hom.isoMk_inv, Cat.toCatHom₂_toNatTrans, Iso.symm_hom,
+    NatIso.ofComponents_hom_app, NatIso.ofComponents_inv_app,
+    homCategory_comp_as_app, isoMk_inv_as_app, isoMk_hom_as_app]
+  bicategory
+
 set_option maxHeartbeats 1600000 in
 /-- Core of `naturality_comp` for `yonedaLemmaForwards` (unlifted fibre form). -/
 lemma fnc_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
@@ -105,6 +126,21 @@ lemma fnc_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g
     Functor.map_comp] at hpush2
   erw [reassoc_of% hpush2]
   erw [(g.2.naturality g.1).hom.toNatTrans.naturality_assoc]
-  simp only [Category.assoc, ← Functor.map_comp]
-  trace_state
-  sorry
+  simp only [Category.assoc, ← Functor.map_comp_assoc, ← Functor.map_comp]
+  have hHead_t : (Z.app c.1).toFunctor.map ((λ_ (f.1 ≫ g.1).unop).hom ≫ (ρ_ (f.1 ≫ g.1).unop).inv) ≫
+        (Z.app c.1).toFunctor.map
+            (((yoneda₀ (unop a.1)).mapComp f.1 g.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
+          (Z.naturality g.1).hom.toNatTrans.app
+            (((yoneda₀ (unop a.1)).map f.1).toFunctor.obj (𝟙 (unop a.1)))
+      = (Z.app c.1).toFunctor.map (
+          ((postcompComp₂ g.1.unop f.1.unop).hom.as.app c.1).toNatTrans.app (𝟙 (unop c.1)) ≫
+          ((postcomp₂ f.1.unop).app c.1).toFunctor.map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ≫
+          ((postcomp₂ f.1.unop).naturality g.1).hom.toNatTrans.app (𝟙 (unop b.1)) ≫
+          ((yoneda₀ (unop a.1)).map g.1).toFunctor.map
+            ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)) ≫
+        (Z.naturality g.1).hom.toNatTrans.app
+          (((yoneda₀ (unop a.1)).map f.1).toFunctor.obj (𝟙 (unop a.1))) := by
+    erw [← Functor.map_comp_assoc]; erw [fnc_head]; rfl
+  erw [hHead_t]
+  -- Both sides are now in postcomp form and agree except for the position of the single
+  -- `u_f = (λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv` factor: LHS carries
