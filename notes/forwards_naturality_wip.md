@@ -106,13 +106,57 @@ Note `forwards_naturality_id_core` reports `declaration uses sorry`. That is **i
 its statement mentions `yonedaPairing.mapId`, whose own `NatIso.ofComponents` naturality field
 is still sorried (task #1, `Biyoneda/Basic.lean` ~line 306). The core's own proof is complete.
 
-## Remaining: naturality_comp
-Same descent (`catLift_hom₂_ext`, `dsimp only [yonedaLemmaForwardsFunctor]`, the reduction
-pipeline) but with `yonedaEvaluation_mapComp_app_down` in place of `_map₂_app_down`, and with
-`yonedaPairing.mapComp` (rather than `mapId`) on the right-hand side — note that field's
-naturality is *also* still sorried (line ~323), so expect the same inherited-sorry warning.
+## Remaining: naturality_comp — ~85% done, partial proof saved
 
-Expect the driver to be **`Z.naturality_comp`** (the composition coherence of `Z`), exactly
-mirroring how `naturality_id` used `Z.naturality_id` and `naturality_naturality` used
-`g.2.naturality_naturality`. `postcompComp₂` will play the role `postcompId₂` played, and
-`Pseudofunctor.mapComp_assoc_right_hom` may be needed for the associator bookkeeping.
+**`notes/naturality_comp_partial.lean.txt` is a compiling probe file** (only its `fnc_core`
+is `sorry`ed). Copy it to `Biyoneda/Probe.lean` and resume from the `trace_state` at the end.
+It already contains, all verified:
+
+* `yonedaEvaluation_map_map_down` — the missing sibling of the `_app_down` family:
+  `(yonedaEvaluation.map f).toFunctor.map {down := m} = {down := (yonedaEvaluation'.map f)…m}`.
+  Needed because `naturality_comp`'s RHS applies `yonedaEvaluation.map g` to a lifted 2-cell.
+* `comp_naturality_hom_app` — **reusable**: the component form of a *composite* strong
+  transformation's naturality constraint,
+  `((η ≫ θ).naturality k).hom.app x = (θ.app _).map ((η.naturality k).hom.app x) ≫
+  (θ.naturality k).hom.app ((η.app _).obj x)`. Proved from
+  `categoryStruct_comp_naturality_hom` + the `iterate … erw [eqToHom_refl] …` idiom.
+* The `naturality_comp` **field proof** (descent + reduction), verified to reduce the whole
+  obligation to `fnc_core` by `exact`.
+* `fnc_core`'s proof reduced to the point where **both sides align position-by-position**.
+
+### The assembly that works
+1. `rw [comp_naturality_hom_app]` splits the LHS's `(f.2 ≫ g.2).naturality (f.1 ≫ g.1)`.
+2. Unfold `yonedaPairing`/`yonedaEvaluation'`, then `dsimp only [Functor.toCatHom]` to turn
+   `(yonedaPairing.map f).obj Z` into `postcomp₂ f.1.unop ≫ Z ≫ f.2`, then
+   `rw [comp_naturality_hom_app, comp_naturality_hom_app]` for the RHS's nested naturality.
+3. `simp only [Pseudofunctor.StrongTrans.naturality_comp_hom_app]` — **this is the key
+   telescoping step**. It rewrites all three `naturality (f.1 ≫ g.1)` at once (for `Z`, `f.2`,
+   `g.2`) and the `mapComp`s then cancel in a chain: `c.2.mapComp` against `g.2`'s,
+   `b.2.mapComp` against `f.2`'s, `a.2.mapComp` against `Z`'s.
+4. Cancel those three inv/hom pairs (needs `erw`, and the trailing `≫ 𝟙` needs the object
+   spelling normalised by `Cat.Hom.comp_toFunctor, Functor.comp_obj` first — same trap as
+   `naturality_id`).
+5. Push the `f.1`-parts rightward through three naturality squares. The technique that works:
+   `have h := congrArg (outerFunctor).map ((…naturality …).hom.toNatTrans.naturality m)`,
+   `simp only [Cat.Hom.comp_toFunctor, Functor.comp_map, Functor.comp_obj, Functor.map_comp] at h`,
+   then **`erw [reassoc_of% h]`** (plain `erw [h]` fails — the pair is `A ≫ (B ≫ rest)`).
+
+### What is left (the only remaining content)
+Both sides are now the same 7-factor chain. The single residual difference:
+* LHS head carries `Z.app c.1 |>.map ((λ_ (f.1 ≫ g.1).unop).hom ≫ (ρ_ (f.1 ≫ g.1).unop).inv)`
+  and `Z.app c.1 |>.map (((yoneda₀ _).mapComp f.1 g.1).hom.app (𝟙 _))`;
+* RHS head instead carries `Z.app c.1 |>.map ((postcompComp₂ g.1.unop f.1.unop).hom.as.app c.1 …)`,
+  `… ((postcomp₂ f.1.unop).app c.1).map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv)` and
+  `… ((postcomp₂ f.1.unop).naturality g.1).hom.app (𝟙 _)`;
+* and the RHS tail has one extra factor `Z.app b.1 |>.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)`
+  buried inside `(c.2.map g.1).map (g.2.app b.1 |>.map (f.2.app b.1 |>.map …))`.
+
+So the finish is: push that extra tail factor leftward (three more of the step-5 pushes) until
+it joins the head, then prove a **pure unitor/yoneda coherence in `B`'s hom-categories**
+relating `u_{f≫g}` to `postcompComp₂`, `postcomp₂`'s naturality and `u_f`, `u_g` — the
+composition-analogue of the `Bicategory.unitors_equal` finish that closed `naturality_id`.
+
+### Warning
+Every associativity/`Functor.map_comp` step here needs `erw`, and `simp only [Functor.map_comp]`
+eventually stops making progress because the remaining `≫` sit on the bicategory-hom instance
+path. Budget for that; it is what stalled this obligation, not the mathematics.

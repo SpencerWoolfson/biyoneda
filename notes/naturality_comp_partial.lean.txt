@@ -1,0 +1,110 @@
+import Biyoneda.Basic
+
+open CategoryTheory Bicategory Bicategory.Opposite Opposite Pseudofunctor StrongTrans Functor
+open scoped Pseudofunctor.StrongTrans
+
+universe u v w v₁ v₂ u₁ u₂
+
+attribute [local instance] uliftCategory
+
+variable {B : Type u} [Bicategory.{w, v} B]
+
+/-- Reduction: the lifted evaluation pseudofunctor's action on a lifted morphism. -/
+lemma yonedaEvaluation_map_map_down {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
+    {x y : ↑(yonedaEvaluation'.obj a)} (m : x ⟶ y) :
+    (yonedaEvaluation.map f).toFunctor.map { down := m }
+      = { down := (yonedaEvaluation'.map f).toFunctor.map m } := by
+  dsimp [yonedaEvaluation, Pseudofunctor.comp, catPseudoULift, catLift, ULiftHom.up]
+  rfl
+
+/-- Component form of the naturality constraint of a composite strong transformation. -/
+lemma comp_naturality_hom_app {F G H : Bᵒᵖ ⥤ᵖ Cat.{w, v}} (η : F ⟶ G) (θ : G ⟶ H)
+    {X Y : Bᵒᵖ} (k : X ⟶ Y) (x : ↑(F.obj X)) :
+    ((η ≫ θ).naturality k).hom.toNatTrans.app x =
+      (θ.app Y).toFunctor.map ((η.naturality k).hom.toNatTrans.app x) ≫
+        (θ.naturality k).hom.toNatTrans.app ((η.app X).toFunctor.obj x) := by
+  simp only [Pseudofunctor.StrongTrans.categoryStruct_comp_naturality_hom,
+    Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+    Cat.associator_hom_app, Cat.associator_inv_app]
+  iterate 8
+    (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
+  rfl
+
+set_option maxHeartbeats 1600000 in
+/-- Core of `naturality_comp` for `yonedaLemmaForwards` (unlifted fibre form). -/
+lemma fnc_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
+    (Z : ↑(yonedaPairing.obj a)) :
+    (((f.2 ≫ g.2).app c.1).toFunctor.map
+          ((Z.app c.1).toFunctor.map
+              ((λ_ (f.1 ≫ g.1).unop).hom ≫ (ρ_ (f.1 ≫ g.1).unop).inv) ≫
+            (Z.naturality (f.1 ≫ g.1)).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
+        ((f.2 ≫ g.2).naturality (f.1 ≫ g.1)).hom.toNatTrans.app
+          ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))) ≫
+      (yonedaEvaluation'.mapComp f g).hom.toNatTrans.app
+        ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) =
+    (((yonedaPairing.mapComp f g).hom.toNatTrans.app Z).as.app c.1).toNatTrans.app
+        (𝟙 (unop c.1)) ≫
+      ((g.2.app c.1).toFunctor.map
+            ((((yonedaPairing.map f).toFunctor.obj Z).app c.1).toFunctor.map
+                ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ≫
+              (((yonedaPairing.map f).toFunctor.obj Z).naturality g.1).hom.toNatTrans.app
+                (𝟙 (unop b.1))) ≫
+          (g.2.naturality g.1).hom.toNatTrans.app
+            ((((yonedaPairing.map f).toFunctor.obj Z).app b.1).toFunctor.obj (𝟙 (unop b.1)))) ≫
+        (yonedaEvaluation'.map g).toFunctor.map
+          ((f.2.app b.1).toFunctor.map
+              ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) ≫
+                (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
+            (f.2.naturality f.1).hom.toNatTrans.app
+              ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))) := by
+  rw [comp_naturality_hom_app]
+  simp only [Pseudofunctor.StrongTrans.comp_app, Cat.Hom.comp_toFunctor,
+    Functor.comp_map, Functor.comp_obj]
+  dsimp only [yonedaPairing, yonedaEvaluation']
+  simp only [Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app,
+    Iso.trans_hom, Iso.symm_hom, whiskerRightIso_hom, whiskerLeftIso_hom,
+    homCategory_comp_as_app, whiskerRight_as_app, whiskerLeft_as_app,
+    associator_hom_as_app, associator_inv_as_app,
+    Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+    Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+    Iso.app_hom, Cat.Hom.toNatIso, Cat.associator_hom_app, Cat.associator_inv_app]
+  dsimp only [Functor.toCatHom]
+  rw [comp_naturality_hom_app, comp_naturality_hom_app]
+  simp only [Pseudofunctor.StrongTrans.comp_app, Cat.Hom.comp_toFunctor,
+    Functor.comp_map, Functor.comp_obj, eqToHom_refl, Category.id_comp, Category.comp_id,
+    Category.assoc]
+  simp only [Pseudofunctor.StrongTrans.naturality_comp_hom_app]
+  simp only [Category.assoc, ← Functor.map_comp_assoc, ← Functor.map_comp,
+    Cat.Hom.inv_hom_id_toNatTrans_app, Cat.Hom.inv_hom_id_toNatTrans_app_assoc,
+    Cat.Hom.hom_inv_id_toNatTrans_app, Cat.Hom.hom_inv_id_toNatTrans_app_assoc,
+    Category.id_comp, Category.comp_id, Functor.map_id]
+  iterate 6
+    (first
+      | erw [Cat.Hom.inv_hom_id_toNatTrans_app_assoc]
+      | erw [Cat.Hom.inv_hom_id_toNatTrans_app]
+      | erw [Category.assoc]
+      | skip)
+  simp only [Category.assoc, ← Functor.map_comp_assoc, ← Functor.map_comp,
+    Cat.Hom.inv_hom_id_toNatTrans_app, Cat.Hom.inv_hom_id_toNatTrans_app_assoc,
+    Category.id_comp, Category.comp_id, Functor.map_id]
+  simp only [Cat.Hom.comp_toFunctor, Functor.comp_obj, Functor.comp_map]
+  iterate 6 (first | erw [Category.comp_id] | skip)
+  iterate 4
+    (first
+      | erw [Cat.Hom.hom_inv_id_toNatTrans_app]
+      | erw [Cat.Hom.inv_hom_id_toNatTrans_app]
+      | skip)
+  erw [Functor.map_id, Category.comp_id]
+  simp only [Functor.map_comp, Category.assoc]
+  erw [(g.2.naturality g.1).hom.toNatTrans.naturality]
+  have hpush2 := congrArg (g.2.app c.1).toFunctor.map
+    ((f.2.naturality g.1).hom.toNatTrans.naturality
+      ((Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))))
+  simp only [Cat.Hom.comp_toFunctor, Functor.comp_map, Functor.comp_obj,
+    Functor.map_comp] at hpush2
+  erw [reassoc_of% hpush2]
+  erw [(g.2.naturality g.1).hom.toNatTrans.naturality_assoc]
+  simp only [Category.assoc, ← Functor.map_comp]
+  trace_state
+  sorry
