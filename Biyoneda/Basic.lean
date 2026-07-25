@@ -4,6 +4,7 @@ import Mathlib.CategoryTheory.Bicategory.Yoneda
 import Mathlib.CategoryTheory.Category.ULift
 import Mathlib.Tactic.CategoryTheory.Bicategory.Basic
 import Mathlib.Tactic.CategoryTheory.Slice
+import Biyoneda.ForMathlib
 
 /-!
 # Bicategorical Yoneda Lemma
