@@ -301,9 +301,12 @@ def yonedaPairing : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (ma
       refine Iso.trans (postcompId₂ (unop x.1) ▷ᵢ (X ≫ 𝟙 x.2)) ?_
       exact (bicategoricalIso X (𝟙 (yoneda₀ (unop x.1)) ≫ X ≫ 𝟙 x.2)).symm
     · intro X Y f
-      dsimp [isoMk, NatIso.ofComponents, NatTrans.toCatHom₂]
-      simp
-      sorry
+      apply homCategory.ext
+      intro b
+      dsimp
+      -- naturality of `mapId`'s component iso: `f` passes the coherence 2-cell by interchange
+      simp only [Bicategory.whisker_exchange_assoc]
+      bicategory
   mapComp f g := by
     refine Cat.Hom.isoMk ?_
     refine NatIso.ofComponents ?_ ?_
@@ -1131,8 +1134,7 @@ lemma strongTrans_comp_naturality_hom_app {F G H : Bᵒᵖ ⥤ᵖ Cat.{w, v}} (�
       (θ.app Y).toFunctor.map ((η.naturality k).hom.toNatTrans.app x) ≫
         (θ.naturality k).hom.toNatTrans.app ((η.app X).toFunctor.obj x) := by
   simp only [Pseudofunctor.StrongTrans.categoryStruct_comp_naturality_hom]
-  iterate 8
-    (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
+  iterate (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id])
   rfl
 
 /-- The head unit-coherence in `B`'s hom-categories underlying `naturality_comp`: `u_{f≫g}`
@@ -1155,9 +1157,9 @@ lemma forwards_naturality_comp_head {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
     NatIso.ofComponents_hom_app, NatIso.ofComponents_inv_app, isoMk_inv_as_app]
   bicategory
 
-set_option maxHeartbeats 1600000 in
+set_option maxHeartbeats 500000 in
 -- the long descent + `naturality_comp_hom_app` telescoping + three `u_f`-transport squares
--- genuinely need the extra budget (measured floor ≈ 1.2M); the proof does not fit in 200k
+-- exceed the default budget (measured floor ≈ 350k, so ~1.4× margin); does not fit in 200k
 /-- Core of `naturality_comp` for `yonedaLemmaForwards` (unlifted fibre form). -/
 lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
     (Z : ↑(yonedaPairing.obj a)) :
@@ -1209,12 +1211,10 @@ lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
       | erw [Category.assoc])
   simp only [← Functor.map_comp]
   simp only [Cat.Hom.comp_toFunctor, Functor.comp_obj]
-  iterate 6 (first | erw [Category.comp_id] | skip)
-  iterate 4
-    (first
+  iterate erw [Category.comp_id]
+  iterate (first
       | erw [Cat.Hom.hom_inv_id_toNatTrans_app]
-      | erw [Cat.Hom.inv_hom_id_toNatTrans_app]
-      | skip)
+      | erw [Cat.Hom.inv_hom_id_toNatTrans_app])
   erw [Functor.map_id, Category.comp_id]
   simp only [Functor.map_comp, Category.assoc]
   erw [(g.2.naturality g.1).hom.toNatTrans.naturality]
@@ -1299,11 +1299,11 @@ lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
   erw [reassoc_of% hT3]
   erw [Category.id_comp]
   simp only [Cat.Hom.comp_toFunctor, Functor.comp_map]
-  iterate 60 (first | erw [← Functor.map_comp_assoc] | erw [← Functor.map_comp] | skip)
-  iterate 10 (first | erw [Category.assoc] | skip)
-  iterate 20 (first | erw [← Functor.map_comp] | skip)
+  iterate (first | erw [← Functor.map_comp_assoc] | erw [← Functor.map_comp])
+  iterate erw [Category.assoc]
+  iterate erw [← Functor.map_comp]
   dsimp only [postcomp₂, postcomposingCat, postcomp, Functor.toCatHom]
-  iterate 20 (first | erw [← Functor.map_comp_assoc] | erw [← Functor.map_comp] | skip)
+  iterate (first | erw [← Functor.map_comp_assoc] | erw [← Functor.map_comp])
   rfl
 
 /--
