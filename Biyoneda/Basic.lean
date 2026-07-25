@@ -1375,16 +1375,15 @@ def yonedaLemmaForwards : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B 
       Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
       yonedaEvaluation_mapId_app_down,
       Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, id_eq,
-      Functor.mapIso_hom, Iso.trans_hom, Iso.symm_hom, Cat.leftUnitor_hom_app,
-      Cat.rightUnitor_inv_app]
+      Functor.mapIso_hom, Iso.trans_hom, Iso.symm_hom, Cat.leftUnitor_hom_toNatTrans_app,
+      Cat.rightUnitor_inv_toNatTrans_app]
     dsimp only [ULiftHom.up, ULift.upFunctor, ULiftHom.objDown, Functor.comp]
     simp only [Bicategory.prod_id_fst, Bicategory.prod_id_snd,
       Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_map,
       Iso.app_hom, Cat.Hom.toNatIso,
       Pseudofunctor.StrongTrans.categoryStruct_id_naturality_hom]
-    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.rightUnitor_hom_app,
-      Cat.leftUnitor_inv_app, eqToHom_trans]
-    erw [eqToHom_refl, eqToHom_refl]
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.rightUnitor_hom_toNatTrans_app,
+      Cat.leftUnitor_inv_toNatTrans_app]
     simp only [Category.comp_id, Cat.Hom.comp_toFunctor,
       Cat.Hom.id_toFunctor, Functor.comp_obj, Functor.id_obj]
     erw [Category.comp_id]
@@ -1397,10 +1396,9 @@ def yonedaLemmaForwards : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B 
       yonedaEvaluation_mapComp_app_down,
       Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, id_eq,
       Functor.mapIso_hom, Iso.trans_hom, Iso.symm_hom,
-      Cat.associator_hom_app, Cat.associator_inv_app]
+      Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app]
     dsimp only [ULiftHom.up, ULift.upFunctor, ULiftHom.objDown, Functor.comp]
     simp only [Bicategory.prod_comp_fst, Bicategory.prod_comp_snd, Iso.app_hom, Cat.Hom.toNatIso]
-    erw [eqToHom_refl, eqToHom_refl, eqToHom_refl]
     simp only [Category.comp_id, Category.id_comp, Cat.Hom.comp_toFunctor, Functor.comp_obj]
     erw [yonedaEvaluation_map_map_down]
     exact forwards_naturality_comp_core f g Z
