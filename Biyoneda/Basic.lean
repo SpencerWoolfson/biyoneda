@@ -900,30 +900,53 @@ def yonedaEvaluation' : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v}
     simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv, whiskerLeftIso_hom,
       whiskerLeftIso_inv, whiskerRightIso_hom, whiskerRightIso_inv, Cat.Hom.toNatTrans_comp,
       NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
-      whiskerLeft_app, whiskerRight_app, Cat.associator_hom_app, Cat.associator_inv_app]
-    iterate 16
-      (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
-    exact evaluation_associator_core f g h Z
+      whiskerLeft_app, whiskerRight_app,
+      Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
+      Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id,
+      Bicategory.prod_comp_fst, Bicategory.prod_comp_snd, Bicategory.prod_associator_hom_fst,
+      Pseudofunctor.StrongTrans.comp_app]
+    simpa only [Cat.Hom.comp_toFunctor, Functor.comp_obj, Functor.comp_map, Functor.map_id,
+      Functor.map_comp, Category.id_comp, Category.comp_id, Category.assoc,
+      Pseudofunctor.StrongTrans.comp_app]
+      using evaluation_associator_core f g h Z
   map₂_left_unitor {a b} f := by
     apply Cat.Hom₂.ext_app
     intro Z
     simp only [Iso.trans_hom, Iso.symm_hom, whiskerLeftIso_hom, whiskerRightIso_hom,
       Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
       Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
-      Cat.associator_hom_app, Cat.associator_inv_app, Cat.leftUnitor_hom_app]
-    iterate 12
-      (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
-    exact evaluation_left_unitor_core f Z
+      Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
+      Cat.leftUnitor_hom_toNatTrans_app,
+      Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id,
+      Bicategory.prod_comp_fst, Bicategory.prod_comp_snd, Bicategory.prod_leftUnitor_hom_fst,
+      Bicategory.prod_id_fst, Bicategory.prod_id_snd,
+      Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_toFunctor, Functor.id_obj,
+      Pseudofunctor.StrongTrans.comp_app]
+    simpa only [Cat.Hom.comp_toFunctor, Functor.comp_obj, Functor.comp_map, Functor.map_id,
+      Functor.map_comp, Category.id_comp, Category.comp_id, Category.assoc,
+      Bicategory.prod_id_fst, Bicategory.prod_id_snd,
+      Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_toFunctor, Functor.id_obj,
+      Pseudofunctor.StrongTrans.comp_app]
+      using evaluation_left_unitor_core f Z
   map₂_right_unitor {a b} f := by
     apply Cat.Hom₂.ext_app
     intro Z
     simp only [Iso.trans_hom, Iso.symm_hom, whiskerLeftIso_hom, whiskerRightIso_hom,
       Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
       Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
-      Cat.associator_hom_app, Cat.associator_inv_app, Cat.rightUnitor_hom_app]
-    iterate 12
-      (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
-    exact evaluation_right_unitor_core f Z
+      Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
+      Cat.rightUnitor_hom_toNatTrans_app,
+      Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id,
+      Bicategory.prod_comp_fst, Bicategory.prod_comp_snd, Bicategory.prod_rightUnitor_hom_fst,
+      Bicategory.prod_id_fst, Bicategory.prod_id_snd,
+      Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_toFunctor, Functor.id_obj,
+      Pseudofunctor.StrongTrans.comp_app]
+    simpa only [Cat.Hom.comp_toFunctor, Functor.comp_obj, Functor.comp_map, Functor.map_id,
+      Functor.map_comp, Category.id_comp, Category.comp_id, Category.assoc,
+      Bicategory.prod_id_fst, Bicategory.prod_id_snd,
+      Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_toFunctor, Functor.id_obj,
+      Pseudofunctor.StrongTrans.comp_app]
+      using evaluation_right_unitor_core f Z
 
 /--
 The *evaluation pseudofunctor* at the correct universe level,
