@@ -842,10 +842,10 @@ def yonedaEvaluation' : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v}
     simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv, whiskerLeftIso_hom,
       whiskerLeftIso_inv, whiskerRightIso_hom, whiskerRightIso_inv, Cat.Hom.toNatTrans_comp,
       NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
-      whiskerLeft_app, whiskerRight_app, Cat.associator_hom_app, Cat.associator_inv_app]
+      whiskerLeft_app, whiskerRight_app,
+      Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
+      Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id]
     simp only [prod_whiskerLeft_fst, prod_whiskerLeft_snd, whiskerLeft_as_app]
-    iterate 12
-      (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
     erw [Cat.whiskerLeft_app]
     have hw := Cat.Hom₂.congr_app (c.2.map₂_whisker_left f.1 η.1)
       (((f ≫ h).2.app a.1).toFunctor.obj Z)
@@ -862,18 +862,18 @@ def yonedaEvaluation' : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v}
       (c.2.mapComp f.1 g.1).hom.toNatTrans.naturality
         ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))
     erw [reassoc_of% h1]
-    simp only [Category.assoc]
-    exact evaluation_whisker_left_core f η Z
+    simpa only [Cat.Hom.comp_toFunctor, Functor.comp_obj, Functor.comp_map, Category.assoc]
+      using evaluation_whisker_left_core f η Z
   map₂_whisker_right {a b c f g h} η := by
     apply Cat.Hom₂.ext_app
     intro Z
     simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv, whiskerLeftIso_hom,
       whiskerLeftIso_inv, whiskerRightIso_hom, whiskerRightIso_inv, Cat.Hom.toNatTrans_comp,
       NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
-      whiskerLeft_app, whiskerRight_app, Cat.associator_hom_app, Cat.associator_inv_app]
+      whiskerLeft_app, whiskerRight_app,
+      Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
+      Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id]
     simp only [prod_whiskerRight_fst, prod_whiskerRight_snd, whiskerRight_as_app]
-    iterate 12
-      (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
     have hw := Cat.Hom₂.congr_app (c.2.map₂_whisker_right h.1 η.1)
       (((g ≫ η).2.app a.1).toFunctor.obj Z)
     dsimp at hw
@@ -892,7 +892,8 @@ def yonedaEvaluation' : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v}
       (c.2.mapComp f.1 η.1).hom.toNatTrans.naturality
         ((h.2.as.app a.1 ▷ η.2.app a.1).toNatTrans.app Z)
     erw [reassoc_of% h1]
-    exact evaluation_whisker_right_core h η Z
+    simpa only [Cat.Hom.comp_toFunctor, Functor.comp_obj, Functor.comp_map, Category.assoc]
+      using evaluation_whisker_right_core h η Z
   map₂_associator {a b c d} f g h := by
     apply Cat.Hom₂.ext_app
     intro Z

@@ -24,6 +24,12 @@ forced onto slow `erw`. The lemmas below give `𝟙` directly (each holds by `rf
 the coherence cleanup that `erw` used to. They are the correct `@[simp]` normal form for a strict
 bicategory and are the natural thing to upstream (ideally by making the existing Mathlib lemmas
 produce `𝟙`).
+
+**`@[simp]` note.** For an actual Mathlib PR these should be `@[simp]`. Here we deliberately leave
+them un-tagged and use them *explicitly* in the proofs that need them: tagging them `@[simp]`
+globally adds a match attempt to every bare `simp`/`dsimp` across the 2000-line development for a
+tiny per-call cost that, summed over the file, can outweigh the local wins. Keeping them opt-in
+makes each golf a guaranteed *localized* net improvement. Flip them to `@[simp]` at upstream time.
 -/
 
 open CategoryTheory Bicategory
@@ -32,22 +38,22 @@ namespace CategoryTheory.Cat
 
 variable {B C D E : Cat}
 
-@[simp] theorem associator_hom_toNatTrans_app (F : B ⟶ C) (G : C ⟶ D) (H : D ⟶ E) (X : B) :
+theorem associator_hom_toNatTrans_app (F : B ⟶ C) (G : C ⟶ D) (H : D ⟶ E) (X : B) :
     (α_ F G H).hom.toNatTrans.app X = 𝟙 _ := rfl
 
-@[simp] theorem associator_inv_toNatTrans_app (F : B ⟶ C) (G : C ⟶ D) (H : D ⟶ E) (X : B) :
+theorem associator_inv_toNatTrans_app (F : B ⟶ C) (G : C ⟶ D) (H : D ⟶ E) (X : B) :
     (α_ F G H).inv.toNatTrans.app X = 𝟙 _ := rfl
 
-@[simp] theorem leftUnitor_hom_toNatTrans_app (F : B ⟶ C) (X : B) :
+theorem leftUnitor_hom_toNatTrans_app (F : B ⟶ C) (X : B) :
     (λ_ F).hom.toNatTrans.app X = 𝟙 _ := rfl
 
-@[simp] theorem leftUnitor_inv_toNatTrans_app (F : B ⟶ C) (X : B) :
+theorem leftUnitor_inv_toNatTrans_app (F : B ⟶ C) (X : B) :
     (λ_ F).inv.toNatTrans.app X = 𝟙 _ := rfl
 
-@[simp] theorem rightUnitor_hom_toNatTrans_app (F : B ⟶ C) (X : B) :
+theorem rightUnitor_hom_toNatTrans_app (F : B ⟶ C) (X : B) :
     (ρ_ F).hom.toNatTrans.app X = 𝟙 _ := rfl
 
-@[simp] theorem rightUnitor_inv_toNatTrans_app (F : B ⟶ C) (X : B) :
+theorem rightUnitor_inv_toNatTrans_app (F : B ⟶ C) (X : B) :
     (ρ_ F).inv.toNatTrans.app X = 𝟙 _ := rfl
 
 end CategoryTheory.Cat
