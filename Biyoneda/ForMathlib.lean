@@ -5,6 +5,7 @@ Authors: Spencer Woolfson
 -/
 import Mathlib.CategoryTheory.Category.Cat
 import Mathlib.CategoryTheory.Bicategory.Yoneda
+import Mathlib.CategoryTheory.Bicategory.FunctorBicategory.Pseudo
 
 /-!
 # Lemmas staged for upstreaming to Mathlib
@@ -15,8 +16,11 @@ development; everything is about `CategoryTheory.Cat` and the bicategory of cate
 Keeping them here (rather than inline in `Biyoneda/Basic.lean`) makes them easy to lift into a
 Mathlib PR later, and lets the whole project share one canonical simp-normal form.
 
-(No copyright header yet — the repository has no LICENSE; add the Apache-2.0 header before any
-actual PR.)
+## Component lemmas for `Cat` 2-cells and modifications
+
+`Cat.Hom₂.congr_app` / `Cat.Hom₂.ext_app` are the "2-cells are determined by their components"
+pair, and `modification_naturality_app` is the point-level form of `Modification.naturality`.
+All three are general facts about `Cat`-valued pseudofunctors, independent of this development.
 
 ## `Cat` is strict: coherence 2-cells are the identity
 
@@ -37,7 +41,9 @@ tiny per-call cost that, summed over the file, can outweigh the local wins. Keep
 makes each golf a guaranteed *localized* net improvement. Flip them to `@[simp]` at upstream time.
 -/
 
-open CategoryTheory Bicategory
+open CategoryTheory Bicategory Pseudofunctor StrongTrans Functor
+
+universe w v u₁ v₁ w₁
 
 namespace CategoryTheory.Cat
 
@@ -62,3 +68,34 @@ theorem rightUnitor_inv_toNatTrans_app (F : B ⟶ C) (X : B) :
     (ρ_ F).inv.toNatTrans.app X = 𝟙 _ := rfl
 
 end CategoryTheory.Cat
+
+namespace CategoryTheory
+
+/-- Equal 2-morphisms in `Cat` have equal components at every object. -/
+lemma Cat.Hom₂.congr_app {C D : Cat} {F G : C ⟶ D} {η θ : F ⟶ G} (h : η = θ) (X : C) :
+    η.toNatTrans.app X = θ.toNatTrans.app X := by rw [h]
+
+/-- Two parallel 2-morphisms in `Cat` are equal if their components agree at every object. -/
+lemma Cat.Hom₂.ext_app {C D : Cat} {F G : C ⟶ D} {η θ : F ⟶ G}
+    (h : ∀ X, η.toNatTrans.app X = θ.toNatTrans.app X) : η = θ :=
+  Cat.Hom₂.ext (NatTrans.ext (funext h))
+
+/-- `NatTrans.toCatHom₂` and `.toNatTrans` are inverse: the underlying transformation of the
+2-cell built from `η` is `η` again. -/
+@[simp] lemma Cat.toCatHom₂_toNatTrans {C D : Type u₁} [Category.{v₁} C] [Category.{v₁} D]
+    {F G : C ⥤ D} (η : F ⟶ G) : (NatTrans.toCatHom₂ η).toNatTrans = η := rfl
+
+/-- Point-level form of `Modification.naturality` for `Cat`-valued pseudofunctors: the
+naturality square of a modification, evaluated at an object of the fibre. -/
+lemma modification_naturality_app {C : Type u₁} [Bicategory.{w₁, v₁} C]
+    {F G : C ⥤ᵖ Cat.{w, v}} {η θ : F ⟶ G} (Γ : η ⟶ θ) {a b : C} (f : a ⟶ b)
+    (z : ↑(F.obj a)) :
+    (Γ.as.app b).toNatTrans.app ((F.map f).toFunctor.obj z) ≫
+      (θ.naturality f).hom.toNatTrans.app z =
+    (η.naturality f).hom.toNatTrans.app z ≫
+      (G.map f).toFunctor.map ((Γ.as.app a).toNatTrans.app z) := by
+  simpa only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app]
+    using Cat.Hom₂.congr_app (Γ.as.naturality f) z
+
+end CategoryTheory
