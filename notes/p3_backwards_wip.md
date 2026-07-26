@@ -64,3 +64,42 @@ then `Cat.Hom₂.ext_app` for its natTrans component. Order matters.)
 
 Order: naturality_naturality (easiest) → naturality_id → naturality_comp (hardest, the associator one,
 watch for the P2/P4 defeq-toxicity if `postcompComp₂` shows up). Budget each ~a focused session.
+
+## naturality_naturality — REDUCED TO A CLEAN CORE (2026-07-25), blocked on lift-plumbing
+
+The descent + the RIGHT reduction simp (NOT the blunt `dsimp only [yonedaEvaluation, …]`, which
+over-unfolds `B` into a 238-line record) collapses the goal to a clean 5-line statement. Working prefix:
+```lean
+  naturality_naturality {a b f g} η := by
+    apply Cat.Hom₂.ext_app
+    intro X
+    obtain ⟨x⟩ := X
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app, yonedaEvaluation_map₂_app_down,
+      Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, id_eq,
+      isoMk_hom_as_app, homCategory_comp_as_app, Functor.mapIso_hom, Iso.trans_hom, Iso.symm_hom]
+    -- GOAL (verified, 5 lines) — this is `backwards_naturality_naturality_core η x`:
+    --   (yonedaLemmaBackwardsFunctor b).map { down := (yonedaEvaluation'.map₂ η).toNatTrans.app x } ≫
+    --       (backwardsNaturalityIso g { down := x }).hom =
+    --     (backwardsNaturalityIso f { down := x }).hom ≫
+    --       (yonedaPairing.map₂ η).toNatTrans.app ((yonedaLemmaBackwardsFunctor a).obj { down := x })
+    sorry
+```
+`yonedaEvaluation_map₂_app_down` is the key ULift-stripping lemma (keeps `B` opaque). This clean goal
+is the **naturality of `backwardsNaturalityIso` in the 1-cell parameter** and should be a standalone
+`backwards_naturality_naturality_core` lemma.
+
+**The remaining blocker (bounded lift-plumbing):** proving that clean goal needs the modification
+descent `apply homCategory.ext; intro γ; apply Cat.Hom₂.ext_app; intro ZZ`, but that re-exposes a
+`ULift.rec` from `(yonedaLemmaBackwardsFunctor b).map { down := m }` (its def routes through
+`(catLiftEquiv _).inverse.map`). The `ULift.rec` is **stuck** because its scrutinee is
+`(yonedaEvaluation.map g).toFunctor.obj { down := x }`, not a literal `{down := …}` — so `dsimp`/`simp`
+won't fire it. **Fix to find next session:** a reduction lemma for `(yonedaEvaluation.map g).obj
+{down := x}` → `{down := (yonedaEvaluation'.map g).obj x}` (the `.obj` analogue of
+`yonedaEvaluation_map_map_down` at ~1148 — grep for an existing one or add it), applied BEFORE the
+descent so the `ULift.rec` scrutinee becomes a constructor; then `(yonedaLemmaBackwardsFunctor b).map
+{down:=m}` reduces via its `@[simp]` lemma + `catLiftEquiv`/`ULiftHom.equiv` (cf. the `simp
+[catLiftEquiv, …]` at ~1985) to `(b.2.map ZZ.op).map m`, and the core closes by `mapComp`/naturality
+(mirror `backwards_natural_core` ~1787). Alternatively, build a `catLift_hom₂`-style helper that maps
+the lifted `.map` cleanly the way `catLift_hom₂_ext` does for the forwards side. The *math* is done;
+this is the lift bookkeeping.
