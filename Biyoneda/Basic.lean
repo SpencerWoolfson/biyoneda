@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Spencer Woolfson. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Spencer Woolfson
+-/
 import Mathlib.CategoryTheory.Bicategory.Product
 import Mathlib.CategoryTheory.Bicategory.Adjunction.Basic
 import Mathlib.CategoryTheory.Bicategory.Yoneda
@@ -10,8 +15,8 @@ import Biyoneda.ForMathlib
 # Bicategorical Yoneda Lemma
 
 This file formalises the Yoneda lemma for bicategories.  Given a bicategory `B` with Yoneda
-embedding `yoneda : B ⥤ᵖ Bᵒᵖ ⥤ᵖ Cat` (see `Bicategory.yoneda`), we construct a bicategorical
-equivalence
+embedding `yoneda : B ⥤ᵖ Bᵒᵖ ⥤ᵖ Cat` (see `Bicategory.yoneda`), we construct a
+bicategorical equivalence
 
   `StrongTrans (yoneda₀ b) F  ≃  F.obj b`
 
@@ -36,8 +41,6 @@ natural in `b : Bᵒᵖ` and `F : Bᵒᵖ ⥤ᵖ Cat`.
 `Cat.{max u (max v w), max u (max v w)}`.  The auxiliary pseudofunctor `catPseudoULift` is
 used to promote `yonedaEvaluation'` to the correct universe level, yielding `yonedaEvaluation`.
 -/
-
--- Sorry Count (11)
 
 open CategoryTheory Bicategory Bicategory.Opposite Opposite Pseudofunctor StrongTrans Functor
 open scoped Pseudofunctor.StrongTrans
@@ -1930,8 +1933,9 @@ def yonedaLemmaBackwards : StrongTrans (@yonedaEvaluation B _)  (@yonedaPairing 
     intro X
     obtain ⟨x⟩ := X
     simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app, yonedaEvaluation_map₂_app_down,
-      Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app]
+      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+      yonedaEvaluation_map₂_app_down, Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans,
+      NatIso.ofComponents_hom_app]
     apply homCategory.ext
     intro γ
     erw [homCategory_comp_as_app, homCategory_comp_as_app]

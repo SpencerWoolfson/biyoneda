@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Spencer Woolfson. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Spencer Woolfson
+-/
 import Mathlib.CategoryTheory.Category.Cat
 import Mathlib.CategoryTheory.Bicategory.Yoneda
 
