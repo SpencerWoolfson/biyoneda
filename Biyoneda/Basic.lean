@@ -109,7 +109,7 @@ def catPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
     · intro x
       unfold catLift ULiftHom at x
       exact ULiftHom.up.map (η.toNatTrans.app x.down)
-    · exact fun _ _ h => Quiver.homOfEq_injective rfl rfl
+    · exact fun _ _ h ↦ Quiver.homOfEq_injective rfl rfl
         (congrArg (ULiftHom.up.map) (η.toNatTrans.naturality h.down))
   mapId C := Iso.refl (catLift.map (𝟙 C))
   mapComp F G := Iso.refl (catLift.map (F ≫ G))
@@ -311,7 +311,7 @@ def yonedaPairing : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (ma
   mapComp f g := by
     refine Cat.Hom.isoMk ?_
     refine NatIso.ofComponents ?_ ?_
-    · intros x
+    · intro x
       refine ?_ ≪≫ (α_ _ _ _)
       refine (α_ (postcomp₂ (g.1.unop ≫ f.1.unop)) x (f.2 ≫ g.2)).symm ≪≫ ?_
       refine (α_ (postcomp₂ (g.1.unop ≫ f.1.unop) ≫ x) f.2 g.2).symm ≪≫ ?_
@@ -1103,7 +1103,7 @@ lemma forwards_naturality_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.
   erw [(η.2.as.app b.1).toNatTrans.naturality,
     (η.2.as.app b.1).toNatTrans.naturality_assoc]
   erw [Category.assoc]
-  refine congrArg (fun m => (η.2.as.app b.1).toNatTrans.app _ ≫ m) ?_
+  refine congrArg (fun m ↦ (η.2.as.app b.1).toNatTrans.app _ ≫ m) ?_
   erw [← Functor.map_comp_assoc]
   erw [forwards_naturality_naturality_Z η Z]
   erw [Functor.map_comp_assoc]
@@ -1931,8 +1931,7 @@ def yonedaLemmaBackwards : StrongTrans (@yonedaEvaluation B _)  (@yonedaPairing 
     obtain ⟨x⟩ := X
     simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
       Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app, yonedaEvaluation_map₂_app_down,
-      Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app,
-      homCategory_comp_as_app, Iso.trans_hom, Iso.symm_hom]
+      Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app]
     apply homCategory.ext
     intro γ
     erw [homCategory_comp_as_app, homCategory_comp_as_app]
@@ -1941,20 +1940,18 @@ def yonedaLemmaBackwards : StrongTrans (@yonedaEvaluation B _)  (@yonedaPairing 
     dsimp only [backwardsNaturalityIso, backwardsNaturalityIsoApp]
     simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, isoMk_hom_as_app, Cat.Hom.isoMk_hom,
       Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, Iso.trans_hom, Iso.symm_hom,
-      Iso.app_hom, Cat.Hom.toNatIso, Iso.app_inv]
+      Iso.app_hom, Cat.Hom.toNatIso]
     erw [back_map_comp]
     dsimp only [yonedaPairing]
-    simp only [NatTrans.toCatHom₂_toNatTrans, Cat.toCatHom₂_toNatTrans]
+    simp only [NatTrans.toCatHom₂_toNatTrans]
     dsimp only [yonedaPairingMap₂, yonedaPairingMapFunctor, Functor.whiskerLeft,
       Functor.whiskerRight, precomposing, postcomposing, precomposingCat, postcomposingCat,
       postcomposing₂]
     erw [homCategory_comp_as_app]
-    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app, whiskerRight_as_app,
-      whiskerLeft_as_app, isoMk_hom_as_app, Cat.toCatHom₂_toNatTrans, Cat.Hom.isoMk_hom]
-    simp only [precomposing_map_app, postcomposing_map_app, precomposing_obj, postcomposing_obj,
-      precomp_map, postcomp₂, postcomposingCat, postcomp_obj, Pseudofunctor.StrongTrans.comp_app,
-      Functor.comp_map, Cat.Hom.comp_toFunctor]
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerRight_toNatTrans,
+      whiskerRight_app, whiskerRight_as_app, Cat.toCatHom₂_toNatTrans]
+    simp only [precomp_map, postcomp₂, postcomposingCat, postcomp_obj,
+      Pseudofunctor.StrongTrans.comp_app, Functor.comp_map, Cat.Hom.comp_toFunctor]
     dsimp only [yonedaLemmaBackwardsFunctor, yonedaLemmaBackwardsFunctorObj,
       yonedaLemmaBackwardsFunctorObjFunctor, yonedaEvaluation']
     simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
@@ -2052,7 +2049,7 @@ This is the component of the unit natural isomorphism `yonedaHomInvIdNatIso` at 
 def yonedaHomInvIdObjIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) (x : ↑(yonedaPairing.obj a)) :
     (yonedaLemmaForwards.app a ≫ yonedaLemmaBackwards.app a).toFunctor.obj x ≅
     (𝟭 ↑(yonedaPairing.obj a)).obj x := by
-    refine StrongTrans.isoMk (fun b => (Cat.Hom.isoMk (yonedaHomInvIdFunctorIso b x))) ?_
+    refine StrongTrans.isoMk (fun b ↦ (Cat.Hom.isoMk (yonedaHomInvIdFunctorIso b x))) ?_
     intro q r f
     refine Cat.Hom₂.ext_iff.mpr ?_
     ext s
