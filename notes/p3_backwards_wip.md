@@ -103,3 +103,62 @@ descent so the `ULift.rec` scrutinee becomes a constructor; then `(yonedaLemmaBa
 (mirror `backwards_natural_core` ~1787). Alternatively, build a `catLift_hom₂`-style helper that maps
 the lifted `.map` cleanly the way `catLift_hom₂_ext` does for the forwards side. The *math* is done;
 this is the lift bookkeeping.
+
+## naturality_naturality — ~90% DONE (2026-07-25), the lift-plumbing fix WORKS
+
+The lift-plumbing fix = a `rfl` reduction lemma for the backwards functor's `.map` component (add it
+to Basic near `yonedaEvaluation_map_map_down`):
+```lean
+lemma back_map_comp (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})) {A₀ B₀ : ↑(yonedaEvaluation'.obj x)}
+    (m : A₀ ⟶ B₀) (c : Bᵒᵖ) (W : ↑((yoneda₀ (unop x.1)).obj c)) :
+    (((((yonedaLemmaBackwardsFunctor x).map { down := m }).as.app c).toNatTrans).app W)
+      = (x.2.map (Quiver.Hom.op W)).toFunctor.map m := rfl
+```
+(Stating `m` generic — with the source/target implicit — makes the `.map`'s internal `rcases` fire,
+so it's `rfl`. It must be applied with **`erw`**, not `simp`/`rw` — the StrongTrans homCategory diamond.)
+
+Full VERIFIED proof prefix (compiles to a clean fibre-morphism equation):
+```lean
+  naturality_naturality {a b f g} η := by
+    apply Cat.Hom₂.ext_app
+    intro X
+    obtain ⟨x⟩ := X
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app, yonedaEvaluation_map₂_app_down,
+      Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, id_eq,
+      isoMk_hom_as_app, homCategory_comp_as_app, Functor.mapIso_hom, Iso.trans_hom, Iso.symm_hom]
+    apply homCategory.ext
+    intro γ
+    erw [homCategory_comp_as_app, homCategory_comp_as_app]      -- distribute the modification comp
+    apply Cat.Hom₂.ext_app
+    intro ZZ
+    dsimp only [backwardsNaturalityIso, backwardsNaturalityIsoApp]
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, isoMk_hom_as_app, Cat.Hom.isoMk_hom,
+      Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, Iso.trans_hom, Iso.symm_hom,
+      Iso.app_hom, Cat.Hom.toNatIso, Iso.app_inv]
+    erw [back_map_comp]                                          -- <-- the lift-plumbing fix; LHS now fully reduced
+    dsimp only [yonedaPairing]
+    simp only [NatTrans.toCatHom₂_toNatTrans, Cat.toCatHom₂_toNatTrans]
+    dsimp only [yonedaPairingMap₂, yonedaPairingMapFunctor, Functor.whiskerLeft,
+      Functor.whiskerRight, precomposing, postcomposing, precomposingCat, postcomposingCat,
+      postcomposing₂]
+    erw [homCategory_comp_as_app]
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app, whiskerRight_as_app,
+      whiskerLeft_as_app, isoMk_hom_as_app, Cat.toCatHom₂_toNatTrans, Cat.Hom.isoMk_hom]
+    -- REMAINING GOAL (verified, ~12 lines) — a naturality square in the fibre b.2.obj γ:
+    --   (b.2.map ZZ.op).map ((yonedaEvaluation'.map₂ η).app x) ≫ mapComp(g,ZZ).inv ≫ nat(g, g≫ZZ).inv
+    --     = (mapComp(f,ZZ).inv ≫ nat(f, f≫ZZ).inv) ≫
+    --         ((postcomp f.2).obj S).app γ |>.map (ZZ ◁ η.1.unop2) ≫
+    --         ((precomp b.2 (postcomp₂ g.1.unop)).map (S ◁ η.2)).as.app γ |>.toNatTrans.app ZZ
+    sorry
+```
+**LHS is fully reduced** (the lift-plumbing worked). The ONLY thing left is reducing the two RHS
+`yonedaPairing.map₂` component terms (the `η.1` part `… .map (ZZ ◁ η.1.unop2)` and the `η.2` part
+`(precomp …).map (S ◁ η.2).as.app γ …`) to explicit fibre morphisms — a further deep-but-mechanical
+reduction of `postcomp`/`precomp` on the strong transformation `S = yonedaLemmaBackwardsFunctorObj a
+{down:=x}`. **Then the whole equation closes by naturality** — mirror `backwards_natural_core`
+(~1787): `rw [reassoc_of% ((b.2.mapComp _ _).inv.toNatTrans.naturality _), (f.2.naturality _).inv.toNatTrans.naturality _]`
+and match. So: reduce the two RHS terms (find the `postcomp`/`precomp` `_app`/`_map` component lemmas
+by first-diff, as with the associator golf), then the naturality close. `back_map_comp` + this prefix
+are the reusable scaffolding for naturality_id and naturality_comp too.
