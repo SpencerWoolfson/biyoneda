@@ -1,164 +1,86 @@
 # P3 backwards coherence — WIP (resume here)
 
-**Goal:** close the three `yonedaLemmaBackwards` coherence sorries (Basic.lean ~1844–1846):
-`naturality_naturality`, `naturality_id`, `naturality_comp`. Mirror of the finished P2 forwards
-work (`yonedaLemmaForwards` + `forwards_naturality_*_core`).
+Close the three `yonedaLemmaBackwards` coherence obligations. **`naturality_naturality` is DONE**
+(in Basic.lean, green). Remaining: `naturality_id`, `naturality_comp`.
 
-## The three goal states (harvested 2026-07-25)
+## ✅ naturality_naturality — COMPLETE (2026-07-26)
 
-Standard StrongTrans coherence obligations, 2-cells in `Cat`:
-- **naturality_naturality** `{a b f g} η`:
-  `yonedaEvaluation.map₂ η ▷ B_b ≫ N_g = N_f ≫ B_a ◁ yonedaPairing.map₂ η`
-- **naturality_id** `a`:
-  `N_{𝟙} ≫ B_a ◁ (yonedaPairing.mapId a).hom = (yonedaEvaluation.mapId a).hom ▷ B_a ≫ (λ_ B_a).hom ≫ (ρ_ B_a).inv`
-- **naturality_comp** `{a b c} f g`:
-  `N_{f≫g} ≫ B_a ◁ (yonedaPairing.mapComp f g).hom = (yonedaEvaluation.mapComp f g).hom ▷ B_c ≫ α_ ≫
-   yonedaEvaluation.map f ◁ N_g ≫ α_.inv ≫ N_f ▷ yonedaPairing.map g ≫ α_`
-  where `B_x := { toFunctor := yonedaLemmaBackwardsFunctor x }` (the `.app`), and
-  `N_x := (Cat.Hom.isoMk (NatIso.ofComponents (fun X ↦ backwardsNaturalityIso x X) _)).hom` (the `.naturality`).
+Ported to Basic.lean and verified (full `lake build`, 6 sorries remain, was 7). Three pieces:
 
-## The descent pattern — ESTABLISHED (verified compiles to a clean fibre-morphism goal)
+1. **`back_map_comp`** (Basic ~1832) — the lift-plumbing `rfl` reduction for the backwards
+   functor's `.map` component (state `m` generic so the def's `rcases` fires; apply with **`erw`**).
+2. **`backwards_naturality_naturality_core`** (Basic ~1842) — the reduced fibre-morphism core.
+   **Winning idea:** use the *composite* 2-cell `θ = η.1 ▷ ZZ.op` to linearize into a 3-slide chain:
+   - `hmc` = `b.2.toOplax.mapComp_naturality_left η.1 ZZ.op` → `hmc_inv` (inverse form via
+     `Iso.comp_inv_eq`/`Iso.eq_inv_comp` + `hmc.symm`).
+   - `hnn` = `g.2.naturality_naturality (η.1 ▷ ZZ.op)` → `hnn_inv` (same iso-flip pattern).
+   - `hmod` = `modification_naturality_app η.2 (f.1 ≫ ZZ.op) x` → `hmod_inv`.
+   - `hMCinv` = `(b.2.mapComp f.1 ZZ.op).inv.toNatTrans.naturality P` (front point-transport F↔G).
+   - `hη2` = `(η.2.as.app γ).toNatTrans.naturality (a₂θ'.app x)` (auto-bridges the `op2(ZZ◁η.1)`
+     vs `η.1▷ZZ.op` spelling — they're defeq via `op2_whiskerLeft`, closes by final `rfl`).
+   Chain: `rw [Functor.map_comp]; erw [Category.assoc, reassoc_of% hmc_inv, Category.assoc, hnn_inv]`
+   then `erw [reassoc_of% hMCinv, reassoc_of% hmod_inv, Category.assoc, ← hη2, ← Category.assoc]; rfl`.
+   **Diamond note:** the fibre `≫`/`Category.assoc` do NOT fire at reducible transparency —
+   MUST use `erw` (default transparency), not `slice`/`rw`/`simp only [Category.assoc]`.
+3. **The field** (Basic ~1928) — descent (`Cat.Hom₂.ext_app; obtain ⟨x⟩; simp; homCategory.ext;
+   erw homCategory_comp_as_app ×2; Cat.Hom₂.ext_app; intro ZZ; dsimp backwardsNaturalityIso; simp;
+   erw back_map_comp; dsimp yonedaPairing/yonedaPairingMap₂/…; reduce`) then
+   `exact backwards_naturality_naturality_core η x ZZ`.
 
-Backwards lands in `yonedaPairing` (StrongTrans), source `yonedaEvaluation` is ULift-lifted. The
-working descent (for `naturality_naturality`; the others are analogous):
+This is the **reusable template** for id/comp: same descent + `back_map_comp`, then a core lemma
+that bottoms out in an ALREADY-PROVEN object-level coherence.
+
+## ⬜ naturality_id (Basic ~1963) — descent works, needs reduction pass
+
+Object-level core ALREADY proven: **`mapComp_id_component`** (Basic ~1431). The field should
+reduce to it (mirror how forwards `naturality_id` (Basic ~1371) uses `forwards_naturality_id_core`).
+
+Verified descent prefix (compiles to the goal below):
 ```lean
-  naturality_naturality {a b f g} η := by
-    apply Cat.Hom₂.ext_app          -- Cat 2-cell (natTrans) → .toNatTrans.app
-    intro X
-    obtain ⟨x⟩ := X                  -- strip the ULift on the yonedaEvaluation source
-    dsimp only [yonedaEvaluation, Pseudofunctor.comp, catPseudoULift, catLift, ULiftHom.up,
-      Functor.comp]
-    apply homCategory.ext            -- modification → per-component
-    intro γ
-    apply Cat.Hom₂.ext_app           -- that component (a natTrans) → .app
-    intro ZZ
-    dsimp
-    -- GOAL NOW: a concrete morphism equation in a fibre category, but HUGE and un-reduced
-    --   (still has catLiftEquiv, yonedaPairing.map₂ η, backwardsNaturalityIso, … unfolded literally).
-    sorry
-```
-(`Cat.Hom₂.ext_app` as the 2nd descent step FAILED — must use `homCategory.ext` for the modification,
-then `Cat.Hom₂.ext_app` for its natTrans component. Order matters.)
-
-## Next steps (the remaining work, per obligation)
-
-1. **Reduce** the descended goal with a big `simp only [...]` — the backwards analogue of the forwards
-   fields' reduction (`Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-   Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app, yonedaEvaluation_map₂_app_down,
-   Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, …` + backwards-specific:
-   `backwardsNaturalityIso`, `isoMk_hom_as_app`, `catLiftEquiv` reductions). Harvest the residual with
-   `trace_state`.
-2. **Build a core lemma** `backwards_naturality_naturality_core …` stating the reduced content
-   (clean fibre-morphism equation) and prove it — mirror `forwards_naturality_naturality_core`
-   (~Basic.lean 1072). The content should reduce to the object-level backwards coherence, which is
-   ALREADY proven in `yonedaLemmaBackwardsFunctorObj` (Basic.lean ~1500):
-   `naturality_naturality := Cat.Hom₂.ext_app fun X ↦ Cat.Hom₂.congr_app
-      (x.2.toOplax.mapComp_naturality_right (op X) g) eval`; likewise `mapComp_id_component`,
-   `mapComp_assoc_component` for id/comp. So the cores likely wrap `mapComp_naturality_right` /
-   `mapComp_id_component` / `mapComp_assoc_component`.
-3. Close the field with `exact backwards_naturality_naturality_core …`.
-4. **NEW: use the ForMathlib golf from the start** — the Cat coherence in these goals produces the
-   same `eqToHom` cleanup; use `Cat.associator_hom_toNatTrans_app` etc. + `simpa … using core` rather
-   than an `iterate … erw` cleanup (see `instance-diamonds.md` § eqToHom-strictness). This keeps the
-   new proofs fast and clean.
-
-Order: naturality_naturality (easiest) → naturality_id → naturality_comp (hardest, the associator one,
-watch for the P2/P4 defeq-toxicity if `postcompComp₂` shows up). Budget each ~a focused session.
-
-## naturality_naturality — REDUCED TO A CLEAN CORE (2026-07-25), blocked on lift-plumbing
-
-The descent + the RIGHT reduction simp (NOT the blunt `dsimp only [yonedaEvaluation, …]`, which
-over-unfolds `B` into a 238-line record) collapses the goal to a clean 5-line statement. Working prefix:
-```lean
-  naturality_naturality {a b f g} η := by
+  naturality_id a := by
     apply Cat.Hom₂.ext_app
     intro X
     obtain ⟨x⟩ := X
     simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app, yonedaEvaluation_map₂_app_down,
-      Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, id_eq,
-      isoMk_hom_as_app, homCategory_comp_as_app, Functor.mapIso_hom, Iso.trans_hom, Iso.symm_hom]
-    -- GOAL (verified, 5 lines) — this is `backwards_naturality_naturality_core η x`:
-    --   (yonedaLemmaBackwardsFunctor b).map { down := (yonedaEvaluation'.map₂ η).toNatTrans.app x } ≫
-    --       (backwardsNaturalityIso g { down := x }).hom =
-    --     (backwardsNaturalityIso f { down := x }).hom ≫
-    --       (yonedaPairing.map₂ η).toNatTrans.app ((yonedaLemmaBackwardsFunctor a).obj { down := x })
-    sorry
-```
-`yonedaEvaluation_map₂_app_down` is the key ULift-stripping lemma (keeps `B` opaque). This clean goal
-is the **naturality of `backwardsNaturalityIso` in the 1-cell parameter** and should be a standalone
-`backwards_naturality_naturality_core` lemma.
-
-**The remaining blocker (bounded lift-plumbing):** proving that clean goal needs the modification
-descent `apply homCategory.ext; intro γ; apply Cat.Hom₂.ext_app; intro ZZ`, but that re-exposes a
-`ULift.rec` from `(yonedaLemmaBackwardsFunctor b).map { down := m }` (its def routes through
-`(catLiftEquiv _).inverse.map`). The `ULift.rec` is **stuck** because its scrutinee is
-`(yonedaEvaluation.map g).toFunctor.obj { down := x }`, not a literal `{down := …}` — so `dsimp`/`simp`
-won't fire it. **Fix to find next session:** a reduction lemma for `(yonedaEvaluation.map g).obj
-{down := x}` → `{down := (yonedaEvaluation'.map g).obj x}` (the `.obj` analogue of
-`yonedaEvaluation_map_map_down` at ~1148 — grep for an existing one or add it), applied BEFORE the
-descent so the `ULift.rec` scrutinee becomes a constructor; then `(yonedaLemmaBackwardsFunctor b).map
-{down:=m}` reduces via its `@[simp]` lemma + `catLiftEquiv`/`ULiftHom.equiv` (cf. the `simp
-[catLiftEquiv, …]` at ~1985) to `(b.2.map ZZ.op).map m`, and the core closes by `mapComp`/naturality
-(mirror `backwards_natural_core` ~1787). Alternatively, build a `catLift_hom₂`-style helper that maps
-the lifted `.map` cleanly the way `catLift_hom₂_ext` does for the forwards side. The *math* is done;
-this is the lift bookkeeping.
-
-## naturality_naturality — ~90% DONE (2026-07-25), the lift-plumbing fix WORKS
-
-The lift-plumbing fix = a `rfl` reduction lemma for the backwards functor's `.map` component (add it
-to Basic near `yonedaEvaluation_map_map_down`):
-```lean
-lemma back_map_comp (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})) {A₀ B₀ : ↑(yonedaEvaluation'.obj x)}
-    (m : A₀ ⟶ B₀) (c : Bᵒᵖ) (W : ↑((yoneda₀ (unop x.1)).obj c)) :
-    (((((yonedaLemmaBackwardsFunctor x).map { down := m }).as.app c).toNatTrans).app W)
-      = (x.2.map (Quiver.Hom.op W)).toFunctor.map m := rfl
-```
-(Stating `m` generic — with the source/target implicit — makes the `.map`'s internal `rcases` fire,
-so it's `rfl`. It must be applied with **`erw`**, not `simp`/`rw` — the StrongTrans homCategory diamond.)
-
-Full VERIFIED proof prefix (compiles to a clean fibre-morphism equation):
-```lean
-  naturality_naturality {a b f g} η := by
-    apply Cat.Hom₂.ext_app
-    intro X
-    obtain ⟨x⟩ := X
-    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app, yonedaEvaluation_map₂_app_down,
-      Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, id_eq,
-      isoMk_hom_as_app, homCategory_comp_as_app, Functor.mapIso_hom, Iso.trans_hom, Iso.symm_hom]
+      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app, yonedaEvaluation_mapId_app_down,
+      Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app,
+      homCategory_comp_as_app, Iso.trans_hom, Iso.symm_hom,
+      Cat.leftUnitor_hom_toNatTrans_app, Cat.rightUnitor_inv_toNatTrans_app]
     apply homCategory.ext
     intro γ
-    erw [homCategory_comp_as_app, homCategory_comp_as_app]      -- distribute the modification comp
+    erw [homCategory_comp_as_app, homCategory_comp_as_app]
     apply Cat.Hom₂.ext_app
     intro ZZ
-    dsimp only [backwardsNaturalityIso, backwardsNaturalityIsoApp]
-    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, isoMk_hom_as_app, Cat.Hom.isoMk_hom,
-      Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, Iso.trans_hom, Iso.symm_hom,
-      Iso.app_hom, Cat.Hom.toNatIso, Iso.app_inv]
-    erw [back_map_comp]                                          -- <-- the lift-plumbing fix; LHS now fully reduced
-    dsimp only [yonedaPairing]
-    simp only [NatTrans.toCatHom₂_toNatTrans, Cat.toCatHom₂_toNatTrans]
-    dsimp only [yonedaPairingMap₂, yonedaPairingMapFunctor, Functor.whiskerLeft,
-      Functor.whiskerRight, precomposing, postcomposing, precomposingCat, postcomposingCat,
-      postcomposing₂]
-    erw [homCategory_comp_as_app]
-    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app, whiskerRight_as_app,
-      whiskerLeft_as_app, isoMk_hom_as_app, Cat.toCatHom₂_toNatTrans, Cat.Hom.isoMk_hom]
-    -- REMAINING GOAL (verified, ~12 lines) — a naturality square in the fibre b.2.obj γ:
-    --   (b.2.map ZZ.op).map ((yonedaEvaluation'.map₂ η).app x) ≫ mapComp(g,ZZ).inv ≫ nat(g, g≫ZZ).inv
-    --     = (mapComp(f,ZZ).inv ≫ nat(f, f≫ZZ).inv) ≫
-    --         ((postcomp f.2).obj S).app γ |>.map (ZZ ◁ η.1.unop2) ≫
-    --         ((precomp b.2 (postcomp₂ g.1.unop)).map (S ◁ η.2)).as.app γ |>.toNatTrans.app ZZ
+    -- GOAL (verified):
+    --   (backwardsNaturalityIso (𝟙 a) {down:=x}).hom.as.app γ
+    --     ≫ (postcompId₂ (unop a.1) ▷ᵢ (S ≫ 𝟙 a.2)).hom.as.app γ
+    --     ≫ (bicategoricalIso S (𝟙 (yoneda₀ …) ≫ S ≫ 𝟙 a.2)).symm.hom.as.app γ ).toNatTrans.app ZZ
+    --   = ((yonedaLemmaBackwardsFunctor a).map {down := (yonedaEvaluation'.mapId a).hom.app x}
+    --       ≫ 𝟙 ≫ 𝟙).as.app γ .toNatTrans.app ZZ
+    --   where S = (yonedaLemmaBackwardsFunctor a).obj {down:=x}
     sorry
 ```
-**LHS is fully reduced** (the lift-plumbing worked). The ONLY thing left is reducing the two RHS
-`yonedaPairing.map₂` component terms (the `η.1` part `… .map (ZZ ◁ η.1.unop2)` and the `η.2` part
-`(precomp …).map (S ◁ η.2).as.app γ …`) to explicit fibre morphisms — a further deep-but-mechanical
-reduction of `postcomp`/`precomp` on the strong transformation `S = yonedaLemmaBackwardsFunctorObj a
-{down:=x}`. **Then the whole equation closes by naturality** — mirror `backwards_natural_core`
-(~1787): `rw [reassoc_of% ((b.2.mapComp _ _).inv.toNatTrans.naturality _), (f.2.naturality _).inv.toNatTrans.naturality _]`
-and match. So: reduce the two RHS terms (find the `postcomp`/`precomp` `_app`/`_map` component lemmas
-by first-diff, as with the associator golf), then the naturality close. `back_map_comp` + this prefix
-are the reusable scaffolding for naturality_id and naturality_comp too.
+**Next moves:** (1) RHS: distribute `.as.app γ` over the modification `≫` with
+`erw [homCategory_comp_as_app, homCategory_comp_as_app]`, kill the `𝟙.as.app` (identity lemma),
+then `erw [back_map_comp]` → `(a.2.map ZZ.op).map ((a.2.mapId a.1).hom.app x)`. (2) LHS: distribute
+`.toNatTrans.app ZZ` over `≫` (`Cat.Hom.toNatTrans_comp, NatTrans.comp_app`), reduce
+`backwardsNaturalityIso (𝟙 a)` (via `backwardsNaturalityIsoApp`, its hom = `mapComp(𝟙,ZZ.op).inv ≫
+nat(𝟙≫ZZ.op).inv`), and reduce **`postcompId₂`** (Basic ~204, `postcomp₂ (𝟙 a) ≅ 𝟙`) and
+**`bicategoricalIso`** (structural associator/unitor iso — components are `𝟙` via the ForMathlib
+strictness lemmas + `bicategory`). (3) State a core = reduced goal, prove via `mapComp_id_component`
+(+ the `mapId`/unitor coherence `Pseudofunctor.mapComp_id_right_hom`, already wrapped in that lemma).
+
+## ⬜ naturality_comp (Basic ~1964) — same template
+
+Object-level core ALREADY proven: **`mapComp_assoc_component`** (Basic ~1443). Mirror forwards
+`naturality_comp` (Basic ~1391 → `forwards_naturality_comp_core`). Descent identical to above but
+with `yonedaEvaluation_mapComp_app_down` and `Cat.associator_{hom,inv}_toNatTrans_app` in the first
+simp (cf. forwards ~1394-1399). Watch for `postcompComp₂` defeq-toxicity (the P4 perf wall) if it
+surfaces. Reduces to `mapComp_assoc_component` (the associator coherence).
+
+## Scaffolding available (all verified, in Basic.lean)
+- `back_map_comp` (~1832), `backwards_naturality_naturality_core` (~1842) — reuse the descent.
+- `mapComp_id_component` (~1431), `mapComp_assoc_component` (~1443) — the object-level targets.
+- `backwardsNaturalityIsoApp` (~1643): `.hom = mapComp(f.1,X.op).inv ≫ nat(f.1≫X.op).inv`.
+- ForMathlib strictness lemmas (`Cat.{leftUnitor,rightUnitor,associator}_*_toNatTrans_app = 𝟙`).
+- Diamond discipline: `erw` for fibre `≫`/assoc; `reassoc_of%` for non-terminal slides.
