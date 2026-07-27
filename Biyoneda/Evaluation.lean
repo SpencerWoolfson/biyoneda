@@ -189,43 +189,34 @@ lemma evaluation_whisker_right_core {a b c : C × (C ⥤ᵖ Cat.{w, v})} {f g : 
 
 /-- The cancellation core of `evaluationPseudo.map₂_whisker_left`, at a point `Z`. -/
 lemma evaluation_whisker_left_core {a b c : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
-    {g h : b ⟶ c} (η : g ⟶ h) (Z : ↑(a.2.obj a.1)) :
-    ((c.2.mapComp f.1 g.1).hom.toNatTrans.app
-        ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
-      (c.2.map g.1).toFunctor.map ((c.2.map f.1).toFunctor.map
-        ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)))) ≫
-      (c.2.map₂ η.1).toNatTrans.app
-        ((c.2.map f.1).toFunctor.obj
-          ((h.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
-      (c.2.mapComp f.1 h.1).inv.toNatTrans.app
-        ((h.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) =
-    (c.2.mapComp f.1 g.1).hom.toNatTrans.app
-        ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
+    {g h : b ⟶ c} (η : g ⟶ h) (W : ↑(b.2.obj a.1)) :
+    ((c.2.mapComp f.1 g.1).hom.toNatTrans.app ((g.2.app a.1).toFunctor.obj W) ≫
       (c.2.map g.1).toFunctor.map
-        ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
+        ((c.2.map f.1).toFunctor.map ((η.2.as.app a.1).toNatTrans.app W))) ≫
+      (c.2.map₂ η.1).toNatTrans.app
+        ((c.2.map f.1).toFunctor.obj ((h.2.app a.1).toFunctor.obj W)) ≫
+      (c.2.mapComp f.1 h.1).inv.toNatTrans.app ((h.2.app a.1).toFunctor.obj W) =
+    (c.2.mapComp f.1 g.1).hom.toNatTrans.app ((g.2.app a.1).toFunctor.obj W) ≫
+      (c.2.map g.1).toFunctor.map ((g.2.naturality f.1).inv.toNatTrans.app W) ≫
       ((c.2.map g.1).toFunctor.map
-          ((η.2.as.app b.1).toNatTrans.app
-            ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+          ((η.2.as.app b.1).toNatTrans.app ((b.2.map f.1).toFunctor.obj W)) ≫
         (c.2.map₂ η.1).toNatTrans.app
-          ((h.2.app b.1).toFunctor.obj
-            ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))) ≫
-      (c.2.map h.1).toFunctor.map
-        ((h.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
-      (c.2.mapComp f.1 h.1).inv.toNatTrans.app
-        ((h.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) := by
-  have h2 := modification_naturality_app η.2 f.1 ((f.2.app a.1).toFunctor.obj Z)
+          ((h.2.app b.1).toFunctor.obj ((b.2.map f.1).toFunctor.obj W))) ≫
+      (c.2.map h.1).toFunctor.map ((h.2.naturality f.1).hom.toNatTrans.app W) ≫
+      (c.2.mapComp f.1 h.1).inv.toNatTrans.app ((h.2.app a.1).toFunctor.obj W) := by
+  have h2 := modification_naturality_app η.2 f.1 W
   have h3 : (c.2.map g.1).toFunctor.map
-        ((h.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
+        ((h.2.naturality f.1).hom.toNatTrans.app W) ≫
       (c.2.map₂ η.1).toNatTrans.app
         ((c.2.map f.1).toFunctor.obj
-          ((h.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) =
+          ((h.2.app a.1).toFunctor.obj W)) =
       (c.2.map₂ η.1).toNatTrans.app
         ((h.2.app b.1).toFunctor.obj
-          ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+          ((b.2.map f.1).toFunctor.obj W)) ≫
       (c.2.map h.1).toFunctor.map
-        ((h.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) :=
+        ((h.2.naturality f.1).hom.toNatTrans.app W) :=
     (c.2.map₂ η.1).toNatTrans.naturality
-      ((h.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))
+      ((h.2.naturality f.1).hom.toNatTrans.app W)
   simp only [Category.assoc]
   slice_rhs 4 5 => rw [← h3]
   slice_rhs 3 4 =>
@@ -234,166 +225,133 @@ lemma evaluation_whisker_left_core {a b c : C × (C ⥤ᵖ Cat.{w, v})} (f : a �
   erw [h2]
   slice_rhs 2 3 => erw [← Functor.map_comp]
   have c1' := Cat.Hom.inv_hom_id_toNatTrans_app_assoc (g.2.naturality f.1)
-    ((f.2.app a.1).toFunctor.obj Z)
+    W
     ((c.2.map f.1).toFunctor.map
-      ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)))
+      ((η.2.as.app a.1).toNatTrans.app W))
   erw [c1']
   simp only [Category.assoc]
   rfl
+
+/-- In the product bicategory `C × (C ⥤ᵖ Cat)`, the second component of the associator is a
+modification whose components are identities — `Cat` is strict, so this holds by `rfl`.  Stating
+it lets `simp` cancel the term instead of leaving it for a defeq-level `erw`. -/
+lemma prod_associator_snd_as_app_app {a b c d : C × (C ⥤ᵖ Cat.{w, v})}
+    (f : a ⟶ b) (g : b ⟶ c) (h : c ⟶ d) (Z : ↑(a.2.obj a.1)) :
+    ((α_ f g h).hom.2.as.app a.1).toNatTrans.app Z = 𝟙 _ := rfl
 
 set_option maxHeartbeats 800000 in
 -- the `show` re-spelling and the `exact`-plug both bridge composite/nested point
 -- spellings by defeq at default transparency
 /-- The cancellation core of `evaluationPseudo.map₂_associator`, at a point `Z`. -/
 lemma evaluation_associator_core {a b c d : C × (C ⥤ᵖ Cat.{w, v})}
-    (f : a ⟶ b) (g : b ⟶ c) (h : c ⟶ d) (Z : ↑(a.2.obj a.1)) :
-    (d.2.map ((f.1 ≫ g.1) ≫ h.1)).toFunctor.map
-        (((α_ f g h).hom.2.as.app a.1).toNatTrans.app Z) ≫
-      (d.2.map₂ (α_ f.1 g.1 h.1).hom).toNatTrans.app
-        ((h.2.app a.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) =
-    ((d.2.mapComp (f.1 ≫ g.1) h.1).hom.toNatTrans.app
-        ((h.2.app a.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
-      ((d.2.map h.1).toFunctor.map
-            ((h.2.naturality (f.1 ≫ g.1)).inv.toNatTrans.app
-              ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
-          𝟙 ((d.2.map h.1).toFunctor.obj
-            ((h.2.app c.1).toFunctor.obj
-              ((c.2.map (f.1 ≫ g.1)).toFunctor.obj
-                ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))))) ≫
-        𝟙 ((d.2.map h.1).toFunctor.obj
-          ((h.2.app c.1).toFunctor.obj
-            ((c.2.map (f.1 ≫ g.1)).toFunctor.obj
-              ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))))) ≫
-      (h.2.app c.1 ≫ d.2.map h.1).toFunctor.map
-          ((c.2.mapComp f.1 g.1).hom.toNatTrans.app
-              ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
-            ((c.2.map g.1).toFunctor.map
-                  ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
-                𝟙 ((c.2.map g.1).toFunctor.obj
-                  ((g.2.app b.1).toFunctor.obj
-                    ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))))) ≫
-              𝟙 ((c.2.map g.1).toFunctor.obj
-                ((g.2.app b.1).toFunctor.obj
-                  ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))))) ≫
-        ((((d.2.map h.1).toFunctor.map
-                  ((h.2.naturality g.1).hom.toNatTrans.app
-                    ((g.2.app b.1).toFunctor.obj
-                      ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))) ≫
-                𝟙 ((d.2.map h.1).toFunctor.obj
-                  ((d.2.map g.1).toFunctor.obj
-                    ((h.2.app b.1).toFunctor.obj
-                      ((g.2.app b.1).toFunctor.obj
-                        ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))))))) ≫
-              𝟙 ((d.2.map h.1).toFunctor.obj
-                ((d.2.map g.1).toFunctor.obj
-                  ((h.2.app b.1).toFunctor.obj
-                    ((g.2.app b.1).toFunctor.obj
-                      ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))))))) ≫
-            (d.2.mapComp g.1 h.1).inv.toNatTrans.app
-              ((h.2.app b.1).toFunctor.obj
-                ((g.2.app b.1).toFunctor.obj
-                  ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))))) ≫
-          (((𝟙 ((d.2.map (g.1 ≫ h.1)).toFunctor.obj
-                  ((h.2.app b.1).toFunctor.obj
-                    ((g.2.app b.1).toFunctor.obj
-                      ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))))) ≫
-                (d.2.map (g.1 ≫ h.1)).toFunctor.map
-                  (((g.2 ≫ h.2).naturality f.1).hom.toNatTrans.app
-                    ((f.2.app a.1).toFunctor.obj Z))) ≫
-              𝟙 ((d.2.map (g.1 ≫ h.1)).toFunctor.obj
-                ((d.2.map f.1).toFunctor.obj
-                  ((h.2.app a.1).toFunctor.obj
-                    ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))))) ≫
-            𝟙 ((d.2.map (g.1 ≫ h.1)).toFunctor.obj
-              ((d.2.map f.1).toFunctor.obj
-                ((h.2.app a.1).toFunctor.obj
-                  ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))))) ≫
-        (d.2.mapComp f.1 (g.1 ≫ h.1)).inv.toNatTrans.app
-          ((h.2.app a.1).toFunctor.obj
-            ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) := by
-  have hα : ((α_ f g h).hom.2.as.app a.1).toNatTrans.app Z = 𝟙 _ := rfl
-  rw [hα]
+    (f : a ⟶ b) (g : b ⟶ c) (h : c ⟶ d) (W : ↑(b.2.obj a.1)) :
+    (d.2.map ((f.1 ≫ g.1) ≫ h.1)).toFunctor.map (𝟙 ((h.2.app a.1).toFunctor.obj ((g.2.app
+      a.1).toFunctor.obj W))) ≫ (d.2.map₂ (α_ f.1 g.1 h.1).hom).toNatTrans.app ((h.2.app
+      a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj W)) = ((d.2.mapComp (f.1 ≫ g.1)
+      h.1).hom.toNatTrans.app ((h.2.app a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj W)) ≫
+      ((d.2.map h.1).toFunctor.map ((h.2.naturality (f.1 ≫ g.1)).inv.toNatTrans.app ((g.2.app
+      a.1).toFunctor.obj W)) ≫ 𝟙 ((d.2.map h.1).toFunctor.obj ((h.2.app c.1).toFunctor.obj
+      ((c.2.map (f.1 ≫ g.1)).toFunctor.obj ((g.2.app a.1).toFunctor.obj W))))) ≫ 𝟙 ((d.2.map
+      h.1).toFunctor.obj ((h.2.app c.1).toFunctor.obj ((c.2.map (f.1 ≫ g.1)).toFunctor.obj
+      ((g.2.app a.1).toFunctor.obj W))))) ≫ (h.2.app c.1 ≫ d.2.map h.1).toFunctor.map
+      ((c.2.mapComp f.1 g.1).hom.toNatTrans.app ((g.2.app a.1).toFunctor.obj W) ≫ ((c.2.map
+      g.1).toFunctor.map ((g.2.naturality f.1).inv.toNatTrans.app W) ≫ 𝟙 ((c.2.map
+      g.1).toFunctor.obj ((g.2.app b.1).toFunctor.obj ((b.2.map f.1).toFunctor.obj W)))) ≫ 𝟙
+      ((c.2.map g.1).toFunctor.obj ((g.2.app b.1).toFunctor.obj ((b.2.map f.1).toFunctor.obj W))))
+      ≫ ((((d.2.map h.1).toFunctor.map ((h.2.naturality g.1).hom.toNatTrans.app ((g.2.app
+      b.1).toFunctor.obj ((b.2.map f.1).toFunctor.obj W))) ≫ 𝟙 ((d.2.map h.1).toFunctor.obj
+      ((d.2.map g.1).toFunctor.obj ((h.2.app b.1).toFunctor.obj ((g.2.app b.1).toFunctor.obj
+      ((b.2.map f.1).toFunctor.obj W)))))) ≫ 𝟙 ((d.2.map h.1).toFunctor.obj ((d.2.map
+      g.1).toFunctor.obj ((h.2.app b.1).toFunctor.obj ((g.2.app b.1).toFunctor.obj ((b.2.map
+      f.1).toFunctor.obj W)))))) ≫ (d.2.mapComp g.1 h.1).inv.toNatTrans.app ((h.2.app
+      b.1).toFunctor.obj ((g.2.app b.1).toFunctor.obj ((b.2.map f.1).toFunctor.obj W)))) ≫ (((𝟙
+      ((d.2.map (g.1 ≫ h.1)).toFunctor.obj ((h.2.app b.1).toFunctor.obj ((g.2.app
+      b.1).toFunctor.obj ((b.2.map f.1).toFunctor.obj W)))) ≫ (d.2.map (g.1 ≫ h.1)).toFunctor.map
+      (((g.2 ≫ h.2).naturality f.1).hom.toNatTrans.app W)) ≫ 𝟙 ((d.2.map (g.1 ≫
+      h.1)).toFunctor.obj ((d.2.map f.1).toFunctor.obj ((h.2.app a.1).toFunctor.obj ((g.2.app
+      a.1).toFunctor.obj W))))) ≫ 𝟙 ((d.2.map (g.1 ≫ h.1)).toFunctor.obj ((d.2.map
+      f.1).toFunctor.obj ((h.2.app a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj W))))) ≫
+      (d.2.mapComp f.1 (g.1 ≫ h.1)).inv.toNatTrans.app ((h.2.app a.1).toFunctor.obj ((g.2.app
+      a.1).toFunctor.obj W)) := by
   erw [Functor.map_id]
   erw [Category.id_comp]
   have hw := Cat.Hom₂.congr_app (d.2.map₂_associator f.1 g.1 h.1)
-    ((h.2.app a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))
+    ((h.2.app a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj W))
   dsimp at hw
   erw [hw]
   rw [Pseudofunctor.StrongTrans.naturality_comp_inv_app h.2 f.1 g.1
-    ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))]
+    ((g.2.app a.1).toFunctor.obj W)]
   have hD := Cat.Hom₂.congr_app
     (Pseudofunctor.StrongTrans.categoryStruct_comp_naturality_hom g.2 h.2 f.1)
-    ((f.2.app a.1).toFunctor.obj Z)
+    W
   rw [hD]
   simp only [Category.id_comp, Category.comp_id, Category.assoc, Functor.map_comp,
     Cat.Hom.comp_map]
   iterate 12 (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
   have hsplit : ((g.2.naturality f.1).hom ▷ h.2.app b.1 ≫
       g.2.app a.1 ◁ (h.2.naturality f.1).hom).toNatTrans.app
-        ((f.2.app a.1).toFunctor.obj Z) =
+        W =
       (h.2.app b.1).toFunctor.map
-        ((g.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
+        ((g.2.naturality f.1).hom.toNatTrans.app W) ≫
       (h.2.naturality f.1).hom.toNatTrans.app
-        ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) := rfl
+        ((g.2.app a.1).toFunctor.obj W) := rfl
   erw [hsplit]
   simp only [← Functor.map_comp]
   show (d.2.mapComp (f.1 ≫ g.1) h.1).hom.toNatTrans.app
         ((h.2.app a.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+          ((g.2.app a.1).toFunctor.obj W)) ≫
       (d.2.map h.1).toFunctor.map
         ((d.2.mapComp f.1 g.1).hom.toNatTrans.app
           ((h.2.app a.1).toFunctor.obj
-            ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))) ≫
+            ((g.2.app a.1).toFunctor.obj W))) ≫
       (d.2.mapComp g.1 h.1).inv.toNatTrans.app
         ((d.2.map f.1).toFunctor.obj
           ((h.2.app a.1).toFunctor.obj
-            ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))) ≫
+            ((g.2.app a.1).toFunctor.obj W))) ≫
       (d.2.mapComp f.1 (g.1 ≫ h.1)).inv.toNatTrans.app
         ((h.2.app a.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) =
+          ((g.2.app a.1).toFunctor.obj W)) =
     (d.2.mapComp (f.1 ≫ g.1) h.1).hom.toNatTrans.app
         ((h.2.app a.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+          ((g.2.app a.1).toFunctor.obj W)) ≫
       (d.2.map h.1).toFunctor.map
         ((d.2.mapComp f.1 g.1).hom.toNatTrans.app
             ((h.2.app a.1).toFunctor.obj
-              ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+              ((g.2.app a.1).toFunctor.obj W)) ≫
           (d.2.map g.1).toFunctor.map
             ((h.2.naturality f.1).inv.toNatTrans.app
-              ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+              ((g.2.app a.1).toFunctor.obj W)) ≫
           (h.2.naturality g.1).inv.toNatTrans.app
             ((c.2.map f.1).toFunctor.obj
-              ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+              ((g.2.app a.1).toFunctor.obj W)) ≫
           (h.2.app c.1).toFunctor.map
             ((c.2.mapComp f.1 g.1).inv.toNatTrans.app
-              ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))) ≫
+              ((g.2.app a.1).toFunctor.obj W))) ≫
       (d.2.map h.1).toFunctor.map
         ((h.2.app c.1).toFunctor.map
           ((c.2.mapComp f.1 g.1).hom.toNatTrans.app
-              ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
+              ((g.2.app a.1).toFunctor.obj W) ≫
             (c.2.map g.1).toFunctor.map
-              ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
+              ((g.2.naturality f.1).inv.toNatTrans.app W) ≫
             𝟙 ((c.2.map g.1).toFunctor.obj
               ((g.2.app b.1).toFunctor.obj
-                ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))))) ≫
+                ((b.2.map f.1).toFunctor.obj W))))) ≫
       (d.2.map h.1).toFunctor.map
         ((h.2.naturality g.1).hom.toNatTrans.app
           ((g.2.app b.1).toFunctor.obj
-            ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))) ≫
+            ((b.2.map f.1).toFunctor.obj W))) ≫
       (d.2.mapComp g.1 h.1).inv.toNatTrans.app
         ((h.2.app b.1).toFunctor.obj
           ((g.2.app b.1).toFunctor.obj
-            ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))) ≫
+            ((b.2.map f.1).toFunctor.obj W))) ≫
       (d.2.map (g.1 ≫ h.1)).toFunctor.map
         ((h.2.app b.1).toFunctor.map
-            ((g.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
+            ((g.2.naturality f.1).hom.toNatTrans.app W) ≫
           (h.2.naturality f.1).hom.toNatTrans.app
-            ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+            ((g.2.app a.1).toFunctor.obj W)) ≫
       (d.2.mapComp f.1 (g.1 ≫ h.1)).inv.toNatTrans.app
         ((h.2.app a.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))
+          ((g.2.app a.1).toFunctor.obj W))
   rw [← Functor.map_comp_assoc]
   first
     | rw [← Functor.map_comp_assoc]
@@ -410,26 +368,26 @@ lemma evaluation_associator_core {a b c d : C × (C ⥤ᵖ Cat.{w, v})}
     | erw [Category.comp_id]
   have key1 : (h.2.naturality g.1).inv.toNatTrans.app
         ((c.2.map f.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+          ((g.2.app a.1).toFunctor.obj W)) ≫
       (h.2.app c.1).toFunctor.map ((c.2.map g.1).toFunctor.map
-        ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))) ≫
+        ((g.2.naturality f.1).inv.toNatTrans.app W)) ≫
       (h.2.naturality g.1).hom.toNatTrans.app
         ((g.2.app b.1).toFunctor.obj
-          ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) =
+          ((b.2.map f.1).toFunctor.obj W)) =
       (d.2.map g.1).toFunctor.map ((h.2.app b.1).toFunctor.map
-        ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))) := by
+        ((g.2.naturality f.1).inv.toNatTrans.app W)) := by
     have hn : (h.2.naturality g.1).inv.toNatTrans.app
           ((c.2.map f.1).toFunctor.obj
-            ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+            ((g.2.app a.1).toFunctor.obj W)) ≫
         (h.2.app c.1).toFunctor.map ((c.2.map g.1).toFunctor.map
-          ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))) =
+          ((g.2.naturality f.1).inv.toNatTrans.app W)) =
         (d.2.map g.1).toFunctor.map ((h.2.app b.1).toFunctor.map
-          ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))) ≫
+          ((g.2.naturality f.1).inv.toNatTrans.app W)) ≫
         (h.2.naturality g.1).inv.toNatTrans.app
           ((g.2.app b.1).toFunctor.obj
-            ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) :=
+            ((b.2.map f.1).toFunctor.obj W)) :=
       ((h.2.naturality g.1).inv.toNatTrans.naturality
-        ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))).symm
+        ((g.2.naturality f.1).inv.toNatTrans.app W)).symm
     rw [← Category.assoc]
     erw [hn]
     first | rw [Category.assoc] | erw [Category.assoc]
@@ -441,51 +399,51 @@ lemma evaluation_associator_core {a b c d : C × (C ⥤ᵖ Cat.{w, v})}
   simp only [Category.assoc]
   have key2 : (d.2.map h.1).toFunctor.map ((d.2.map g.1).toFunctor.map
         ((h.2.naturality f.1).inv.toNatTrans.app
-          ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
+          ((g.2.app a.1).toFunctor.obj W) ≫
          (h.2.app b.1).toFunctor.map
-          ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)))) ≫
+          ((g.2.naturality f.1).inv.toNatTrans.app W))) ≫
       (d.2.mapComp g.1 h.1).inv.toNatTrans.app
         ((h.2.app b.1).toFunctor.obj
           ((g.2.app b.1).toFunctor.obj
-            ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))) ≫
+            ((b.2.map f.1).toFunctor.obj W))) ≫
       (d.2.map (g.1 ≫ h.1)).toFunctor.map
         ((h.2.app b.1).toFunctor.map
-          ((g.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
+          ((g.2.naturality f.1).hom.toNatTrans.app W) ≫
          (h.2.naturality f.1).hom.toNatTrans.app
-          ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
+          ((g.2.app a.1).toFunctor.obj W)) ≫
       (d.2.mapComp f.1 (g.1 ≫ h.1)).inv.toNatTrans.app
         ((h.2.app a.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) =
+          ((g.2.app a.1).toFunctor.obj W)) =
       (d.2.mapComp g.1 h.1).inv.toNatTrans.app
         ((d.2.map f.1).toFunctor.obj
           ((h.2.app a.1).toFunctor.obj
-            ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))) ≫
+            ((g.2.app a.1).toFunctor.obj W))) ≫
       (d.2.mapComp f.1 (g.1 ≫ h.1)).inv.toNatTrans.app
         ((h.2.app a.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) := by
+          ((g.2.app a.1).toFunctor.obj W)) := by
     have hn2 : (d.2.map h.1).toFunctor.map ((d.2.map g.1).toFunctor.map
           ((h.2.naturality f.1).inv.toNatTrans.app
-            ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
+            ((g.2.app a.1).toFunctor.obj W) ≫
            (h.2.app b.1).toFunctor.map
-            ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)))) ≫
+            ((g.2.naturality f.1).inv.toNatTrans.app W))) ≫
         (d.2.mapComp g.1 h.1).inv.toNatTrans.app
           ((h.2.app b.1).toFunctor.obj
             ((g.2.app b.1).toFunctor.obj
-              ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))) =
+              ((b.2.map f.1).toFunctor.obj W))) =
         (d.2.mapComp g.1 h.1).inv.toNatTrans.app
           ((d.2.map f.1).toFunctor.obj
             ((h.2.app a.1).toFunctor.obj
-              ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))) ≫
+              ((g.2.app a.1).toFunctor.obj W))) ≫
         (d.2.map (g.1 ≫ h.1)).toFunctor.map
           ((h.2.naturality f.1).inv.toNatTrans.app
-            ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
+            ((g.2.app a.1).toFunctor.obj W) ≫
            (h.2.app b.1).toFunctor.map
-            ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))) :=
+            ((g.2.naturality f.1).inv.toNatTrans.app W)) :=
       (d.2.mapComp g.1 h.1).inv.toNatTrans.naturality
         ((h.2.naturality f.1).inv.toNatTrans.app
-          ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
+          ((g.2.app a.1).toFunctor.obj W) ≫
          (h.2.app b.1).toFunctor.map
-          ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)))
+          ((g.2.naturality f.1).inv.toNatTrans.app W))
     rw [← Category.assoc]
     erw [hn2]
     first | rw [Category.assoc] | erw [Category.assoc]
@@ -564,7 +522,7 @@ def evaluationPseudo : C × (C ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v} where
         ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))
     erw [reassoc_of% h1]
     simpa only [Cat.Hom.comp_toFunctor, Functor.comp_obj, Functor.comp_map, Category.assoc]
-      using evaluation_whisker_left_core f η Z
+      using evaluation_whisker_left_core f η ((f.2.app a.1).toFunctor.obj Z)
   map₂_whisker_right {a b c f g h} η := by
     apply Cat.Hom₂.ext_app
     intro Z
@@ -606,10 +564,11 @@ def evaluationPseudo : C × (C ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v} where
       Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id,
       Bicategory.prod_comp_fst, Bicategory.prod_comp_snd, Bicategory.prod_associator_hom_fst,
       Pseudofunctor.StrongTrans.comp_app]
+    erw [prod_associator_snd_as_app_app, Functor.map_id, Category.id_comp]
     simpa only [Cat.Hom.comp_toFunctor, Functor.comp_obj, Functor.comp_map, Functor.map_id,
       Functor.map_comp, Category.id_comp, Category.comp_id, Category.assoc,
       Pseudofunctor.StrongTrans.comp_app]
-      using evaluation_associator_core f g h Z
+      using evaluation_associator_core f g h ((f.2.app a.1).toFunctor.obj Z)
   map₂_left_unitor {a b} f := by
     apply Cat.Hom₂.ext_app
     intro Z

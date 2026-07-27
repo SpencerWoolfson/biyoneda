@@ -120,3 +120,63 @@ are consumed *inside* `evaluationPseudo`'s own coherence fields, so they **canno
 This is the structural reason their statements are long, and it caps how far cosmetic cleanup can
 go. Shortening them further means changing how the pseudofunctor is *built* (e.g. assembling it
 from smaller gadgets so the fields are inherited), not how the cores are *stated*.
+
+## Cutting down the core lemmas — generalising the transported point
+
+Measured the repetition instead of guessing.  In `evaluation_associator_core` alone:
+
+| repeated expression | occurrences |
+|---|---|
+| `P1 = (f.2.app a.1).toFunctor.obj Z` | **66** |
+| `P2 = (g.2.app a.1).toFunctor.obj P1` | 35 |
+| `P3 = (h.2.app a.1).toFunctor.obj P2` | 17 |
+
+So the cores are dominated by re-spelling the same *transported point*.  The fix is to take the
+transported point as a **free variable** rather than rebuilding it from `Z` each time:
+
+```lean
+-- before:  (Z : ↑(a.2.obj a.1))   ... with ((f.2.app a.1).toFunctor.obj Z) written 10-18×
+-- after:   (W : ↑(b.2.obj a.1))   ... written simply W
+```
+
+This also makes the lemmas strictly **more general** (they now hold for an arbitrary `W`, not only
+for transported points); the call site instantiates `W := (f.2.app a.1).toFunctor.obj Z`.
+
+Applicability was checked per core by counting `Z` occurrences *outside* `P1`:
+
+| core | `P1`× | bare `Z` outside `P1` | generalised? |
+|---|---|---|---|
+| `evaluation_whisker_left_core` | 10 | **0** | yes |
+| `evaluation_associator_core` | 18 | 1 | yes — see below |
+| `evaluation_whisker_right_core` | 3 | 7 | no (point enters directly) |
+| `evaluation_left_unitor_core` | 2 | 3 | no |
+| `evaluation_right_unitor_core` | 4 | 1 | no |
+
+The associator's single blocking `Z` sits in `((α_ f g h).hom.2.as.app a.1).toNatTrans.app Z`,
+which is **definitionally the identity** (`Cat` is strict).  Recording that as
+
+```lean
+lemma prod_associator_snd_as_app_app … :
+    ((α_ f g h).hom.2.as.app a.1).toNatTrans.app Z = 𝟙 _ := rfl
+```
+
+lets the statement use `𝟙` instead, unblocking the generalisation and letting `Functor.map_id`
+collapse the whole first factor of the LHS.  At the call site it must be applied with `erw`
+(the usual `Cat` strictness diamond), not `rw`.
+
+### Result
+
+| core | statement lines | statement chars |
+|---|---|---|
+| `evaluation_whisker_left_core` | 25 → **16** | 1438 → 1056 |
+| `evaluation_associator_core` | 68 → **30** | 3904 → 2599 |
+| **all five cores** | | 7836 → **6149 (−21%)** |
+
+Build green, `Basic.lean` unchanged at 6 sorries.
+
+### Still open
+
+`whisker_right` / the two unitor cores take the point directly and so do not generalise this way.
+Reducing them further would need the deeper change: assembling `evaluationPseudo` from smaller
+gadgets so the coherence fields are *inherited* rather than proved, which would remove the cores
+entirely rather than shortening them.
