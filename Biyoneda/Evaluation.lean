@@ -51,10 +51,6 @@ lemma evaluation_left_unitor_core {a b : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶ 
         (((λ_ f).hom.2.as.app a.1).toNatTrans.app Z) ≫
       (b.2.map₂ (λ_ f.1).hom).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) =
     ((b.2.mapComp (𝟙 a.1) f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) ≫
-      𝟙 ((b.2.map f.1).toFunctor.obj
-        ((b.2.map (𝟙 a.1)).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
-      𝟙 ((b.2.map f.1).toFunctor.obj
-        ((b.2.map (𝟙 a.1)).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
       (b.2.map f.1).toFunctor.map
         ((f.2.naturality (𝟙 a.1)).inv.toNatTrans.app Z)) ≫
       (b.2.map f.1).toFunctor.map
@@ -63,7 +59,6 @@ lemma evaluation_left_unitor_core {a b : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶ 
   dsimp at hw
   have hid := Pseudofunctor.StrongTrans.naturality_id_hom_app f.2 a.1 Z
   dsimp at hid
-  simp only [Category.id_comp]
   have hl : ((λ_ f).hom.2.as.app a.1).toNatTrans.app Z =
       𝟙 ((f.2.app a.1).toFunctor.obj Z) := rfl
   have c1 := Cat.Hom.inv_hom_id_toNatTrans_app (b.2.mapId a.1) ((f.2.app a.1).toFunctor.obj Z)
@@ -88,7 +83,6 @@ lemma evaluation_left_unitor_core {a b : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶ 
   erw [← Functor.map_comp]
   erw [key]
   erw [Category.comp_id]
-  erw [Category.id_comp]
   rfl
 
 /-- The cancellation core of `evaluationPseudo.map₂_right_unitor`, at a point `Z`. -/
@@ -98,20 +92,11 @@ lemma evaluation_right_unitor_core {a b : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶
         (((ρ_ f).hom.2.as.app a.1).toNatTrans.app Z) ≫
       (b.2.map₂ (ρ_ f.1).hom).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) =
     ((b.2.mapComp f.1 (𝟙 b.1)).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) ≫
-      𝟙 ((b.2.map (𝟙 b.1)).toFunctor.obj
-        ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
-      (𝟙 ((b.2.map (𝟙 b.1)).toFunctor.obj
-          ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z))) ≫
-        (b.2.map (𝟙 b.1)).toFunctor.map
-          (((𝟙 b.2 : b.2 ⟶ b.2).naturality f.1).inv.toNatTrans.app
-            ((f.2.app a.1).toFunctor.obj Z)) ≫
-        𝟙 ((b.2.map (𝟙 b.1)).toFunctor.obj
-          ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))) ≫
-      𝟙 ((b.2.map (𝟙 b.1)).toFunctor.obj
-        ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)))) ≫
+      (b.2.map (𝟙 b.1)).toFunctor.map
+        (((𝟙 b.2 : b.2 ⟶ b.2).naturality f.1).inv.toNatTrans.app
+          ((f.2.app a.1).toFunctor.obj Z))) ≫
       (b.2.mapId b.1).hom.toNatTrans.app
-        ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
-      𝟙 ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) := by
+        ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) := by
   have hw := Cat.Hom₂.congr_app (b.2.map₂_right_unitor f.1) ((f.2.app a.1).toFunctor.obj Z)
   dsimp at hw
   have hr : ((ρ_ f).hom.2.as.app a.1).toNatTrans.app Z =
@@ -128,7 +113,7 @@ lemma evaluation_right_unitor_core {a b : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶
   erw [hw]
   erw [hidt]
   erw [Functor.map_id]
-  simp only [Category.id_comp, Category.comp_id, Category.assoc]
+  simp only [Category.comp_id, Category.assoc]
   iterate 6 (first | erw [Category.id_comp] | erw [Category.comp_id] | skip)
   rfl
 

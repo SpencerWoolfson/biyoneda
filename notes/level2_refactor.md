@@ -93,3 +93,30 @@ Added at the end of `Evaluation.lean` (all verified):
 The `mapComp` component lemmas are the valuable ones: they state in a single rewrite what the
 existing proofs derive by hand with `iterate 6 (first | erw [Cat.Hom.inv_hom_id_toNatTrans_app] | …)`.
 They are deliberately **not** `@[simp]`, matching the `ForMathlib` policy.
+
+## Statement de-noising (using the API's insight)
+
+The `*_core` statements were long partly because they bake in **identity 2-cells** — artefacts of
+the unreduced pasting, each costing 2–4 lines. Stripping them (the field's `simpa` bridges the
+difference) shrank the unitor cores substantially:
+
+| lemma | statement lines | `𝟙` in statement |
+|---|---|---|
+| `evaluation_left_unitor_core` | 14 → **10** | 7 → 3 |
+| `evaluation_right_unitor_core` | 20 → **11** | 13 → 4 |
+
+The remaining `𝟙`s are genuine identity *1-cells* (`𝟙 a.1`), not noise.
+
+`evaluation_associator_core` (68-line statement, 9 identity 2-cells) was **attempted and reverted**:
+removing them requires balanced-paren surgery across a deeply nested term and the automated pass
+left the expression unbalanced. Doing it needs a careful hand edit; the 279-line proof below it
+makes the risk/benefit poor until the rest of the project settles.
+
+## Why the cores can't just be restated via the API
+
+Worth recording, because it looks like an obvious win and is not: the `evaluation_*_core` lemmas
+are consumed *inside* `evaluationPseudo`'s own coherence fields, so they **cannot mention
+`evaluationPseudo`** — that would be circular. They are obliged to speak in raw, expanded terms.
+This is the structural reason their statements are long, and it caps how far cosmetic cleanup can
+go. Shortening them further means changing how the pseudofunctor is *built* (e.g. assembling it
+from smaller gadgets so the fields are inherited), not how the cores are *stated*.
