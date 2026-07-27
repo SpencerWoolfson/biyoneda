@@ -11,6 +11,7 @@ import Mathlib.Tactic.CategoryTheory.Bicategory.Basic
 import Mathlib.Tactic.CategoryTheory.Slice
 import Biyoneda.Evaluation
 import Biyoneda.UniverseLift
+import Biyoneda.BiEquiv
 
 /-!
 # Bicategorical Yoneda Lemma
@@ -1206,24 +1207,6 @@ def yonedaLemmaBackwards : StrongTrans (@yonedaEvaluation B _)  (@yonedaPairing 
   naturality_id a := by sorry
   naturality_comp {a b c} f g := by sorry
 
-/--
-The data of an internal equivalence in a bicategory `B` between objects `x` and `y`.
-
-* `map : x ⟶ y` — the forward 1-morphism.
-* `inv : y ⟶ x` — the backward 1-morphism.
-* `homInvId : map ≫ inv ≅ 𝟙 x` — a 2-isomorphism witnessing that `inv` is a left inverse
-  of `map` up to isomorphism.
-* `invHomId : inv ≫ map ≅ 𝟙 y` — a 2-isomorphism witnessing that `inv` is a right inverse
-  of `map` up to isomorphism.
-
-Note: this is weaker than an adjoint equivalence (no triangle identities are required), but
-sufficient to state the Yoneda lemma as a bicategorical equivalence.
--/
-structure BiEquiv (x y : B) where
-  map : x ⟶ y
-  inv : y ⟶ x
-  homInvId : map ≫ inv ≅ 𝟙 x
-  invHomId : inv ≫ map ≅ 𝟙 y
 
 /--
 The canonical isomorphism used to build the unit of the Yoneda equivalence.

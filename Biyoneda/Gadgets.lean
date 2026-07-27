@@ -42,7 +42,7 @@ fields — including the parked `mapComp` `sorry` in `Basic.lean` — would disa
 |---|---|
 | `Pseudofunctor.prod` | **complete, no sorries** — all five coherence fields auto-discharged |
 | `Pseudofunctor.op` | data complete; four of five coherence fields auto-discharged, `map₂_associator` open |
-| `homPseudo` | `obj`/`map`/`map₂`/`map₂_id` work; `map_comp`, `mapId`, `mapComp` open |
+| `homPseudo` | `obj`/`map`/`map₂` typecheck; `mapId`, `mapComp` and all coherence open |
 
 The `prod` result is the important one: it confirms the premise of this whole file. When the data
 is assembled from existing gadgets, the coherence really does come for free.
@@ -51,11 +51,12 @@ is assembled from existing gadgets, the coherence really does come for free.
 
 That file builds the *one-variable* hom-pseudofunctor, so it is the direct template here.
 
-1. **Use `PrelaxFunctor.mkOfHomFunctors`, not a raw `where` with a hand-built `map₂`.**
-   It takes an object map plus, for each pair, a *functor* out of the hom-category, and from that
-   derives `map`, `map₂`, `map₂_id` and `map₂_comp` in one go. This is why `yoneda₀` is four
-   lines. Building `map₂` by hand (`fconstructor`, then supplying `app` and `naturality`
-   separately) fights the API and re-proves what the functor structure already gives you.
+1. **Express `map`/`map₂` through `precomposingCat` / `postcomposingCat`** rather than building
+   a `NatTrans` by hand (`fconstructor`, then `app` and `naturality` separately) — the packaged
+   functors already carry the naturality. Mathlib additionally routes this through
+   `PrelaxFunctor.mkOfHomFunctors`, which derives `map₂_id` and `map₂_comp` for free and is why
+   `yoneda₀` is four lines; `homPseudo` below writes the fields directly instead and therefore
+   owes those two proofs.
 2. **The building blocks all exist**: `precomposingCat`, `postcomposingCat` (the functors),
    `leftUnitorNatIsoCat` / `rightUnitorNatIsoCat` (for `mapId`), and
    `associatorNatIsoRightCat` / `associatorNatIsoLeftCat` / `associatorNatIsoMiddleCat`
@@ -154,8 +155,8 @@ namespace CategoryTheory.Bicategory
 `homPseudo B : Bᵒᵖ × B ⥤ᵖ Cat`, sending `(a, b)` to the hom-category `unop a ⟶ b`, and a 1-cell
 `(f, g)` to `h ↦ f ≫ h ≫ g` (precompose, then postcompose).
 
-Built with `PrelaxFunctor.mkOfHomFunctors` following Mathlib's `yoneda₀`, so `map`, `map₂` and
-`map₂_id` come from the hom-functor rather than being supplied by hand.
+Fields are written out directly. `map` and `map₂` use Mathlib's packaged `precomposingCat` /
+`postcomposingCat` functors, so their naturality is inherited rather than hand-proved.
 -/
 
 variable (B : Type u₁) [Bicategory.{w₁, v₁} B]
@@ -165,50 +166,47 @@ set_option backward.isDefEq.respectTransparency false in
 
 The bicategorical analogue of `CategoryTheory.Functor.hom : Cᵒᵖ × C ⥤ Type v`.
 
-Remaining work, in order:
+The fields are written out directly rather than going through
+`PrelaxFunctor.mkOfHomFunctors`.  That constructor would derive `map₂_id` and `map₂_comp` for
+free (it is how Mathlib's `yoneda₀` gets them), so writing the fields explicitly means owing
+those two proofs as well — the trade is that the definition stays readable and each field is
+independently inspectable.
 
-1. **`map_comp` of the hom-functor** (the `sorry` inside the `mkOfHomFunctors` argument). After
-   the `simp only` the goal is exactly the **interchange law** — the two middle factors
-   `A_g ▷ _` and `_ ◁ B_f` need swapping, which is `Bicategory.whisker_exchange`. A bare
-   `simp [whisker_exchange]` does not fire and `bicategory` rewrites the goal into an
-   `Iso`-composite form without closing it, so this wants a *positional* rewrite
-   (`rw [Bicategory.whisker_exchange]` at the right occurrence, or `slice`).
-2. **`mapId`** — component at `h` is `ρ_ _ ≪≫ λ_ h` (verified to typecheck). Mathlib's
+`obj`, `map` and `map₂` are verified to typecheck.  Remaining work, in order:
+
+1. **`map₂_comp`** — exactly the **interchange law**.  Writing `A` for `(precomposingCat ..).map`
+   and `B` for `(postcomposingCat ..).map`, the goal is
+   `A (η ≫ θ).1.unop2 ▷ _ ≫ _ ◁ B (η ≫ θ).2`
+   `= (A η.1.unop2 ▷ _ ≫ _ ◁ B η.2) ≫ (A θ.1.unop2 ▷ _ ≫ _ ◁ B θ.2)`.
+   It needs, in order: (i) expand `(η ≫ θ).1.unop2` and `(η ≫ θ).2` over the composite — this
+   does **not** fire from `unop2_comp` alone, the product-bicategory projection `(η ≫ θ).1` has
+   to be reduced first (`Bicategory.prod_comp_fst` / `prod_comp_snd`); (ii) `Functor.map_comp`,
+   then `comp_whiskerRight` / `whiskerLeft_comp`; (iii) `Bicategory.whisker_exchange` to swap the
+   two middle factors.  A bare `simp [whisker_exchange]` does not fire and `bicategory` rewrites
+   the goal into an `Iso`-composite form without closing it, so (iii) wants a *positional*
+   rewrite (`rw` at the right occurrence, or `slice`).
+2. **`map₂_id`** — should be `Functor.map_id` on both halves, then the whiskerings of identities
+   collapse (`id_whiskerRight`, `whiskerLeft_id`, `Category.comp_id`).
+3. **`mapId`** — component at `h` is `ρ_ _ ≪≫ λ_ h` (verified to typecheck).  Mathlib's
    `leftUnitorNatIsoCat` / `rightUnitorNatIsoCat` are the packaged versions.
-3. **`mapComp`** — a structural re-bracketing of `gh.1.unop ≫ fg.1.unop ≫ h ≫ fg.2 ≫ gh.2`.
+4. **`mapComp`** — a structural re-bracketing of `gh.1.unop ≫ fg.1.unop ≫ h ≫ fg.2 ≫ gh.2`.
    `bicategoricalIso _ _` FAILS here: the product/opposite projections `(fg ≫ gh).1.unop` are
-   not in structural normal form, so `BicategoricalCoherence` cannot be synthesized. Either
+   not in structural normal form, so `BicategoricalCoherence` cannot be synthesized.  Either
    normalise the projections first (`dsimp only [...]`) and retry, or assemble it from
    `associatorNatIsoRightCat` / `associatorNatIsoLeftCat` / `associatorNatIsoMiddleCat`.
-4. **The five coherence fields** — the decision point (see the module docstring). -/
+5. **The five coherence fields** — the decision point (see the module docstring). -/
 def homPseudo : Bᵒᵖ × B ⥤ᵖ Cat.{w₁, v₁} where
-  toPrelaxFunctor := PrelaxFunctor.mkOfHomFunctors
-    (fun p => Cat.of (unop p.1 ⟶ p.2))
-    (fun p q =>
-      { obj := fun fg =>
-          (precomposingCat (unop q.1) (unop p.1) p.2).obj fg.1.unop ≫
-            (postcomposingCat (unop q.1) p.2 q.2).obj fg.2
-        map := fun {fg fg'} η =>
-          (precomposingCat (unop q.1) (unop p.1) p.2).map η.1.unop2 ▷ _ ≫
-            _ ◁ (postcomposingCat (unop q.1) p.2 q.2).map η.2
-        map_comp := by
-          intro X Y Z f g
-          simp only [Category.assoc]
-          -- The goal here is exactly the **interchange law**. Writing `A` for
-          -- `(precomposingCat ..).map` and `B` for `(postcomposingCat ..).map`, it is
-          --   `A (f ≫ g).1.unop2 ▷ _ ≫ _ ◁ B (f ≫ g).2`
-          --     `= A f.1.unop2 ▷ _ ≫ _ ◁ B f.2 ≫ A g.1.unop2 ▷ _ ≫ _ ◁ B g.2`
-          -- so it needs, in order: (i) expand `(f ≫ g).1.unop2` and `(f ≫ g).2` over the
-          -- composite — note this did NOT fire from `unop2_comp` alone, the product-bicategory
-          -- projection `(f ≫ g).1` has to be reduced first (`Bicategory.prod_comp_fst/snd`);
-          -- (ii) `Functor.map_comp`, then `comp_whiskerRight` / `whiskerLeft_comp`;
-          -- (iii) `Bicategory.whisker_exchange` to swap the two middle factors.
-          -- A bare `simp [whisker_exchange]` does not fire, and `bicategory` rewrites the goal
-          -- into an `Iso`-composite form without closing it — so step (iii) wants a *positional*
-          -- rewrite (`rw` at the right occurrence, or `slice`).
-          sorry })
+  obj p := Cat.of (unop p.1 ⟶ p.2)
+  map {p q} fg :=
+    (precomposingCat (unop q.1) (unop p.1) p.2).obj fg.1.unop ≫
+      (postcomposingCat (unop q.1) p.2 q.2).obj fg.2
+  map₂ {p q fg fg'} η :=
+    (precomposingCat (unop q.1) (unop p.1) p.2).map η.1.unop2 ▷ _ ≫
+      _ ◁ (postcomposingCat (unop q.1) p.2 q.2).map η.2
   mapId p := sorry
   mapComp fg gh := sorry
+  map₂_id := by sorry
+  map₂_comp := by sorry
   map₂_whisker_left := by sorry
   map₂_whisker_right := by sorry
   map₂_associator := by sorry
