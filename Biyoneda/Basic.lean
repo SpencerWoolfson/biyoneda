@@ -414,7 +414,7 @@ lemma forwards_naturality_naturality_Z {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w,
         (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
       (a.2.map₂ η.1).toNatTrans.app ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) := by
   rw [Category.assoc]
-  have h3 := Cat.Hom₂.congr_app (Z.naturality_naturality η.1) (𝟙 (unop a.1))
+  have h3 := Z.naturality_naturality_app η.1 (𝟙 (unop a.1))
   simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
     Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app] at h3
   dsimp [yoneda₀, precomposing, precomposingCat] at h3
@@ -461,7 +461,7 @@ lemma forwards_naturality_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.
     postcomp₂, postcomposingCat, postcomp_obj, Cat.Hom.comp_toFunctor,
     Bicategory.id_whiskerLeft]
   have h1 := modification_naturality_app η.2 f.1 ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))
-  have h2 := Cat.Hom₂.congr_app (g.2.naturality_naturality η.1)
+  have h2 := g.2.naturality_naturality_app η.1
     ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))
   dsimp at h1 h2
   simp only [Category.assoc]
@@ -959,7 +959,7 @@ lemma backwards_inner_component {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (
               (a.2.mapComp f.1 (Quiver.Hom.op YY)).inv).toNatTrans.app X) := by
   have h1 := Cat.Hom₂.congr_app
     (b.2.toOplax.mapComp_naturality_right f.1 (op2 h)) ((f.2.app a.1).toFunctor.obj X)
-  have h2 := Cat.Hom₂.congr_app (f.2.naturality_naturality (f.1 ◁ op2 h)) X
+  have h2 := f.2.naturality_naturality_app (f.1 ◁ op2 h) X
   have h3 := Cat.Hom₂.congr_app
     (a.2.toOplax.mapComp_naturality_right f.1 (op2 h)) X
   dsimp at h1 h2 h3
@@ -1221,8 +1221,7 @@ lemma backwards_naturality_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat
   -- The three coherences, component-distributed (θ = η.1 ▷ ZZ.op linearizes the chain)
   have hmc := Cat.Hom₂.congr_app
     (b.2.toOplax.mapComp_naturality_left η.1 (Quiver.Hom.op ZZ)) ((g.2.app a.1).toFunctor.obj x)
-  have hnn := Cat.Hom₂.congr_app
-    (g.2.naturality_naturality (η.1 ▷ Quiver.Hom.op ZZ)) x
+  have hnn := g.2.naturality_naturality_app (η.1 ▷ Quiver.Hom.op ZZ) x
   have hmod := modification_naturality_app η.2 (f.1 ≫ Quiver.Hom.op ZZ) x
   simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
     Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app] at hmc hnn hmod
