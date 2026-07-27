@@ -139,9 +139,8 @@ lemma evaluation_whisker_right_core {a b c : C × (C ⥤ᵖ Cat.{w, v})} {f g : 
         ((η.2.naturality g.1).hom.toNatTrans.app ((g.2.app a.1).toFunctor.obj Z)) ≫
       (c.2.mapComp g.1 η.1).inv.toNatTrans.app
         ((η.2.app a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj Z)) := by
-  have hnn := Cat.Hom₂.congr_app (η.2.naturality_naturality h.1)
+  have hnn := η.2.naturality_naturality_app h.1
     ((g.2.app a.1).toFunctor.obj Z)
-  dsimp at hnn
   have hs : (η.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) ≫
       (η.2.app b.1).toFunctor.map
         ((b.2.map f.1).toFunctor.map ((h.2.as.app a.1).toNatTrans.app Z)) =
@@ -164,7 +163,6 @@ lemma evaluation_whisker_right_core {a b c : C × (C ⥤ᵖ Cat.{w, v})} {f g : 
     erw [Category.assoc]
     erw [hnnG]
   slice_rhs 2 3 => erw [hsG]
-  simp only [← Functor.map_comp]
   have key : (c.2.map η.1).toFunctor.map
         ((c.2.map f.1).toFunctor.map
           ((η.2.app a.1).toFunctor.map ((h.2.as.app a.1).toNatTrans.app Z)) ≫
@@ -275,9 +273,8 @@ lemma evaluation_associator_core {a b c d : C × (C ⥤ᵖ Cat.{w, v})}
       a.1).toFunctor.obj W)) := by
   erw [Functor.map_id]
   erw [Category.id_comp]
-  have hw := Cat.Hom₂.congr_app (d.2.map₂_associator f.1 g.1 h.1)
+  have hw := d.2.map₂_associator_app f.1 g.1 h.1
     ((h.2.app a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj W))
-  dsimp at hw
   erw [hw]
   rw [Pseudofunctor.StrongTrans.naturality_comp_inv_app h.2 f.1 g.1
     ((g.2.app a.1).toFunctor.obj W)]
@@ -491,9 +488,8 @@ def evaluationPseudo : C × (C ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v} where
       Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id]
     simp only [prod_whiskerLeft_fst, prod_whiskerLeft_snd, whiskerLeft_as_app]
     erw [Cat.whiskerLeft_app]
-    have hw := Cat.Hom₂.congr_app (c.2.map₂_whisker_left f.1 η.1)
+    have hw := c.2.map₂_whisker_left_app f.1 η.1
       (((f ≫ h).2.app a.1).toFunctor.obj Z)
-    dsimp at hw
     erw [hw]
     have h1 : (c.2.map (f ≫ g).1).toFunctor.map
           ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
@@ -518,13 +514,11 @@ def evaluationPseudo : C × (C ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v} where
       Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
       Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id]
     simp only [prod_whiskerRight_fst, prod_whiskerRight_snd, whiskerRight_as_app]
-    have hw := Cat.Hom₂.congr_app (c.2.map₂_whisker_right h.1 η.1)
+    have hw := c.2.map₂_whisker_right_app h.1 η.1
       (((g ≫ η).2.app a.1).toFunctor.obj Z)
-    dsimp at hw
     erw [hw]
-    have hnn := Cat.Hom₂.congr_app (η.2.naturality_naturality h.1)
+    have hnn := η.2.naturality_naturality_app h.1
       ((g.2.app a.1).toFunctor.obj Z)
-    dsimp at hnn
     have h1 : (c.2.map (f ≫ η).1).toFunctor.map
           ((h.2.as.app a.1 ▷ η.2.app a.1).toNatTrans.app Z) ≫
         (c.2.mapComp f.1 η.1).hom.toNatTrans.app

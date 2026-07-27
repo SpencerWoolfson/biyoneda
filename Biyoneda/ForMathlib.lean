@@ -112,4 +112,18 @@ lemma Cat.naturality_2 {C D : Cat} {F G : C ⟶ D} (ι : F ≅ G) {X Y : ↑C} (
       = F.toFunctor.map m :=
   NatIso.naturality_2 (Cat.Hom.toNatIso ι) m
 
+/-- Component form of `StrongTrans.naturality_naturality`.  Mathlib tags most of the
+`Pseudofunctor` coherence lemmas `@[to_app]`, which auto-generates these `_app` versions, but
+this one is not tagged — so it has to be stated by hand.  Tagging it upstream would remove the
+need for this. -/
+lemma Pseudofunctor.StrongTrans.naturality_naturality_app {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{w, v}} (α : F ⟶ G) {a b : B} {f g : a ⟶ b} (η : f ⟶ g) (X : ↑(F.obj a)) :
+    (α.app b).toFunctor.map ((F.map₂ η).toNatTrans.app X) ≫
+      (α.naturality g).hom.toNatTrans.app X =
+    (α.naturality f).hom.toNatTrans.app X ≫
+      (G.map₂ η).toNatTrans.app ((α.app a).toFunctor.obj X) := by
+  simpa only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app]
+    using Cat.Hom₂.congr_app (α.naturality_naturality η) X
+
 end CategoryTheory

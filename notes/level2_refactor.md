@@ -180,3 +180,57 @@ Build green, `Basic.lean` unchanged at 6 sorries.
 Reducing them further would need the deeper change: assembling `evaluationPseudo` from smaller
 gadgets so the coherence fields are *inherited* rather than proved, which would remove the cores
 entirely rather than shortening them.
+
+## The missing abstraction: Mathlib's `@[to_app]` already generates these
+
+Prompted by "long type definitions are a sign we're missing an abstraction" — and that was right.
+
+Mathlib tags its bicategory coherence lemmas `@[to_app (attr := reassoc)]`, which **auto-generates
+the component (`_app`) version of each**, specialised to `Cat` and simplified with
+`Cat.whiskerLeft_app` / `whiskerRight_app` / `id_app` / `comp_app` / `eqToHom_app`.  There is also
+a term elaborator **`to_app_of% t`** for ad-hoc use inside proofs.
+
+We were using **none** of it: 0 uses of `to_app_of%`, and 19 hand-rolled
+`Cat.Hom₂.congr_app (…) ; dsimp at h` sites doing by hand exactly what `to_app` generates.
+
+Verified to already exist (`#check`):
+
+| generated lemma | we were hand-deriving it |
+|---|---|
+| `Pseudofunctor.map₂_associator_app` | ✓ |
+| `Pseudofunctor.map₂_left_unitor_app`, `…_right_unitor_app` | ✓ |
+| `Pseudofunctor.map₂_whisker_left_app`, `…_whisker_right_app` | ✓ |
+| `Pseudofunctor.mapComp_assoc_right_hom_app` | (already used) |
+| `Pseudofunctor.StrongTrans.naturality_comp_hom_app` | (already used) |
+
+`map₂_associator_app`'s statement **is literally** the `hw` that
+`evaluation_associator_core` was computing by hand.
+
+**Why this matters beyond line count.** `to_app` normalises with a *specific* simp set. Our manual
+`dsimp at h` produced a **different** normal form — which is very likely why our terms so often
+fail to match Mathlib lemmas and get pushed onto `erw` chains and whole-goal `show`s. We were
+working in a non-canonical spelling of the same mathematics.
+
+Only `StrongTrans.naturality_naturality` is **not** tagged `@[to_app]` upstream; its `_app` form is
+now stated by hand in `ForMathlib` — and "please tag this" is a good small Mathlib PR.
+
+Swapped so far (build green): the associator `hw`, both whisker `hw`s, and both
+`naturality_naturality` sites — `Cat.Hom₂.congr_app` in `Evaluation.lean` 8 → 3. Each swap also
+deletes its `dsimp at h` cleanup line. One downstream `simp only [← Functor.map_comp]` became
+vacuous (the canonical form had already merged the maps) and was deleted.
+
+**Still to do:** the remaining 3 sites in `Evaluation.lean` (the two unitor ones need care — their
+generated forms carry an `eqToHom`, so they are not drop-in) and the 11 in `Basic.lean`.
+
+## `hsplit`, dissected
+
+Not 78 lines of argument. It is:
+* 7 lines — a `rfl` fact: the component of a horizontal composite `(α ▷ H ≫ F ◁ β)` splits as
+  `H.map (α.app W) ≫ β.app (F.obj W)`;
+* **~55 lines — a whole-goal `show`** re-spelling the goal to bridge a defeq;
+* ~16 lines — the actual tactics.
+
+So the bulk is the `show`, i.e. the diamond-bridge technique. The right fix is not to golf the
+`show` but to remove the need for it: with the goal already in `to_app` canonical form (above) and
+the `evaluationPseudo_mapComp_hom_app` API, the re-spelling should largely become unnecessary.
+That is the next experiment.
