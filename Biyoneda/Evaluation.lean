@@ -239,7 +239,7 @@ lemma prod_associator_snd_as_app_app {a b c d : C × (C ⥤ᵖ Cat.{w, v})}
     (f : a ⟶ b) (g : b ⟶ c) (h : c ⟶ d) (Z : ↑(a.2.obj a.1)) :
     ((α_ f g h).hom.2.as.app a.1).toNatTrans.app Z = 𝟙 _ := rfl
 
-set_option maxHeartbeats 800000 in
+set_option maxHeartbeats 400000 in
 -- the `show` re-spelling and the `exact`-plug both bridge composite/nested point
 -- spellings by defeq at default transparency
 /-- The cancellation core of `evaluationPseudo.map₂_associator`, at a point `Z`. -/
@@ -376,23 +376,9 @@ lemma evaluation_associator_core {a b c d : C × (C ⥤ᵖ Cat.{w, v})}
           ((b.2.map f.1).toFunctor.obj W)) =
       (d.2.map g.1).toFunctor.map ((h.2.app b.1).toFunctor.map
         ((g.2.naturality f.1).inv.toNatTrans.app W)) := by
-    have hn : (h.2.naturality g.1).inv.toNatTrans.app
-          ((c.2.map f.1).toFunctor.obj
-            ((g.2.app a.1).toFunctor.obj W)) ≫
-        (h.2.app c.1).toFunctor.map ((c.2.map g.1).toFunctor.map
-          ((g.2.naturality f.1).inv.toNatTrans.app W)) =
-        (d.2.map g.1).toFunctor.map ((h.2.app b.1).toFunctor.map
-          ((g.2.naturality f.1).inv.toNatTrans.app W)) ≫
-        (h.2.naturality g.1).inv.toNatTrans.app
-          ((g.2.app b.1).toFunctor.obj
-            ((b.2.map f.1).toFunctor.obj W)) :=
-      ((h.2.naturality g.1).inv.toNatTrans.naturality
-        ((g.2.naturality f.1).inv.toNatTrans.app W)).symm
-    rw [← Category.assoc]
-    erw [hn]
-    first | rw [Category.assoc] | erw [Category.assoc]
-    erw [Cat.Hom.inv_hom_id_toNatTrans_app]
-    first | rw [Category.comp_id] | erw [Category.comp_id]
+    simpa only [Cat.Hom.comp_toFunctor, Functor.comp_map] using
+      Cat.naturality_1 (h.2.naturality g.1)
+        ((g.2.naturality f.1).inv.toNatTrans.app W)
   erw [key1]
   erw [← Functor.map_comp]
   erw [Functor.map_comp]
@@ -464,7 +450,6 @@ set_option linter.unusedTactic false in
 set_option linter.unreachableTactic false in
 -- the `skip` alternatives in the erosion loops are structural: `iterate` aborts at the
 -- first wholly-failing round without them, and are unreachable on the successful path
-set_option maxHeartbeats 800000 in
 -- the coherence fields close by `exact`-plugs of core lemmas whose defeq checks
 -- bridge composite/nested point spellings at default transparency
 /--

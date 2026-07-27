@@ -98,4 +98,18 @@ lemma modification_naturality_app {C : Type u₁} [Bicategory.{w₁, v₁} C]
     Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app]
     using Cat.Hom₂.congr_app (Γ.as.naturality f) z
 
+/-- `NatIso.naturality_1` for `Cat`-bundled 2-isomorphisms: conjugating a functor's action by a
+2-isomorphism gives the other functor's action.  Mathlib's version does not apply directly because
+`Cat`'s 1-morphisms are bundled (`Cat.Hom`), so its components go through `.toNatTrans.app`. -/
+lemma Cat.naturality_1 {C D : Cat} {F G : C ⟶ D} (ι : F ≅ G) {X Y : ↑C} (m : X ⟶ Y) :
+    ι.inv.toNatTrans.app X ≫ F.toFunctor.map m ≫ ι.hom.toNatTrans.app Y
+      = G.toFunctor.map m :=
+  NatIso.naturality_1 (Cat.Hom.toNatIso ι) m
+
+/-- `NatIso.naturality_2` for `Cat`-bundled 2-isomorphisms. -/
+lemma Cat.naturality_2 {C D : Cat} {F G : C ⟶ D} (ι : F ≅ G) {X Y : ↑C} (m : X ⟶ Y) :
+    ι.hom.toNatTrans.app X ≫ G.toFunctor.map m ≫ ι.inv.toNatTrans.app Y
+      = F.toFunctor.map m :=
+  NatIso.naturality_2 (Cat.Hom.toNatIso ι) m
+
 end CategoryTheory
