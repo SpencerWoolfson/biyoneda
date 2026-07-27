@@ -42,7 +42,7 @@ fields — including the parked `mapComp` `sorry` in `Basic.lean` — would disa
 |---|---|
 | `Pseudofunctor.prod` | **complete, no sorries** — all five coherence fields auto-discharged |
 | `Pseudofunctor.op` | data complete; four of five coherence fields auto-discharged, `map₂_associator` open |
-| `homPseudo` | `obj`/`map`/`map₂` typecheck; `mapId`, `mapComp` and all coherence open |
+| `homPseudo` | data done except `mapComp`'s naturality; **all five coherence fields close with `cat_disch`**; `map₂_comp` open |
 
 The `prod` result is the important one: it confirms the premise of this whole file. When the data
 is assembled from existing gadgets, the coherence really does come for free.
@@ -73,8 +73,15 @@ Finish `homPseudo` and stop at its coherence fields. If they close with `cat_dis
 If instead they need bespoke `erw` chains of the kind in `evaluation_associator_core`, the
 composite route costs *more* than the hand-rolled `yonedaPairing` it would replace — stop there.
 
-Evidence so far points the right way: `prod` closed completely on autoparams, and `op` closed
-four fields of five.
+**The decision point has been answered: GO.** All five of `homPseudo`'s coherence fields
+(`map₂_whisker_left`, `map₂_whisker_right`, `map₂_associator`, `map₂_left_unitor`,
+`map₂_right_unitor`) close with a bare `cat_disch`, as does `map₂_id`. No bespoke `erw` chains
+were needed anywhere. Together with `prod` closing completely and `op` closing four fields of
+five, the "assemble from gadgets and inherit the coherence" premise holds.
+
+What remains in `homPseudo` is *not* coherence: `mapComp`'s naturality (a `NatIso.ofComponents`
+obligation for a hand-built associator chain) and `map₂_comp` (the interchange law). Both are
+noted in detail at their sites.
 
 ## Where each piece would live upstream
 
@@ -203,15 +210,49 @@ def homPseudo : Bᵒᵖ × B ⥤ᵖ Cat.{w₁, v₁} where
   map₂ {p q fg fg'} η :=
     (precomposingCat (unop q.1) (unop p.1) p.2).map η.1.unop2 ▷ _ ≫
       _ ◁ (postcomposingCat (unop q.1) p.2 q.2).map η.2
-  mapId p := sorry
-  mapComp fg gh := sorry
-  map₂_id := by sorry
-  map₂_comp := by sorry
-  map₂_whisker_left := by sorry
-  map₂_whisker_right := by sorry
-  map₂_associator := by sorry
-  map₂_left_unitor := by sorry
-  map₂_right_unitor := by sorry
+  mapId p := by
+    rcases p with ⟨a, b⟩
+    refine CategoryTheory.Cat.Hom.isoMk ?_
+    refine NatIso.ofComponents ?_ ?_
+    · intro h
+      refine (ρ_ (𝟙 (unop a) ≫ h)) ≪≫ λ_ h
+    · intros h h' η
+      simp
+  mapComp fg gh := by
+    rcases fg with ⟨f, g⟩
+    rcases gh with ⟨h, k⟩
+    refine CategoryTheory.Cat.Hom.isoMk ?_
+    refine NatIso.ofComponents ?_ ?_
+    · intro l
+      refine (α_ ((h.unop ≫ f.unop) ≫ l) g k).symm ≪≫ (?_  ▷ᵢ k)
+      refine ?_ ≪≫ (α_ h.unop (f.unop ≫ l) g)
+      exact (α_ h.unop f.unop l) ▷ᵢ g
+    · intros l l' η
+      sorry
+  map₂_id := by cat_disch
+  map₂_comp := by
+    -- OPEN. This is the interchange law, and it is the one field `mkOfHomFunctors` would have
+    -- given for free — writing the fields out directly is exactly what costs this proof.
+    --
+    -- The blocker is *not* the interchange step itself but getting there: `(η ≫ θ).1` does not
+    -- reduce to `η.1 ≫ θ.1`. `CategoryTheory.prod_comp` states this and is `rfl` and `@[simp]`,
+    -- but it does not fire — the hom-category of a product *bicategory* reaches the product
+    -- *category* through a different instance path, so the two are defeq but not reducibly
+    -- equal. Destructuring the 2-cells (`rintro … ⟨η₁, η₂⟩ ⟨θ₁, θ₂⟩`) leaves
+    -- `((η₁, η₂) ≫ (θ₁, θ₂)).1`, still unreduced.
+    --
+    -- Next thing to try: the `show … from rfl` bridge (`instance-diamonds.md` rung 4a) with
+    -- explicit type ascriptions — a bare `show ((η₁, η₂) ≫ (θ₁, θ₂)).1 = η₁ ≫ θ₁ from rfl`
+    -- fails to elaborate because the projection's type is not inferable there. Once the
+    -- projections are reduced, the rest is: `unop2_comp`, `Functor.map_comp`,
+    -- `comp_whiskerRight` / `whiskerLeft_comp`, then a positional
+    -- `Bicategory.whisker_exchange` to swap the two middle factors.
+    sorry
+  map₂_whisker_left := by cat_disch
+  map₂_whisker_right := by cat_disch
+  map₂_associator := by cat_disch
+  map₂_left_unitor := by cat_disch
+  map₂_right_unitor := by cat_disch
 
 end CategoryTheory.Bicategory
 
