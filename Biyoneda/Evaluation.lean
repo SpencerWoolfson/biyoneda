@@ -663,3 +663,85 @@ def evaluationPseudo : C × (C ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v} where
       Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_toFunctor, Functor.id_obj,
       Pseudofunctor.StrongTrans.comp_app]
       using evaluation_right_unitor_core f Z
+
+/-!
+## Component API for `evaluationPseudo`
+
+The structure fields of `evaluationPseudo` are large pastings, but every coherence obligation in
+practice descends into a fibre, where only the *components* matter.  The lemmas below give those
+components in reduced form.
+
+`evaluationPseudo_mapComp_hom_app` / `_inv_app` are the important ones: they state the `mapComp`
+component with the associator identities of the strict bicategory `Cat` already cancelled, so a
+proof can rewrite once instead of hand-cancelling them with an ordered `erw` chain.
+
+These are deliberately **not** `@[simp]` — see the note in `Biyoneda.ForMathlib`: tagging them
+globally adds a match attempt to every bare `simp` in the development.  Cite them explicitly.
+-/
+
+section API
+
+variable {x y : C × (C ⥤ᵖ Cat.{w, v})}
+
+/-- `evaluationPseudo` on objects: `(c, F) ↦ F.obj c`. -/
+lemma evaluationPseudo_obj (x : C × (C ⥤ᵖ Cat.{w, v})) :
+    (evaluationPseudo (C := C)).obj x = x.2.obj x.1 := rfl
+
+/-- `evaluationPseudo` on 1-morphisms. -/
+lemma evaluationPseudo_map (f : x ⟶ y) :
+    (evaluationPseudo (C := C)).map f = f.2.app x.1 ≫ y.2.map f.1 := rfl
+
+/-- `evaluationPseudo`'s unit coherence is that of the second component. -/
+lemma evaluationPseudo_mapId (x : C × (C ⥤ᵖ Cat.{w, v})) :
+    (evaluationPseudo (C := C)).mapId x = x.2.mapId x.1 := rfl
+
+/-- Point form of `evaluationPseudo_map`. -/
+lemma evaluationPseudo_map_obj (f : x ⟶ y) (Z : ↑(x.2.obj x.1)) :
+    ((evaluationPseudo (C := C)).map f).toFunctor.obj Z
+      = (y.2.map f.1).toFunctor.obj ((f.2.app x.1).toFunctor.obj Z) := rfl
+
+/-- Component of `evaluationPseudo.map₂`. -/
+lemma evaluationPseudo_map₂_app {f g : x ⟶ y} (η : f ⟶ g) (Z : ↑(x.2.obj x.1)) :
+    ((evaluationPseudo (C := C)).map₂ η).toNatTrans.app Z
+      = (y.2.map f.1).toFunctor.map ((η.2.as.app x.1).toNatTrans.app Z) ≫
+        (y.2.map₂ η.1).toNatTrans.app ((g.2.app x.1).toFunctor.obj Z) := rfl
+
+/-- Component of `evaluationPseudo.mapId`. -/
+lemma evaluationPseudo_mapId_hom_app (x : C × (C ⥤ᵖ Cat.{w, v})) (Z : ↑(x.2.obj x.1)) :
+    ((evaluationPseudo (C := C)).mapId x).hom.toNatTrans.app Z
+      = (x.2.mapId x.1).hom.toNatTrans.app Z := rfl
+
+/-- Component of `evaluationPseudo.mapComp`, with the strict-`Cat` associator identities
+already cancelled: only the target's `mapComp` and the naturality inverse survive. -/
+lemma evaluationPseudo_mapComp_hom_app {a b c : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
+    (Z : ↑(a.2.obj a.1)) :
+    ((evaluationPseudo (C := C)).mapComp f g).hom.toNatTrans.app Z
+      = (c.2.mapComp f.1 g.1).hom.toNatTrans.app
+            ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
+        (c.2.map g.1).toFunctor.map
+            ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) := by
+  dsimp only [evaluationPseudo]
+  simp only [Iso.trans_hom, Iso.symm_hom, whiskerLeftIso_hom, whiskerRightIso_hom,
+    Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+    Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
+    Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id]
+  rfl
+
+/-- Inverse form of `evaluationPseudo_mapComp_hom_app`. -/
+lemma evaluationPseudo_mapComp_inv_app {a b c : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
+    (Z : ↑(a.2.obj a.1)) :
+    ((evaluationPseudo (C := C)).mapComp f g).inv.toNatTrans.app Z
+      = (c.2.map g.1).toFunctor.map
+            ((g.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
+        (c.2.mapComp f.1 g.1).inv.toNatTrans.app
+            ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) := by
+  dsimp only [evaluationPseudo]
+  simp only [Iso.trans_inv, Iso.symm_inv, whiskerLeftIso_inv, whiskerRightIso_inv,
+    Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+    Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
+    Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id]
+  rfl
+
+end API

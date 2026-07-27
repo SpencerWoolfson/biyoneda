@@ -490,7 +490,7 @@ lemma forwards_naturality_id_core (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}))
         (Z.naturality (𝟙 a.1)).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
       (yonedaEvaluation'.mapId a).hom.toNatTrans.app ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) =
     (((yonedaPairing.mapId a).hom.toNatTrans.app Z).as.app a.1).toNatTrans.app (𝟙 (unop a.1)) := by
-  dsimp only [yonedaPairing, yonedaEvaluation']
+  dsimp only [yonedaPairing, yonedaEvaluation', evaluationPseudo]
   simp only [Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app,
     Iso.trans_hom, Iso.symm_hom, whiskerRightIso_hom, homCategory_comp_as_app,
     whiskerRight_as_app, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
@@ -580,7 +580,7 @@ lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
   rw [strongTrans_comp_naturality_hom_app]
   simp only [Pseudofunctor.StrongTrans.comp_app, Cat.Hom.comp_toFunctor,
     Functor.comp_map, Functor.comp_obj]
-  dsimp only [yonedaPairing, yonedaEvaluation']
+  dsimp only [yonedaPairing, yonedaEvaluation', evaluationPseudo]
   simp only [Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app,
     Iso.trans_hom, Iso.symm_hom, whiskerRightIso_hom, whiskerLeftIso_hom,
     homCategory_comp_as_app, whiskerRight_as_app,
@@ -600,11 +600,102 @@ lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
       | erw [Cat.Hom.inv_hom_id_toNatTrans_app_assoc]
       | erw [Cat.Hom.inv_hom_id_toNatTrans_app]
       | erw [Category.assoc])
-  -- REGRESSION (branch level2-gadget-refactor): the remainder of this ordered `erw` chain
-  -- no longer matches after `yonedaEvaluation'` became an alias for the general
-  -- `evaluationPseudo`; the term shapes the chain was tuned against shifted.  The original
-  -- tactic block is preserved verbatim in `notes/level2_refactor.md` for repair.
-  sorry
+  simp only [← Functor.map_comp]
+  simp only [Cat.Hom.comp_toFunctor, Functor.comp_obj]
+  iterate erw [Category.comp_id]
+  iterate (first
+      | erw [Cat.Hom.hom_inv_id_toNatTrans_app]
+      | erw [Cat.Hom.inv_hom_id_toNatTrans_app])
+  erw [Functor.map_id, Category.comp_id]
+  simp only [Functor.map_comp, Category.assoc]
+  erw [(g.2.naturality g.1).hom.toNatTrans.naturality]
+  have hpush2 := congrArg (g.2.app c.1).toFunctor.map
+    ((f.2.naturality g.1).hom.toNatTrans.naturality
+      ((Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))))
+  simp only [Cat.Hom.comp_toFunctor, Functor.comp_map, Functor.comp_obj,
+    Functor.map_comp] at hpush2
+  erw [reassoc_of% hpush2]
+  erw [(g.2.naturality g.1).hom.toNatTrans.naturality_assoc]
+  simp only [← Functor.map_comp_assoc, ← Functor.map_comp]
+  have hHead_t : (Z.app c.1).toFunctor.map ((λ_ (f.1 ≫ g.1).unop).hom ≫ (ρ_ (f.1 ≫ g.1).unop).inv) ≫
+        (Z.app c.1).toFunctor.map
+            (((yoneda₀ (unop a.1)).mapComp f.1 g.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
+          (Z.naturality g.1).hom.toNatTrans.app
+            (((yoneda₀ (unop a.1)).map f.1).toFunctor.obj (𝟙 (unop a.1)))
+      = (Z.app c.1).toFunctor.map (
+          ((postcompComp₂ g.1.unop f.1.unop).hom.as.app c.1).toNatTrans.app (𝟙 (unop c.1)) ≫
+          ((postcomp₂ f.1.unop).app c.1).toFunctor.map
+              ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ≫
+          ((postcomp₂ f.1.unop).naturality g.1).hom.toNatTrans.app (𝟙 (unop b.1))) ≫
+        (Z.app c.1).toFunctor.map
+            (((yoneda₀ (unop a.1)).map g.1).toFunctor.map
+              ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)) ≫
+          (Z.naturality g.1).hom.toNatTrans.app
+            (((yoneda₀ (unop a.1)).map f.1).toFunctor.obj (𝟙 (unop a.1))) := by
+    erw [← Functor.map_comp_assoc]; erw [forwards_naturality_comp_head]
+    erw [Functor.map_comp_assoc]; rfl
+  erw [hHead_t]
+  -- LHS now has `Zc.map(ymgu) ≫ (Z.naturality g.1)` adjacent; transport it through Z.nat g.1.
+  erw [(Z.naturality g.1).hom.toNatTrans.naturality
+    ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)]
+  -- step 2: transport the factor through `f.2.naturality g.1` (inside `G.map`).
+  have hT2 : ∀ {M : ↑(a.2.obj c.1)}
+      (A : (Z.app c.1).toFunctor.obj
+          (((postcomp₂ (g.1.unop ≫ f.1.unop)).app c.1).toFunctor.obj (𝟙 (unop c.1))) ⟶ M)
+      (Bb : M ⟶ (Z.app b.1 ≫ a.2.map g.1).toFunctor.obj (𝟙 (unop b.1) ≫ f.1.unop)),
+      (f.2.app c.1).toFunctor.map
+          (A ≫ Bb ≫ (Z.app b.1 ≫ a.2.map g.1).toFunctor.map
+            ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)) ≫
+        (f.2.naturality g.1).hom.toNatTrans.app
+          ((Z.app b.1).toFunctor.obj
+            (((yoneda₀ (unop a.1)).map f.1).toFunctor.obj (𝟙 (unop a.1))))
+      = (f.2.app c.1).toFunctor.map (A ≫ Bb) ≫
+          (f.2.naturality g.1).hom.toNatTrans.app
+            ((Z.app b.1).toFunctor.obj (𝟙 (unop b.1) ≫ f.1.unop)) ≫
+            (b.2.map g.1).toFunctor.map
+              ((f.2.app b.1).toFunctor.map
+                ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv))) := by
+    intro M A Bb
+    rw [Functor.map_comp, Functor.map_comp, Category.assoc, Category.assoc]
+    erw [(f.2.naturality g.1).hom.toNatTrans.naturality
+      ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv))]
+    erw [← Functor.map_comp_assoc]; rfl
+  erw [hT2]
+  -- step 3: transport through `g.2.naturality g.1` (top level; has a trailing tail → reassoc).
+  have hT3 : ∀ {M : ↑(b.2.obj c.1)}
+      (A' : (f.2.app c.1).toFunctor.obj ((Z.app c.1).toFunctor.obj
+          (((postcomp₂ (g.1.unop ≫ f.1.unop)).app c.1).toFunctor.obj (𝟙 (unop c.1)))) ⟶ M)
+      (Bb' : M ⟶ (b.2.map g.1).toFunctor.obj ((f.2.app b.1).toFunctor.obj
+          ((Z.app b.1).toFunctor.obj (𝟙 (unop b.1) ≫ f.1.unop)))),
+      (g.2.app c.1).toFunctor.map
+          (A' ≫ Bb' ≫ (b.2.map g.1).toFunctor.map
+            ((f.2.app b.1).toFunctor.map
+              ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)))) ≫
+        (g.2.naturality g.1).hom.toNatTrans.app
+          ((f.2.app b.1).toFunctor.obj ((Z.app b.1).toFunctor.obj
+            (((yoneda₀ (unop a.1)).map f.1).toFunctor.obj (𝟙 (unop a.1)))))
+      = (g.2.app c.1).toFunctor.map (A' ≫ Bb') ≫
+          (g.2.naturality g.1).hom.toNatTrans.app
+            ((f.2.app b.1).toFunctor.obj ((Z.app b.1).toFunctor.obj (𝟙 (unop b.1) ≫ f.1.unop))) ≫
+            (c.2.map g.1).toFunctor.map
+              ((g.2.app b.1).toFunctor.map
+                ((f.2.app b.1).toFunctor.map
+                  ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)))) := by
+    intro M A' Bb'
+    rw [Functor.map_comp, Functor.map_comp, Category.assoc, Category.assoc]
+    erw [(g.2.naturality g.1).hom.toNatTrans.naturality
+      ((f.2.app b.1).toFunctor.map
+        ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)))]
+    erw [← Functor.map_comp_assoc]; rfl
+  erw [reassoc_of% hT3]
+  erw [Category.id_comp]
+  simp only [Cat.Hom.comp_toFunctor, Functor.comp_map]
+  iterate (first | erw [← Functor.map_comp_assoc] | erw [← Functor.map_comp])
+  iterate erw [Category.assoc]
+  iterate erw [← Functor.map_comp]
+  dsimp only [postcomp₂, postcomposingCat, postcomp, Functor.toCatHom]
+  iterate (first | erw [← Functor.map_comp_assoc] | erw [← Functor.map_comp])
+  rfl
 /--
 The *forward strong transformation* `yonedaPairing ⟶ yonedaEvaluation` for the Yoneda lemma.
 
