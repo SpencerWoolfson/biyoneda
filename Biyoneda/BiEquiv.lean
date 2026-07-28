@@ -118,8 +118,34 @@ TODO. `map := e.map ≫ f.map`, `inv := f.inv ≫ e.inv`; the two witnesses are 
 `(e.map ≫ f.map) ≫ (f.inv ≫ e.inv) ≅ 𝟙` obtained by re-associating, cancelling `f.homInvId` in
 the middle, then `e.homInvId`. The `bicategory` tactic should handle the re-association; the
 cancellations are `Iso` composition. -/
-def trans (e : BiEquiv x y) (f : BiEquiv y z) : BiEquiv x z := sorry
-
+def trans (e : BiEquiv x y) (f : BiEquiv y z) : BiEquiv x z where
+  map := e.map ≫ f.map
+  inv := f.inv ≫ e.inv
+  homInvId := by
+    refine adjointifyCounit ?_ ?_
+    · refine ?_ ≪≫ α_ (f.inv ≫ e.inv) (e.map) (f.map)
+      refine ?_ ≪≫ ((α_ (f.inv) (e.inv) (e.map)).symm ▷ᵢ f.map) 
+      refine ?_ ≪≫ ((f.inv ◁ᵢ e.invHomId) ▷ᵢ f.map).symm
+      refine ?_ ≪≫ ((ρ_ f.inv) ▷ᵢ f.map).symm
+      exact (f.invHomId).symm
+    · refine (α_ (e.map ≫ f.map) (f.inv) (e.inv)).symm ≪≫ ?_
+      refine ((α_ (e.map) (f.map) (f.inv)) ▷ᵢ e.inv) ≪≫ ?_
+      refine ((e.map ◁ᵢ f.homInvId) ▷ᵢ e.inv) ≪≫ ?_
+      refine ((ρ_ e.map) ▷ᵢ e.inv) ≪≫ ?_
+      exact (e.homInvId)
+  invHomId := by
+    refine adjointifyCounit ?_ ?_
+    · refine ?_ ≪≫ α_ (e.map ≫ f.map) (f.inv) (e.inv)
+      refine ?_ ≪≫ ((α_ (e.map) (f.map) (f.inv)).symm ▷ᵢ e.inv) 
+      refine ?_ ≪≫ ((e.map ◁ᵢ f.homInvId) ▷ᵢ e.inv).symm
+      refine ?_ ≪≫ ((ρ_ e.map) ▷ᵢ e.inv).symm
+      exact (e.homInvId).symm
+    · refine (α_ (f.inv ≫ e.inv) (e.map) (f.map)).symm ≪≫ ?_
+      refine ((α_ (f.inv) (e.inv) (e.map)) ▷ᵢ f.map) ≪≫ ?_
+      refine ((f.inv ◁ᵢ e.invHomId) ▷ᵢ f.map) ≪≫ ?_
+      refine ((ρ_ f.inv) ▷ᵢ f.map) ≪≫ ?_
+      exact (f.invHomId)
+      
 end BiEquiv
 
 end CategoryTheory.Bicategory
