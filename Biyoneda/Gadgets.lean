@@ -229,19 +229,27 @@ def homPseudo : Bᵒᵖ × B ⥤ᵖ Cat.{w₁, v₁} where
       -- partially succeeds and leaves goals (so it is unsafe inside `first`); and
       -- `simp [associator_naturality_left/middle/right, whisker_exchange]` does not finish.
       --
-      -- The better fix is structural, not tactical: build `mapComp` from Mathlib's packaged
-      -- `associatorNatIsoRightCat` / `associatorNatIsoLeftCat` / `associatorNatIsoMiddleCat`,
-      -- which are `NatIso`s and hence natural *by construction*, instead of giving components
-      -- and owing the naturality square. The chain is
-      --   precomp (gh₁ ≫ fg₁) ≫ postcomp (fg₂ ≫ gh₂)
-      --     --RightCat ▷ᵢ--> (precomp fg₁ ≫ precomp gh₁) ≫ postcomp (fg₂ ≫ gh₂)
-      --     --◁ᵢ LeftCat.symm--> (precomp fg₁ ≫ precomp gh₁) ≫ (postcomp fg₂ ≫ postcomp gh₂)
-      --     --MiddleCat in the middle--> (precomp fg₁ ≫ postcomp fg₂) ≫ (precomp gh₁ ≫ postcomp gh₂)
-      -- with re-association around each step. `associatorNatIsoMiddleCat` is exactly the
-      -- pre/post exchange that the middle step needs.
+      -- The obvious structural fix — build `mapComp` from Mathlib's packaged
+      -- `associatorNatIso{Right,Left,Middle}Cat`, which are `NatIso`s and hence natural *by
+      -- construction* — was TRIED AND MEASURED, and it is a net loss. Recorded so nobody
+      -- repeats it. The chain does typecheck:
+      --
+      --   (associatorNatIsoRightCat gh.1.unop fg.1.unop a.2 ▷ᵢ _) ≪≫
+      --     (_ ◁ᵢ (associatorNatIsoLeftCat (unop c.1) fg.2 gh.2).symm) ≪≫
+      --     (α_ _ _ _) ≪≫ (_ ◁ᵢ (α_ _ _ _).symm) ≪≫
+      --     (_ ◁ᵢ (associatorNatIsoMiddleCat gh.1.unop fg.2 ▷ᵢ _)) ≪≫
+      --     (_ ◁ᵢ (α_ _ _ _)) ≪≫ (α_ _ _ _).symm
+      --
+      -- (use plain `α_` for the re-association, NOT `bicategoricalIso _ _`, which gets stuck:
+      -- its `BicategoricalCoherence` instance cannot be synthesized against metavariables).
+      -- It does give naturality for free — but it costs FOUR of the five coherence fields,
+      -- which stop closing under `cat_disch`. Componentwise data + this one naturality sorry
+      -- is 1 open goal; the structural version is 4. So the componentwise form stays.
+      --
+      -- Still open then: this naturality square. `cat_disch` fails, `bicategory` partially
+      -- succeeds and leaves goals (unsafe inside `first`), and
+      -- `simp [associator_naturality_{left,middle,right}, whisker_exchange]` does not finish.
       sorry
-
-#check PrelaxFunctor.mkOfHomFunctors
 
 end CategoryTheory.Bicategory
 
