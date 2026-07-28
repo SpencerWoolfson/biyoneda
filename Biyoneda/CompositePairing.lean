@@ -106,4 +106,53 @@ specification of the remaining work.
    several build cycles when `yonedaEvaluation'` was aliased.
 3. `homPseudo` still owes the naturality square inside its `mapComp` (`Biyoneda/Gadgets.lean`).
    That is inherited by anything built on it, so the composite is only as finished as that.
+
+## Does this help with the six sorries? Measured answer: not yet, and here is exactly why
+
+An axiom check settles it:
+
+```
+#print axioms yonedaPairingComposite
+  -- depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+#print axioms yonedaPairing
+  -- depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+```
+
+**Both depend on `sorryAx`.** The composite does not reduce the sorry burden — it *relocates* it.
+`Basic.lean`'s `yonedaPairing` carries its own `mapComp` `sorry`; the composite instead inherits
+`homPseudo`'s open naturality square. Net zero.
+
+So the whole payoff of this branch is gated on exactly one obligation: **the naturality square in
+`homPseudo.mapComp`.** Close that, and:
+
+* the composite becomes `sorryAx`-free,
+* replacing `yonedaPairing` with it retires sorry #1 of the six for real,
+* and the ~100 lines of hand-rolled `yonedaPairing` fields collapse to a three-line definition.
+
+Until then the branch is a strictly-nicer *definition* with the same proof debt, and nothing
+downstream gets easier. That is worth knowing before investing in rewriting the other five
+sorries against it.
+
+### What is and is not established
+
+| claim | status |
+|---|---|
+| composite typechecks at Basic's exact target type | **verified** |
+| no `catPseudoULift` needed (universes line up) | **verified** — contrary to the initial guess |
+| `homPseudo` works at the heavy instance `K = Bᵒᵖ ⥤ᵖ Cat` | **verified** |
+| `.obj` agrees definitionally with the hand-rolled pairing | **verified** (`rfl`) |
+| `.map` agrees definitionally | **false** — `rfl` fails with a type mismatch |
+| composite reduces sorry count | **false today** — both sides hit `sorryAx` |
+| the other five sorries get easier | **untested**, and untestable until the square closes |
 -/
+
+section Diagnostic
+
+
+-- Where exactly do the composite and the hand-rolled pairing diverge?
+example (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})) :
+    (yonedaPairingComposite (B := B)).obj x = yonedaPairing.obj x := rfl
+
+-- `map` does NOT match (type mismatch on `rfl`).
+
+end Diagnostic
