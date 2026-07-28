@@ -1,8 +1,11 @@
+-- General, Yoneda-independent material (all upstream candidates, all sorry-free).
 import Biyoneda.ForMathlib
-import Biyoneda.Evaluation
 import Biyoneda.UniverseLift
 import Biyoneda.BiEquiv
+import Biyoneda.Evaluation
+-- The bicategorical Yoneda development itself.
 import Biyoneda.Basic
--- Scaffolding only: gadgets for rebuilding `yonedaPairing` as a composite.
--- Deliberately sorry-ed and NOT imported by `Biyoneda.Basic`.
+-- Gadgets for rebuilding `yonedaPairing` as a composite, and that composite.
+-- Experimental; nothing above depends on them.
 import Biyoneda.Gadgets
+import Biyoneda.CompositePairing
