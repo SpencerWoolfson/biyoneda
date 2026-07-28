@@ -305,6 +305,35 @@ def homPseudo : Bᵒᵖ × B ⥤ᵖ Cat.{w₁, v₁} where
     change (unop a.1 ⟶ a.2) at x
     bicategory
 
+/-! ### The composite: `yonedaPairing` rebuilt from the three gadgets above
+
+With `K := Bᵒᵖ ⥤ᵖ Cat` the functor bicategory,
+
+```
+  Bᵒᵖ × K  --(yoneda.op).prod (id K)-->  Kᵒᵖ × K  --homPseudo K-->  Cat
+```
+
+This lives here (not in `Biyoneda/CompositePairing.lean`) because `Biyoneda.Basic`'s own
+`yonedaPairing` is defined as this composite directly — see the results, the alias-trap history,
+and the axiom check verifying it is `sorryAx`-free in `notes/level2_refactor.md` and
+`Biyoneda/CompositePairing.lean`. -/
+
+universe u
+
+variable {B : Type u} [Bicategory.{w₁, v₁} B]
+
+/-- The functor bicategory `Bᵒᵖ ⥤ᵖ Cat` that the pairing is a hom of. -/
+abbrev PairingTarget (B : Type u) [Bicategory.{w₁, v₁} B] := Bᵒᵖ ⥤ᵖ Cat.{w₁, v₁}
+
+/-- The Yoneda pairing, built as a composite of general gadgets rather than by hand.
+
+`Biyoneda.Basic.yonedaPairing` is defined to equal this directly. -/
+def yonedaPairingComposite :
+    Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w₁, v₁}) ⥤ᵖ Cat.{max u (max v₁ w₁), max u (max v₁ w₁)} :=
+  Pseudofunctor.comp
+    ((Bicategory.yoneda (B := B)).op.prod (Pseudofunctor.id (PairingTarget B)))
+    (homPseudo (PairingTarget B))
+
 end CategoryTheory.Bicategory
 
 /-! The composite built from these three gadgets — `yonedaPairing` rebuilt as
