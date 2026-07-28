@@ -84,3 +84,64 @@ surfaces. Reduces to `mapComp_assoc_component` (the associator coherence).
 - `backwardsNaturalityIsoApp` (~1643): `.hom = mapComp(f.1,X.op).inv ≫ nat(f.1≫X.op).inv`.
 - ForMathlib strictness lemmas (`Cat.{leftUnitor,rightUnitor,associator}_*_toNatTrans_app = 𝟙`).
 - Diamond discipline: `erw` for fibre `≫`/assoc; `reassoc_of%` for non-terminal slides.
+
+## naturality_id — attempted, PARKED on the defeq-toxicity wall (2026-07-28)
+
+The verified descent prefix from above works exactly as written. Continuing past it:
+
+```lean
+  naturality_id a := by
+    apply Cat.Hom₂.ext_app
+    intro X
+    obtain ⟨x⟩ := X
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app, yonedaEvaluation_mapId_app_down,
+      Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app,
+      homCategory_comp_as_app, Iso.trans_hom, Iso.symm_hom,
+      Cat.leftUnitor_hom_toNatTrans_app, Cat.rightUnitor_inv_toNatTrans_app]
+    apply homCategory.ext
+    intro γ
+    erw [homCategory_comp_as_app, homCategory_comp_as_app]
+    apply Cat.Hom₂.ext_app
+    intro ZZ
+    iterate 5 erw [homCategory_comp_as_app]   -- NEW, WORKS: distributes `.as.app γ` over BOTH
+                                                -- sides' compositions (3 factors each), including
+                                                -- resolving `bicategoricalIso` down to explicit
+                                                -- `λ_`/`ρ_`/`⊗𝟙` pieces on the LHS.
+    -- GOAL NOW: an equation of Cat.Hom₂'s, wrapped in `.toNatTrans.app ZZ` (from the OUTER
+    -- Cat.Hom₂.ext_app). Both sides are `X.as.app γ ≫ Y.as.app γ ≫ Z.as.app γ` compositions of
+    -- `Cat.Hom₂`s; need `.toNatTrans.app ZZ` to distribute over this composition next.
+    sorry
+```
+
+**The blocker.** `simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app]`, `erw
+[Cat.Hom.toNatTrans_comp]`, and even a bare (unrestricted) `dsimp` all make **zero** progress on
+the resulting goal — not "pattern not found" in the usual sense, but genuinely inert. Escalating
+to a `show <goal, restated by hand>` to force a full kernel defeq check produced a
+**`(deterministic) timeout at whnf`**.
+
+**Root cause, confirmed**: the goal contains `postcompId₂`, which is `Bicategory.yoneda.mapId a`
+restated (Basic.lean ~62). Mathlib's `Bicategory/Yoneda.lean` carries
+`set_option backward.isDefEq.respectTransparency false in` on `yoneda`, `yoneda₀`, `postcomp₂`,
+`postcomposing₂`, and `associatorNatIsoMiddleCat` — i.e. exactly the constructions `postcompId₂`
+unfolds through. This is confirmed to be **the same defeq-toxicity wall** documented in
+`p4_mapcomp_wip.md` for `yonedaPairing`'s `mapComp` naturality (which involves the sibling
+`postcompComp₂`, tagged the same way) — that obligation has been parked, unsolved, for most of
+this project's history. `naturality_id` hits it too because it's fundamentally about the *unit*
+coherence, which is *built from* `postcompId₂`; `naturality_naturality` avoided it because that
+obligation never touches `postcompId₂`/`postcompComp₂` at all.
+
+**Consequence for `naturality_comp`**: the note above already flags "watch for `postcompComp₂`
+defeq-toxicity (the P4 perf wall) if it surfaces" — given `naturality_id`'s experience, expect it
+to surface there too, for the same structural reason (assoc coherence is built from
+`postcompComp₂` directly).
+
+**Not attempted yet, worth trying next session**: the `naturality_naturality` proof itself never
+needed to `erw`/`dsimp` through `postcompId₂`/`postcompComp₂` directly — it reduced to
+`backwards_naturality_naturality_core`, itself proven via three *inverse-slide* lemmas
+(`mapComp_naturality_left`, `naturality_naturality`, `modification_naturality_app`) that never
+force the unifier to expand the toxic defs. The analogous move here would be to find (or build) a
+similarly *indirect* lemma for the unit case — i.e. a version of `mapComp_id_component`'s
+coherence stated so it can be `rw`'d/`erw`'d as a black box, without ever asking the elaborator to
+unify a goal *containing* `postcompId₂` against anything. This is genuinely a fresh problem, not
+a variation on what's already been tried; budget it as its own multi-session effort, same as P4.
