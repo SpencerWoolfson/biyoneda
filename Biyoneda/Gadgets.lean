@@ -13,8 +13,9 @@ import Biyoneda.ForMathlib
 /-!
 # Gadgets for building `yonedaPairing` as a composite
 
-**Status: work in progress. `Pseudofunctor.prod` is complete; `op` and `homPseudo` are not.
-This file is NOT imported by `Biyoneda.Basic` — nothing depends on it yet.**
+**Status: `Pseudofunctor.prod` and `Pseudofunctor.op` are complete. `homPseudo` has a single
+open obligation (the naturality square in `mapComp`). This file is NOT imported by
+`Biyoneda.Basic` — nothing depends on it yet.**
 
 ## Why this file exists
 
@@ -42,11 +43,18 @@ fields — including the parked `mapComp` `sorry` in `Basic.lean` — would disa
 | gadget | state |
 |---|---|
 | `Pseudofunctor.prod` | **complete, no sorries** — all five coherence fields auto-discharged |
-| `Pseudofunctor.op` | data complete; four of five coherence fields auto-discharged, `map₂_associator` open |
-| `homPseudo` | prelax + `mapId` done, all five coherence fields close with `cat_disch`; only `mapComp`'s naturality open |
+| `Pseudofunctor.op` | **complete, no sorries** — four coherence fields auto-discharge; `map₂_associator` proved via `mapComp_assoc_left_inv` |
+| `homPseudo` | prelax + `mapId` + `mapComp` data done; all five coherence fields close with `cat_disch`; only `mapComp`'s naturality square open |
 
-The `prod` result is the important one: it confirms the premise of this whole file. When the data
-is assembled from existing gadgets, the coherence really does come for free.
+Two of the three gadgets are finished, and the third is one square away. That confirms the
+premise of this file: when the data is assembled from existing gadgets, the coherence really does
+come for free.
+
+The `op.map₂_associator` proof is worth reading as a pattern. 2-cells of `Cᵒᵖ` are `Hom2` records
+with a single `unop2` field and **no registered `ext` lemma**, so descend with the injectivity of
+`op2` instead (`op2_unop2` rewritten on both sides). That turns an opaque goal about opposite
+2-cells into a clean statement in `C`, which is then exactly `mapComp_assoc_left_inv` followed by
+`simp` to cancel the inverse pairs.
 
 ## What Mathlib's `Bicategory/Yoneda.lean` teaches (read it before continuing)
 
@@ -152,9 +160,14 @@ def op (F : B ⥤ᵖ C) : Bᵒᵖ ⥤ᵖ Cᵒᵖ where
     obtain ⟨h⟩ := h
     dsimp at h'
     dsimp [op2]
-    congr
+    -- 2-cells of `Cᵒᵖ` are determined by their `unop2`, and `op2_unop2` gives the injectivity.
+    have ext2 : ∀ {p q : Cᵒᵖ} {u v : p ⟶ q} (x y : u ⟶ v), x.unop2 = y.unop2 → x = y := by
+      intro p q u v x y hxy
+      rw [← Bicategory.Opposite.op2_unop2 x, ← Bicategory.Opposite.op2_unop2 y, hxy]
+    apply ext2
     simp
-    sorry
+    rw [F.mapComp_assoc_left_inv]
+    simp
 
 
 end CategoryTheory.Pseudofunctor
@@ -224,31 +237,11 @@ def homPseudo : Bᵒᵖ × B ⥤ᵖ Cat.{w₁, v₁} where
       refine ?_ ≪≫ (α_ h.unop (f.unop ≫ l) g)
       exact (α_ h.unop f.unop l) ▷ᵢ g
     · intros l l' η
-      -- OPEN, and the only obligation left in `homPseudo`.
-      -- Naturality in `l` of the associator chain above. `cat_disch` fails; `bicategory`
-      -- partially succeeds and leaves goals (so it is unsafe inside `first`); and
-      -- `simp [associator_naturality_left/middle/right, whisker_exchange]` does not finish.
-      --
-      -- The obvious structural fix — build `mapComp` from Mathlib's packaged
-      -- `associatorNatIso{Right,Left,Middle}Cat`, which are `NatIso`s and hence natural *by
-      -- construction* — was TRIED AND MEASURED, and it is a net loss. Recorded so nobody
-      -- repeats it. The chain does typecheck:
-      --
-      --   (associatorNatIsoRightCat gh.1.unop fg.1.unop a.2 ▷ᵢ _) ≪≫
-      --     (_ ◁ᵢ (associatorNatIsoLeftCat (unop c.1) fg.2 gh.2).symm) ≪≫
-      --     (α_ _ _ _) ≪≫ (_ ◁ᵢ (α_ _ _ _).symm) ≪≫
-      --     (_ ◁ᵢ (associatorNatIsoMiddleCat gh.1.unop fg.2 ▷ᵢ _)) ≪≫
-      --     (_ ◁ᵢ (α_ _ _ _)) ≪≫ (α_ _ _ _).symm
-      --
-      -- (use plain `α_` for the re-association, NOT `bicategoricalIso _ _`, which gets stuck:
-      -- its `BicategoricalCoherence` instance cannot be synthesized against metavariables).
-      -- It does give naturality for free — but it costs FOUR of the five coherence fields,
-      -- which stop closing under `cat_disch`. Componentwise data + this one naturality sorry
-      -- is 1 open goal; the structural version is 4. So the componentwise form stays.
-      --
-      -- Still open then: this naturality square. `cat_disch` fails, `bicategory` partially
-      -- succeeds and leaves goals (unsafe inside `first`), and
-      -- `simp [associator_naturality_{left,middle,right}, whisker_exchange]` does not finish.
+      -- OPEN — the only obligation left in this file.
+      -- Naturality in `l` of the associator chain above. Tried and failed: `cat_disch`;
+      -- `bicategory` (partially succeeds, leaves goals — so it is unsafe inside `first`);
+      -- `simp [associator_naturality_{left,middle,right}, whisker_exchange]`, both before and
+      -- after a `dsimp` that reduces the `prelax`-functor applications to whiskerings.
       sorry
 
 end CategoryTheory.Bicategory
