@@ -13,9 +13,13 @@ import Biyoneda.ForMathlib
 /-!
 # Gadgets for building `yonedaPairing` as a composite
 
-**Status: `Pseudofunctor.prod` and `Pseudofunctor.op` are complete. `homPseudo` has a single
-open obligation (the naturality square in `mapComp`). This file is NOT imported by
-`Biyoneda.Basic` — nothing depends on it yet.**
+**Status: all three gadgets are complete — `Pseudofunctor.prod`, `Pseudofunctor.op`, and
+`homPseudo` all build with zero sorries.** Verified with `#print axioms`, not just the absence
+of warnings (see the history of this file for why that distinction matters): all three depend
+only on `[propext, Classical.choice, Quot.sound]`.
+
+This file is NOT imported by `Biyoneda.Basic` — nothing there depends on it yet. `CompositePairing.lean`
+uses these gadgets to assemble `yonedaPairing` as a composite; see that file for the payoff.
 
 ## Why this file exists
 
@@ -33,32 +37,50 @@ We already have the bicategorical analogue of the first line (`Biyoneda.Evaluati
 `evaluationPseudo` = bicategorical `evaluationUncurried`; `catPseudoULift` = `uliftFunctor`).
 The second line needs three gadgets that **do not exist in Mathlib** — as of v4.29.0,
 `grep -r` over `Mathlib/CategoryTheory/Bicategory/` finds no `Pseudofunctor.prod`,
-no `Pseudofunctor.op`, and no two-variable hom-pseudofunctor.
+no `Pseudofunctor.op`, and no two-variable hom-pseudofunctor. This file supplies all three.
 
-If they existed, `yonedaPairing` would collapse to a composite and its hand-rolled coherence
-fields — including the parked `mapComp` `sorry` in `Basic.lean` — would disappear.
-
-## Current status
+## Final status
 
 | gadget | state |
 |---|---|
-| `Pseudofunctor.prod` | **complete, no sorries** — all five coherence fields auto-discharged |
-| `Pseudofunctor.op` | **complete, no sorries** — four coherence fields auto-discharge; `map₂_associator` proved via `mapComp_assoc_left_inv` |
-| `homPseudo` | prelax + `mapId` (incl. naturality) + `mapComp` data done; `mapComp` naturality open; **coherence fields untested — see the correction below** |
+| `Pseudofunctor.prod` | **complete** — all five coherence fields auto-discharged |
+| `Pseudofunctor.op` | **complete** — four coherence fields auto-discharge; `map₂_associator` proved via `mapComp_assoc_left_inv` |
+| `homPseudo` | **complete** — `mapId`/`mapComp` proved directly; all five coherence fields close via `Cat.Hom₂.ext_app` descent + `bicategory` (see the recipe below) |
 
-Two of the three gadgets are finished, and the third is one square away. That confirms the
-premise of this file: when the data is assembled from existing gadgets, the coherence really does
-come for free.
+This confirms the premise of the file: when the data is assembled from existing gadgets, the
+coherence really does come for free — including, in the end, for the two-variable hom.
 
-The `op.map₂_associator` proof is worth reading as a pattern. 2-cells of `Cᵒᵖ` are `Hom2` records
-with a single `unop2` field and **no registered `ext` lemma**, so descend with the injectivity of
-`op2` instead (`op2_unop2` rewritten on both sides). That turns an opaque goal about opposite
-2-cells into a clean statement in `C`, which is then exactly `mapComp_assoc_left_inv` followed by
-`simp` to cancel the inverse pairs.
+## Two reusable proof patterns from this file
 
-## What Mathlib's `Bicategory/Yoneda.lean` teaches (read it before continuing)
+**1. `op.map₂_associator`: descending through a coercion with no `ext` lemma.** 2-cells of `Cᵒᵖ`
+are `Hom2` records with a single `unop2` field and **no registered `ext` lemma**, so `ext` fails
+outright. Descend with the injectivity of `op2` instead (`op2_unop2` rewritten on both sides).
+That turns an opaque goal about opposite 2-cells into a clean statement in `C`, which is then
+exactly `mapComp_assoc_left_inv` followed by `simp` to cancel the inverse pairs.
 
-That file builds the *one-variable* hom-pseudofunctor, so it is the direct template here.
+**2. `homPseudo`'s five coherence fields: unblocking `bicategory` after `Cat.Hom₂.ext_app`.**
+Descending a `Cat`-level 2-cell equation with `Cat.Hom₂.ext_app; intro x` leaves `x` with type
+`↑(Cat.of D)` — a `Cat.of`-bundled coercion — rather than the plain morphism type `D` it is
+defeq to. The `bicategory` tactic then fails with **"`x` is not a morphism"**: it needs the
+*syntactic* type to read `_ ⟶ _`, and defeq alone is not enough. Fix with one extra line before
+calling the tactic:
+
+```lean
+apply Cat.Hom₂.ext_app
+intro x
+dsimp
+change (unop a.1 ⟶ a.2) at x   -- retype x to its defeq-but-not-syntactically-equal morphism type
+bicategory
+```
+
+This unblocked all five of `homPseudo`'s coherence fields identically — once retyped, the goals
+are pure structural bicategory equations (`α_`/`λ_`/`ρ_`/whiskerings only) that `bicategory`
+closes outright. Worth trying anywhere `bicategory`/`bicategory_coherence` reports a bound
+variable "is not a morphism" after descending through a `Cat.of` or similar bundling coercion.
+
+## What Mathlib's `Bicategory/Yoneda.lean` teaches
+
+That file builds the *one-variable* hom-pseudofunctor and was the direct template here.
 
 1. **Use `PrelaxFunctor.mkOfHomFunctors`, and make its hom-functor a composite.** The
    constructor derives `map₂_id` and `map₂_comp` from the hom-functor's own `map_id`/`map_comp`;
@@ -71,38 +93,21 @@ That file builds the *one-variable* hom-pseudofunctor, so it is the direct templ
    (for `mapComp`). `associatorNatIsoMiddleCat` is the pre/post **exchange** — precisely the
    extra coherence a two-variable hom needs that a one-variable hom does not.
 3. **Nearly every definition there carries
-   `set_option backward.isDefEq.respectTransparency false in`.** That is not incidental; expect
-   to need it here too (it is already on `homPseudo` below).
+   `set_option backward.isDefEq.respectTransparency false in`.** That is not incidental; it is
+   needed here too (see `homPseudo` below).
 
-## The decision point
+## A false positive worth remembering (history, not current state)
 
-Finish `homPseudo` and stop at its coherence fields. If they close with `cat_disch` /
-`bicategory` (possibly after a normalising `dsimp`), continue and wire everything together.
-If instead they need bespoke `erw` chains of the kind in `evaluation_associator_core`, the
-composite route costs *more* than the hand-rolled `yonedaPairing` it would replace — stop there.
-
-**CORRECTION — the earlier "decision point is GO" claim was a false positive.**
-
-It was recorded here that all five of `homPseudo`'s coherence fields close with `cat_disch`.
-That reading was wrong, and the cause is the `sorry_if_sorry` trap: `cat_disch`/`aesop_cat` try
-`sorry_if_sorry` first, which closes *any* goal whose statement mentions `sorry`. The coherence
-fields' statements mention `mapComp`, which still contains a `sorry` — so they were being
-discharged by the sorry, not proved.
-
-Verified directly: replace `mapComp`'s naturality `sorry` with any real tactic and four of the
-five coherence fields immediately fail to synthesize; put the `sorry` back and they "close" again.
-
-So **`homPseudo`'s coherence is untested**, and the decision point this file was built to answer
-is still open. It will only be answered once `mapComp`'s naturality has a genuine proof.
-
-What *is* verified, by `#print axioms` rather than by absence of warnings:
-
-* `Pseudofunctor.prod` — depends on `[propext]` only. Genuinely complete.
-* `Pseudofunctor.op` — depends on `[propext, Classical.choice, Quot.sound]`. Genuinely complete.
-* `homPseudo` — depends on `sorryAx`. Not complete.
-
-The `prod` and `op` results are real evidence for the "assemble from gadgets and inherit the
-coherence" premise. The `homPseudo` result was not evidence at all.
+Earlier in this file's development, all five of `homPseudo`'s coherence fields appeared to close
+with `cat_disch` *while `mapComp`'s naturality was still `sorry`*. That was a **false positive**
+caused by the `sorry_if_sorry` trap: `cat_disch`/`aesop_cat` try `sorry_if_sorry` first, which
+closes *any* goal whose statement mentions `sorry`. The coherence fields' statements mention
+`mapComp`, so as long as `mapComp` contained a `sorry`, they were being discharged by it, not
+proved. Verified directly at the time: replacing the `sorry` with a real tactic immediately broke
+four of the five fields; restoring it made them "close" again. The lesson generalises: **a
+declaration whose statement mentions another declaration is not solid evidence of anything while
+that other declaration still contains a `sorry`** — check with `#print axioms`, not by reading
+warnings.
 
 ## Where each piece would live upstream
 
@@ -187,15 +192,19 @@ end CategoryTheory.Pseudofunctor
 
 namespace CategoryTheory.Bicategory
 
-/-! ### Gadget 3 — the two-variable hom-pseudofunctor (in progress)
+/-! ### Gadget 3 — the two-variable hom-pseudofunctor (COMPLETE)
 
 `homPseudo B : Bᵒᵖ × B ⥤ᵖ Cat`, sending `(a, b)` to the hom-category `unop a ⟶ b`, and a 1-cell
-`(f, g)` to `h ↦ f ≫ h ≫ g` (precompose, then postcompose).
+`(f, g)` to `h ↦ f ≫ (h ≫ g)` (postcompose, then precompose — this bracketing is chosen to match
+Mathlib's 1-categorical `Functor.hom`/`yonedaPairing_map`; see `CompositePairing.lean`).
 
 The prelax part is built with `PrelaxFunctor.mkOfHomFunctors`, and its hom-functor is itself a
 *composite of functors* (`unopFunctor ⋙ precomposingCat`, paired with `postcomposingCat`, then
-uncurried composition). So `map`, `map₂`, `map₂_id` and `map₂_comp` are all inherited — including
-the interchange law, which had been the sticking point when the fields were written out by hand.
+uncurried composition with `postcomposing`). So `map`, `map₂`, `map₂_id` and `map₂_comp` are all
+inherited — including the interchange law, which had been the sticking point when the fields
+were written out by hand. `mapId` and `mapComp` are proved directly, and all five coherence
+fields close by descending to a point and calling `bicategory` (see the recipe in the module
+docstring above).
 -/
 
 variable (B : Type u₁) [Bicategory.{w₁, v₁} B]
@@ -207,8 +216,9 @@ latter being the interchange law — are inherited rather than proved:
 
 * `unopFunctor ⋙ precomposingCat` turns a 1-cell of `Bᵒᵖ` into precomposition;
 * `postcomposingCat` turns a 1-cell of `B` into postcomposition;
-* `Functor.prod` pairs them, and `CategoryTheory.Functor.uncurry.obj (precomposing ..)` composes the two
-  resulting `Cat`-morphisms.
+* `Functor.prod` pairs them, and `CategoryTheory.Functor.uncurry.obj (postcomposing ..)` composes
+  the two resulting `Cat`-morphisms, applying the precomposition functor *inside* the
+  postcomposition one (`f ≫ (h ≫ g)`) — the bracketing that matches Mathlib's convention.
 -/
 def prelax : PrelaxFunctor (Bᵒᵖ × B) Cat.{w₁, v₁} :=
   PrelaxFunctor.mkOfHomFunctors
@@ -228,8 +238,10 @@ The bicategorical analogue of `CategoryTheory.Functor.hom : Cᵒᵖ × C ⥤ Typ
 Built on `prelax` above, so `map`, `map₂`, `map₂_id` and `map₂_comp` are all inherited — in
 particular the interchange law, which is what `map₂_comp` amounts to, never has to be proved.
 
-**All five coherence fields close with a bare `cat_disch`.** The only remaining obligation is the
-naturality square inside `mapComp`; see the comment at that `sorry`. -/
+`mapId` and `mapComp` are proved directly (the latter as a hand-built associator chain, whose
+naturality is a targeted `simp only`). All five coherence fields then close by descending to a
+point (`Cat.Hom₂.ext_app`) and retyping it past the `Cat.of` coercion before calling `bicategory`
+— see the module docstring's "unblocking `bicategory`" note for why the retype is needed. -/
 def homPseudo : Bᵒᵖ × B ⥤ᵖ Cat.{w₁, v₁} where
   toPrelaxFunctor := prelax B
   mapId p := by
@@ -242,42 +254,60 @@ def homPseudo : Bᵒᵖ × B ⥤ᵖ Cat.{w₁, v₁} where
       dsimp [prelax]
       rw [Bicategory.leftUnitor_naturality_assoc, Bicategory.rightUnitor_naturality,
         Category.assoc]
-  mapComp fg gh := by
-    rcases fg with ⟨f, g⟩
-    rcases gh with ⟨h, k⟩
+  mapComp {a b c} fg hi := by
+    dsimp [prelax]
     refine CategoryTheory.Cat.Hom.isoMk ?_
+    dsimp [postcomp,precomp,Functor.comp]
     refine NatIso.ofComponents ?_ ?_
-    · intro l
-      dsimp [prelax]
-      exact bicategoricalIso _ _
-    · intros l l' η
-      sorry
+    · intro x
+      refine ?_ ≪≫ (α_ hi.1.unop (fg.1.unop ≫ x ≫ fg.2) hi.2)
+      refine ?_ ≪≫ ((α_ hi.1.unop fg.1.unop  (x ≫ fg.2)) ▷ᵢ hi.2)
+      refine ?_ ≪≫ (α_ (hi.1.unop ≫ fg.1.unop) (x ≫ fg.2) hi.2).symm
+      refine (hi.1.unop ≫ fg.1.unop) ◁ᵢ (α_ x fg.2 hi.2).symm
+    · intros X Y F
+      simp only [whiskerRight_comp, whiskerLeft_comp, comp_whiskerLeft, Category.assoc,
+        Iso.inv_hom_id_assoc, Iso.trans_assoc, Iso.trans_hom, whiskerLeftIso_hom,
+        Iso.symm_hom, whiskerRightIso_hom, pentagon_inv_hom_hom_hom_inv,
+        whiskerLeft_whiskerLeft_hom_inv_assoc, whisker_assoc, whiskerLeft_inv_hom_assoc]
+  map₂_whisker_left {a b c} fg hi jk l := by
+    dsimp [prelax]
+    apply Cat.Hom₂.ext_app
+    intro x
+    dsimp
+    change (unop a.1 ⟶ a.2) at x
+    bicategory
+  map₂_whisker_right {a b c} fg hi jk l := by
+    dsimp [prelax]
+    apply Cat.Hom₂.ext_app
+    intro x
+    dsimp
+    change (unop a.1 ⟶ a.2) at x
+    bicategory
+  map₂_associator {a b c d} fg hi jk := by
+    dsimp [prelax]
+    apply Cat.Hom₂.ext_app
+    intro x
+    dsimp
+    change (unop a.1 ⟶ a.2) at x
+    bicategory
+  map₂_left_unitor {a b} fg := by
+    dsimp [prelax]
+    apply Cat.Hom₂.ext_app
+    intro x
+    dsimp
+    change (unop a.1 ⟶ a.2) at x
+    bicategory
+  map₂_right_unitor {a b} fg := by
+    dsimp [prelax]
+    apply Cat.Hom₂.ext_app
+    intro x
+    dsimp
+    change (unop a.1 ⟶ a.2) at x
+    bicategory
 
 end CategoryTheory.Bicategory
 
-/-! ## The target
-
-Once the three gadgets above are in place, `yonedaPairing` should be definable as the composite
-below rather than hand-rolled, and `Basic.lean`'s `yonedaPairing` (with its parked `mapComp`
-`sorry`) can be retired.
-
-Note the hom-pseudofunctor needed is that of the **functor bicategory** `K = Bᵒᵖ ⥤ᵖ Cat`, whose
-hom-categories are `StrongTrans` with modifications as morphisms — so `precomp`/`postcomp` there
-are whiskering of strong transformations. `homPseudo` is generic in its bicategory, so it
-applies; but that is the heavier instance to test against, and it is worth checking `homPseudo`
-on a small bicategory first.
-
-Sketch (types not yet checked — fill in once the gadgets exist):
-
-```lean
--- yoneda : B ⥤ᵖ Bᵒᵖ ⥤ᵖ Cat                                    (Mathlib, exists)
--- yoneda.op : Bᵒᵖ ⥤ᵖ (Bᵒᵖ ⥤ᵖ Cat)ᵒᵖ                            (Gadget 2)
--- (yoneda.op).prod (Pseudofunctor.id _) :
---     Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat) ⥤ᵖ (Bᵒᵖ ⥤ᵖ Cat)ᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)      (Gadget 1, DONE)
--- ... ⋙ homPseudo (Bᵒᵖ ⥤ᵖ Cat) : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat) ⥤ᵖ Cat     (Gadget 3)
-```
-
-A universe check is also owed here: `Basic.lean`'s `yonedaPairing` lands in
-`Cat.{max u (max v w), max u (max v w)}`, whereas `homPseudo` as stated lands in `Cat.{w₁, v₁}`.
-Expect to need `catPseudoULift` in the composite, exactly as `yonedaEvaluation` does.
--/
+/-! The composite built from these three gadgets — `yonedaPairing` rebuilt as
+`(yoneda.op).prod (Pseudofunctor.id _) ⋙ homPseudo (Bᵒᵖ ⥤ᵖ Cat)` — is in
+`Biyoneda/CompositePairing.lean`, along with the results (no universe lift needed; `.obj` and
+`.map` are `rfl`-equal to `Biyoneda.Basic`'s hand-rolled `yonedaPairing`). -/
