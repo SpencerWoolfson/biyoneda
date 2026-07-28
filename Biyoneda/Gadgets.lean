@@ -44,7 +44,7 @@ fields — including the parked `mapComp` `sorry` in `Basic.lean` — would disa
 |---|---|
 | `Pseudofunctor.prod` | **complete, no sorries** — all five coherence fields auto-discharged |
 | `Pseudofunctor.op` | **complete, no sorries** — four coherence fields auto-discharge; `map₂_associator` proved via `mapComp_assoc_left_inv` |
-| `homPseudo` | prelax + `mapId` + `mapComp` data done; all five coherence fields close with `cat_disch`; only `mapComp`'s naturality square open |
+| `homPseudo` | prelax + `mapId` (incl. naturality) + `mapComp` data done; `mapComp` naturality open; **coherence fields untested — see the correction below** |
 
 Two of the three gadgets are finished, and the third is one square away. That confirms the
 premise of this file: when the data is assembled from existing gadgets, the coherence really does
@@ -81,15 +81,28 @@ Finish `homPseudo` and stop at its coherence fields. If they close with `cat_dis
 If instead they need bespoke `erw` chains of the kind in `evaluation_associator_core`, the
 composite route costs *more* than the hand-rolled `yonedaPairing` it would replace — stop there.
 
-**The decision point has been answered: GO.** All five of `homPseudo`'s coherence fields
-(`map₂_whisker_left`, `map₂_whisker_right`, `map₂_associator`, `map₂_left_unitor`,
-`map₂_right_unitor`) close with a bare `cat_disch`, as does `map₂_id`. No bespoke `erw` chains
-were needed anywhere. Together with `prod` closing completely and `op` closing four fields of
-five, the "assemble from gadgets and inherit the coherence" premise holds.
+**CORRECTION — the earlier "decision point is GO" claim was a false positive.**
 
-What remains in `homPseudo` is *not* coherence: `mapComp`'s naturality (a `NatIso.ofComponents`
-obligation for a hand-built associator chain) and `map₂_comp` (the interchange law). Both are
-noted in detail at their sites.
+It was recorded here that all five of `homPseudo`'s coherence fields close with `cat_disch`.
+That reading was wrong, and the cause is the `sorry_if_sorry` trap: `cat_disch`/`aesop_cat` try
+`sorry_if_sorry` first, which closes *any* goal whose statement mentions `sorry`. The coherence
+fields' statements mention `mapComp`, which still contains a `sorry` — so they were being
+discharged by the sorry, not proved.
+
+Verified directly: replace `mapComp`'s naturality `sorry` with any real tactic and four of the
+five coherence fields immediately fail to synthesize; put the `sorry` back and they "close" again.
+
+So **`homPseudo`'s coherence is untested**, and the decision point this file was built to answer
+is still open. It will only be answered once `mapComp`'s naturality has a genuine proof.
+
+What *is* verified, by `#print axioms` rather than by absence of warnings:
+
+* `Pseudofunctor.prod` — depends on `[propext]` only. Genuinely complete.
+* `Pseudofunctor.op` — depends on `[propext, Classical.choice, Quot.sound]`. Genuinely complete.
+* `homPseudo` — depends on `sorryAx`. Not complete.
+
+The `prod` and `op` results are real evidence for the "assemble from gadgets and inherit the
+coherence" premise. The `homPseudo` result was not evidence at all.
 
 ## Where each piece would live upstream
 
@@ -201,10 +214,10 @@ def prelax : PrelaxFunctor (Bᵒᵖ × B) Cat.{w₁, v₁} :=
   PrelaxFunctor.mkOfHomFunctors
     (fun p => Cat.of (unop p.1 ⟶ p.2))
     (fun a b =>
-      ((unopFunctor a.1 b.1 ⋙ precomposingCat (unop b.1) (unop a.1) a.2).prod
-          (postcomposingCat (unop b.1) a.2 b.2)) ⋙
+      ((unopFunctor a.1 b.1 ⋙ precomposingCat (unop b.1) (unop a.1) b.2).prod
+          (postcomposingCat (unop a.1) a.2 b.2)) ⋙
         Functor.uncurry.obj
-          (precomposing (Cat.of (unop a.1 ⟶ a.2)) (Cat.of (unop b.1 ⟶ a.2))
+          (postcomposing (Cat.of (unop a.1 ⟶ a.2)) (Cat.of (unop a.1 ⟶ b.2))
             (Cat.of (unop b.1 ⟶ b.2))))
 
 set_option backward.isDefEq.respectTransparency false in
@@ -224,24 +237,20 @@ def homPseudo : Bᵒᵖ × B ⥤ᵖ Cat.{w₁, v₁} where
     refine CategoryTheory.Cat.Hom.isoMk ?_
     refine NatIso.ofComponents ?_ ?_
     · intro h
-      refine (ρ_ (𝟙 (unop a) ≫ h)) ≪≫ λ_ h
+      exact (λ_ (h ≫ 𝟙 b)) ≪≫ ρ_ h
     · intros h h' η
-      simp
+      dsimp [prelax]
+      rw [Bicategory.leftUnitor_naturality_assoc, Bicategory.rightUnitor_naturality,
+        Category.assoc]
   mapComp fg gh := by
     rcases fg with ⟨f, g⟩
     rcases gh with ⟨h, k⟩
     refine CategoryTheory.Cat.Hom.isoMk ?_
     refine NatIso.ofComponents ?_ ?_
     · intro l
-      refine (α_ ((h.unop ≫ f.unop) ≫ l) g k).symm ≪≫ (?_  ▷ᵢ k)
-      refine ?_ ≪≫ (α_ h.unop (f.unop ≫ l) g)
-      exact (α_ h.unop f.unop l) ▷ᵢ g
+      dsimp [prelax]
+      exact bicategoricalIso _ _
     · intros l l' η
-      -- OPEN — the only obligation left in this file.
-      -- Naturality in `l` of the associator chain above. Tried and failed: `cat_disch`;
-      -- `bicategory` (partially succeeds, leaves goals — so it is unsafe inside `first`);
-      -- `simp [associator_naturality_{left,middle,right}, whisker_exchange]`, both before and
-      -- after a `dsimp` that reduces the `prelax`-functor applications to whiskerings.
       sorry
 
 end CategoryTheory.Bicategory
