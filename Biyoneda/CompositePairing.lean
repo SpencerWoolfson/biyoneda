@@ -141,7 +141,8 @@ sorries against it.
 | no `catPseudoULift` needed (universes line up) | **verified** — contrary to the initial guess |
 | `homPseudo` works at the heavy instance `K = Bᵒᵖ ⥤ᵖ Cat` | **verified** |
 | `.obj` agrees definitionally with the hand-rolled pairing | **verified** (`rfl`) |
-| `.map` agrees definitionally | **false** — `rfl` fails with a type mismatch |
+| `.map` agrees definitionally | **false**, and the reason is now pinned down: a *bracketing* difference only — the composite gives `(postcomp₂ f ≫ η) ≫ f.2`, the hand-rolled gives `postcomp₂ f ≫ (η ≫ f.2)`. They differ by one associator. |
+| composite admits Mathlib's `rfl` API lemma (`yonedaPairing_map` analogue) | **verified** — see `yonedaPairingComposite_map` |
 | composite reduces sorry count | **false today** — both sides hit `sorryAx` |
 | the other five sorries get easier | **untested**, and untestable until the square closes |
 -/
@@ -156,3 +157,33 @@ example (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})) :
 -- `map` does NOT match (type mismatch on `rfl`).
 
 end Diagnostic
+
+/-! ## The Mathlib-style API lemma
+
+Mathlib does not leave a composite definition opaque. In `CategoryTheory/Yoneda.lean` it defines
+`yonedaPairing` as a composite and then immediately characterises it:
+
+```lean
+@[simp]
+theorem yonedaPairing_map (P Q) (α : P ⟶ Q) (β : (yonedaPairing C).obj P) :
+    (yonedaPairing C).map α β = yoneda.map α.1.unop ≫ β ≫ α.2 := rfl
+```
+
+so downstream code uses the lemma and never unfolds the definition. Our composite admits exactly
+the same treatment — the lemma below is `rfl`.
+-/
+
+/-- Characterisation of `yonedaPairingComposite` on 1-morphisms; the bicategorical analogue of
+Mathlib's `yonedaPairing_map`.
+
+**Note the bracketing.** This is `(postcomp₂ f ≫ η) ≫ f.2`, whereas `Basic.lean`'s hand-rolled
+`yonedaPairing` uses `postcomp₂ f ≫ (η ≫ f.2)`. In a 1-category these coincide (composition is
+strictly associative, which is why Mathlib's version can be stated either way); in a bicategory
+they differ by an associator. **This single bracketing choice is the entire reason
+`yonedaPairingComposite.map ≠ yonedaPairing.map` definitionally.** -/
+@[simp]
+theorem yonedaPairingComposite_map {x y : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : x ⟶ y)
+    (η : ↑((yonedaPairingComposite (B := B)).obj x)) :
+    ((yonedaPairingComposite (B := B)).map f).toFunctor.obj η
+      = (Bicategory.postcomp₂ f.1.unop ≫ η) ≫ f.2 := rfl
+
