@@ -1285,7 +1285,39 @@ def yonedaHomInvIdObjIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) (x : ↑(yonedaPa
     simp at s x
     simp[Functor.whiskerLeft,CategoryStruct.comp,NatTrans.vcomp]
     simp [yonedaLemmaBackwards,yonedaLemmaForwards,yonedaHomInvIdFunctorIso, yonedaUnitAppIso]
-    sorry
+    have hcomp := Cat.Hom₂.congr_app (x.naturality_comp s.op f) (𝟙 (unop a.1))
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+      Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app] at hcomp
+    erw [Category.id_comp, Category.id_comp, Category.comp_id] at hcomp
+    have h2 : (a.2.mapComp s.op f).hom.toNatTrans.app
+        ((x.app a.1).toFunctor.obj (𝟙 (unop a.1))) =
+        (x.naturality (s.op ≫ f)).inv.toNatTrans.app (𝟙 (unop a.1)) ≫
+          ((x.app r).toFunctor.map
+              (((yoneda₀ (unop a.1)).mapComp s.op f).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
+            (x.naturality f).hom.toNatTrans.app
+              (((yoneda₀ (unop a.1)).map s.op).toFunctor.obj (𝟙 (unop a.1))) ≫
+              (a.2.map f).toFunctor.map
+                ((x.naturality s.op).hom.toNatTrans.app (𝟙 (unop a.1)))) := by
+      erw [← hcomp, ← Category.assoc, ← NatTrans.comp_app, ← Cat.Hom.toNatTrans_comp,
+        (x.naturality (s.op ≫ f)).inv_hom_id, Category.id_comp]
+    have h3 := (x.naturality f).hom.toNatTrans.naturality (ρ_ s).hom
+    dsimp at h3
+    erw [h2]
+    erw [Category.assoc]
+    congr 1
+    have h4 : (x.naturality s.op).hom.toNatTrans.app (𝟙 (unop a.1)) ≫
+        ((x.naturality s.op).inv.toNatTrans.app (𝟙 (unop a.1)) ≫
+          (x.app q).toFunctor.map (ρ_ s).hom) =
+        (x.app q).toFunctor.map (ρ_ s).hom := by
+      erw [← Category.assoc, ← NatTrans.comp_app, ← Cat.Hom.toNatTrans_comp,
+        (x.naturality s.op).hom_inv_id, Category.id_comp]
+      rfl
+    erw [Category.assoc, Category.assoc, ← Functor.map_comp, ← Functor.map_comp, h4]
+    erw [← h3, ← Category.assoc, ← Functor.map_comp]
+    congr 1
+    congr 1
+    exact Bicategory.rightUnitor_comp f.unop s
 
 set_option linter.flexible false in
 /--
@@ -1349,11 +1381,29 @@ def yonedaHomInvId : yonedaLemmaForwards ≫ yonedaLemmaBackwards ≅ 𝟙 (@yon
   erw [rw1, rw2, rw3]
   clear rw1 rw2 rw3
   refine Cat.Hom₂.ext_iff.mpr ?_
+  ext x
+  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+    Cat.Hom.isoMk_hom, NatTrans.toCatHom₂_toNatTrans]
+  -- Parked (2026-07-29): reduced to a clean modification-naturality goal, not yet closed.
+  -- After the descent above, the goal is
+  --   (yonedaHomInvIdNatIso b).hom.app ((yonedaPairing.map f).obj x) ≫
+  --     (ρ_ (yonedaPairing.map f) ≪≫ (λ_ (yonedaPairing.map f)).symm).hom.app x
+  --   = (RHS naturality iso of yonedaLemmaForwards ≫ yonedaLemmaBackwards, via
+  --      StrongTrans.vcomp: a 5-factor composite of associators sandwiching
+  --      yonedaLemmaForwards.naturality f and yonedaLemmaBackwards.naturality f).hom.app x
+  --     ≫ (yonedaPairing.map f).map ((yonedaHomInvIdNatIso a).hom.app x)
+  -- Same shape as the (now-proven) yonedaHomInvIdObjIso naturality square (Cat.Hom₂.congr_app
+  -- on a naturality_comp-style coherence, then cancel the invertible associator/naturality
+  -- factors via the erw [← NatTrans.comp_app, ← Cat.Hom.toNatTrans_comp, iso.inv_hom_id, ...]
+  -- recipe), but roughly twice the size (two StrongTrans naturalities instead of one) and each
+  -- dsimp/build cycle here runs ~5 min instead of ~20s, so this was parked rather than ground
+  -- out in-session. Next step if resumed: `dsimp only [CategoryStruct.id, CategoryStruct.comp,
+  -- StrongTrans.categoryStruct, StrongTrans.id, StrongTrans.vcomp, StrongTrans.mkOfOplax,
+  -- Oplax.StrongTrans.mkOfOplax, Oplax.StrongTrans.vcomp]` to reach the state above, then apply
+  -- the ingredient-square recipe to both `yonedaLemmaForwards.naturality f` and
+  -- `yonedaLemmaBackwards.naturality f` in turn.
   sorry
-  -- erw [Cat.Hom.toNatTrans_comp]
-  -- dsimp only [yonedaHomInvIdNatIso, Bicategory.whiskerRight, Functor.whiskerRight,
-  --   Bicategory.whiskerLeft, Functor.whiskerLeft]
-  -- ext x
   -- simp [Functor.leftUnitor, Functor.rightUnitor, yonedaLemmaForwards, yonedaHomInvIdObjIso,
   --   Bicategory.associator, Functor.associator, yonedaPairing]
 
@@ -1389,6 +1439,31 @@ of `yonedaLemma`.
 -/
 def yonedaInvHomId : yonedaLemmaBackwards ≫ yonedaLemmaForwards ≅ 𝟙 (@yonedaEvaluation B _) := by
   refine StrongTrans.isoMk (fun a ↦ Cat.Hom.isoMk (yonedaInvHomIdNatIso a)) ?_
+  intro a b f
+  have rw1 : (fun a ↦ Cat.Hom.isoMk (yonedaInvHomIdNatIso a)) b =
+      Cat.Hom.isoMk (yonedaInvHomIdNatIso b) := rfl
+  have rw2 : (Cat.Hom.isoMk (yonedaInvHomIdNatIso b)).hom =
+      NatTrans.toCatHom₂ ((yonedaInvHomIdNatIso b).hom) := rfl
+  have rw3 : (fun a ↦ Cat.Hom.isoMk (yonedaInvHomIdNatIso a)) a =
+      Cat.Hom.isoMk (yonedaInvHomIdNatIso a) := rfl
+  erw [rw1, rw2, rw3]
+  clear rw1 rw2 rw3
+  refine Cat.Hom₂.ext_iff.mpr ?_
+  ext x
+  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+    Cat.Hom.isoMk_hom, NatTrans.toCatHom₂_toNatTrans]
+  -- Parked (2026-07-29): same shape and size as yonedaHomInvId's naturality goal (see the note
+  -- there). After the descent above, the goal is
+  --   (yonedaInvHomIdNatIso b).hom.app ((yonedaEvaluation.map f).obj x) ≫
+  --     ((𝟙 yonedaEvaluation).naturality f).hom.app x
+  --   = ((yonedaLemmaBackwards ≫ yonedaLemmaForwards).naturality f).hom.app x ≫
+  --     (yonedaEvaluation.map f).map ((yonedaInvHomIdNatIso a).hom.app x)
+  -- Next step if resumed: the same `dsimp only [CategoryStruct.id, CategoryStruct.comp,
+  -- StrongTrans.categoryStruct, StrongTrans.id, StrongTrans.vcomp, StrongTrans.mkOfOplax,
+  -- Oplax.StrongTrans.mkOfOplax, Oplax.StrongTrans.vcomp]` unfold used there (~5 min/cycle),
+  -- then the ingredient-square recipe applied to `yonedaLemmaBackwards.naturality f` and
+  -- `yonedaLemmaForwards.naturality f` in turn.
   sorry
 
 /--

@@ -183,7 +183,7 @@ def op (F : B ⥤ᵖ C) : Bᵒᵖ ⥤ᵖ Cᵒᵖ where
       intro p q u v x y hxy
       rw [← Bicategory.Opposite.op2_unop2 x, ← Bicategory.Opposite.op2_unop2 y, hxy]
     apply ext2
-    simp
+    dsimp
     rw [F.mapComp_assoc_left_inv]
     simp
 
