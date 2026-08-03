@@ -230,6 +230,19 @@ def prelax : PrelaxFunctor (Bᵒᵖ × B) Cat.{w₁, v₁} :=
           (postcomposing (Cat.of (unop a.1 ⟶ a.2)) (Cat.of (unop a.1 ⟶ b.2))
             (Cat.of (unop b.1 ⟶ b.2))))
 
+/-- All five of `homPseudo`'s coherence fields close identically: descend to a point via
+`Cat.Hom₂.ext_app`, retype it past the `Cat.of` coercion so `bicategory` sees a genuine morphism
+(see the module docstring's "unblocking `bicategory`" note), then call `bicategory`. Factored
+into one local tactic so the five fields below don't repeat the same six lines verbatim. -/
+local macro "hom_coherence" a:term : tactic =>
+  `(tactic| (
+    dsimp [prelax]
+    apply Cat.Hom₂.ext_app
+    intro x
+    dsimp
+    change (unop ($a).1 ⟶ ($a).2) at x
+    bicategory))
+
 set_option backward.isDefEq.respectTransparency false in
 /-- The two-variable hom-pseudofunctor `Bᵒᵖ × B ⥤ᵖ Cat`, `(a, b) ↦ (unop a ⟶ b)`.
 
@@ -269,41 +282,11 @@ def homPseudo : Bᵒᵖ × B ⥤ᵖ Cat.{w₁, v₁} where
         Iso.inv_hom_id_assoc, Iso.trans_assoc, Iso.trans_hom, whiskerLeftIso_hom,
         Iso.symm_hom, whiskerRightIso_hom, pentagon_inv_hom_hom_hom_inv,
         whiskerLeft_whiskerLeft_hom_inv_assoc, whisker_assoc, whiskerLeft_inv_hom_assoc]
-  map₂_whisker_left {a b c} fg hi jk l := by
-    dsimp [prelax]
-    apply Cat.Hom₂.ext_app
-    intro x
-    dsimp
-    change (unop a.1 ⟶ a.2) at x
-    bicategory
-  map₂_whisker_right {a b c} fg hi jk l := by
-    dsimp [prelax]
-    apply Cat.Hom₂.ext_app
-    intro x
-    dsimp
-    change (unop a.1 ⟶ a.2) at x
-    bicategory
-  map₂_associator {a b c d} fg hi jk := by
-    dsimp [prelax]
-    apply Cat.Hom₂.ext_app
-    intro x
-    dsimp
-    change (unop a.1 ⟶ a.2) at x
-    bicategory
-  map₂_left_unitor {a b} fg := by
-    dsimp [prelax]
-    apply Cat.Hom₂.ext_app
-    intro x
-    dsimp
-    change (unop a.1 ⟶ a.2) at x
-    bicategory
-  map₂_right_unitor {a b} fg := by
-    dsimp [prelax]
-    apply Cat.Hom₂.ext_app
-    intro x
-    dsimp
-    change (unop a.1 ⟶ a.2) at x
-    bicategory
+  map₂_whisker_left {a b c} fg hi jk l := by hom_coherence a
+  map₂_whisker_right {a b c} fg hi jk l := by hom_coherence a
+  map₂_associator {a b c d} fg hi jk := by hom_coherence a
+  map₂_left_unitor {a b} fg := by hom_coherence a
+  map₂_right_unitor {a b} fg := by hom_coherence a
 
 /-! ### The composite: `yonedaPairing` rebuilt from the three gadgets above
 

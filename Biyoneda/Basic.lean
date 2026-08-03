@@ -297,8 +297,6 @@ lemma forwards_naturality_naturality_Z {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w,
       (a.2.map₂ η.1).toNatTrans.app ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) := by
   rw [Category.assoc]
   have h3 := Z.naturality_naturality_app η.1 (𝟙 (unop a.1))
-  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app] at h3
   dsimp [yoneda₀, precomposing, precomposingCat] at h3
   erw [← h3]
   conv_lhs => rw [← Category.assoc, ← Functor.map_comp]
@@ -1105,8 +1103,8 @@ lemma backwards_naturality_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat
     (b.2.toOplax.mapComp_naturality_left η.1 (Quiver.Hom.op ZZ)) ((g.2.app a.1).toFunctor.obj x)
   have hnn := g.2.naturality_naturality_app (η.1 ▷ Quiver.Hom.op ZZ) x
   have hmod := modification_naturality_app η.2 (f.1 ≫ Quiver.Hom.op ZZ) x
-  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app] at hmc hnn hmod
+  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+    Cat.whiskerRight_toNatTrans, whiskerRight_app] at hmc hnn hmod
   -- hmc_inv: slide map₂ η.1 past the b.2.mapComp iso (inverse form), point G_ax
   have hmc_inv : (b.2.map (Quiver.Hom.op ZZ)).toFunctor.map
         ((b.2.map₂ η.1).toNatTrans.app ((g.2.app a.1).toFunctor.obj x)) ≫
@@ -1201,8 +1199,7 @@ def yonedaLemmaBackwards : StrongTrans (@yonedaEvaluation B _)  (@yonedaPairing 
       Pseudofunctor.StrongTrans.comp_app, Functor.comp_map, Cat.Hom.comp_toFunctor]
     dsimp only [yonedaLemmaBackwardsFunctor, yonedaLemmaBackwardsFunctorObj,
       yonedaLemmaBackwardsFunctorObjFunctor, yonedaEvaluation']
-    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app, whiskerLeft_as_app]
+    simp only [Cat.whiskerLeft_toNatTrans, whiskerLeft_app, whiskerLeft_as_app]
     exact backwards_naturality_naturality_core η x ZZ
   naturality_id a := by sorry
   naturality_comp {a b c} f g := by sorry
@@ -1404,8 +1401,6 @@ def yonedaHomInvId : yonedaLemmaForwards ≫ yonedaLemmaBackwards ≅ 𝟙 (@yon
   -- the ingredient-square recipe to both `yonedaLemmaForwards.naturality f` and
   -- `yonedaLemmaBackwards.naturality f` in turn.
   sorry
-  -- simp [Functor.leftUnitor, Functor.rightUnitor, yonedaLemmaForwards, yonedaHomInvIdObjIso,
-  --   Bicategory.associator, Functor.associator, yonedaPairing]
 
 /--
 At a fixed pair `a = (b₀, F)`, the natural isomorphism from the roundtrip functor
