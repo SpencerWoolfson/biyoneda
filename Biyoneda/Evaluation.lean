@@ -66,7 +66,7 @@ lemma evaluation_left_unitor_core {a b : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶ 
       (f.2.app a.1).toFunctor.map ((a.2.mapId a.1).hom.toNatTrans.app Z) =
       (b.2.mapId a.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z) := by
     apply (Iso.inv_comp_eq ((Cat.Hom.toNatIso (f.2.naturality (𝟙 a.1))).app Z)).mpr
-    show (f.2.app a.1).toFunctor.map ((a.2.mapId a.1).hom.toNatTrans.app Z) =
+    change (f.2.app a.1).toFunctor.map ((a.2.mapId a.1).hom.toNatTrans.app Z) =
       (f.2.naturality (𝟙 a.1)).hom.toNatTrans.app Z ≫
       (b.2.mapId a.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)
     rw [hid]
@@ -294,7 +294,7 @@ lemma evaluation_associator_core {a b c d : C × (C ⥤ᵖ Cat.{w, v})}
         ((g.2.app a.1).toFunctor.obj W) := rfl
   erw [hsplit]
   simp only [← Functor.map_comp]
-  show (d.2.mapComp (f.1 ≫ g.1) h.1).hom.toNatTrans.app
+  change(d.2.mapComp (f.1 ≫ g.1) h.1).hom.toNatTrans.app
         ((h.2.app a.1).toFunctor.obj
           ((g.2.app a.1).toFunctor.obj W)) ≫
       (d.2.map h.1).toFunctor.map
