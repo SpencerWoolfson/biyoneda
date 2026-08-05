@@ -1,6 +1,9 @@
 /.lake
 .DS_Store
 
+# Working/WIP notes: private, not for the public repo
+/notes/
+
 # LaTeX build artifacts
 *.aux
 *.log
