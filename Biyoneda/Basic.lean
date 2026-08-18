@@ -178,11 +178,36 @@ def yonedaPairing : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (ma
       refine ?_ ≪≫ (α_ _ _ _)
       refine (?_ ▷ᵢ (x ≫ f.2))
       apply postcompComp₂
-    · intro X Y f
+    · intro X Y η
       apply homCategory.ext
       intro b
       dsimp
-      sorry
+      ext Z
+      simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+        Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+        Cat.associator_hom_app, Cat.associator_inv_app, Category.assoc, Category.id_comp,
+        Category.comp_id, Functor.comp_obj, eqToHom_refl, eqToHom_map, eqToHom_trans,
+        Cat.Hom.comp_toFunctor, Functor.comp_map, Functor.map_comp,
+        NatTrans.naturality, NatTrans.naturality_assoc]
+      have hnat := ((η.as.app b).toNatTrans.naturality
+        (((postcompComp₂ g.1.unop f.1.unop).hom.as.app b).toNatTrans.app Z)).symm
+      simp only [Pseudofunctor.StrongTrans.comp_app, Cat.Hom.comp_toFunctor,
+        Functor.comp_obj] at hnat
+      simp only [← Functor.map_comp]
+      -- the closer: `congrArg (g2.map ∘ f2.map) hnat`. Direct unification against the
+      -- `postcompComp₂`-laden goal is defeq-toxic (see notes/p4_mapcomp_wip.md); the
+      -- transparency override is the same escape hatch Gadgets.lean:246 uses.
+      set_option backward.isDefEq.respectTransparency false in
+      exact congrArg _ (congrArg _ hnat)
+  -- The four coherence fields below were previously discharged by `sorry_if_sorry`
+  -- riding on the `mapComp` naturality sorry (measured 2026-08-18, see
+  -- notes/tech_debt_2026-08-18.md). With that sorry closed they must be real proofs;
+  -- explicit sorries make the true debt visible while they are attacked one by one.
+  map₂_whisker_left := by sorry
+  map₂_whisker_right := by sorry
+  map₂_associator := by sorry
+  map₂_left_unitor := by sorry
+  map₂_right_unitor := by sorry
   map₂_id {a b} X := congrArg NatTrans.toCatHom₂ (yonedaPairingMap₂_id X)
   map₂_comp {a b f g h} η θ := congrArg NatTrans.toCatHom₂ (yonedaPairingMap₂_comp η θ)
 
