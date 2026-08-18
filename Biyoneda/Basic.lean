@@ -149,6 +149,21 @@ the Yoneda embedding":
 def yonedaPairing : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (max v w), max u (max v w)} :=
   yonedaPairingComposite
 
+
+/-! ### Bridge lemmas: the composite's projections in hand-rolled spelling
+
+`yonedaPairing` is the gadget composite, but `.obj`, `.map` and `.map₂` agree with the
+hand-rolled construction *definitionally*. These `rfl` lemmas let `simp only` reconcile the
+two spellings, which is what keeps the proofs below matching. (`.mapId`/`.mapComp` do NOT
+bridge — the composite's are genuinely different terms — so no such lemma exists for them.)
+-/
+
+@[simp] lemma yonedaPairing_map₂ {x y : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} {f g : x ⟶ y} (η : f ⟶ g) :
+    (yonedaPairing (B := B)).map₂ η = NatTrans.toCatHom₂ (yonedaPairingMap₂ η) := rfl
+
+lemma yonedaPairing_map' {x y : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : x ⟶ y) :
+    (yonedaPairing (B := B)).map f = Functor.toCatHom (yonedaPairingMapFunctor f) := rfl
+
 /--
 The *evaluation pseudofunctor* `Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat) ⥤ᵖ Cat`, sending `(b, F)` to `F.obj b`.
 
@@ -251,17 +266,23 @@ with going through `Z.naturality f.1` and then applying `a.2.map₂ η.1`.  It i
 right-unitor naturality to reconcile the two unitor spellings.
 -/
 lemma forwards_naturality_naturality_Z {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} {f g : a ⟶ b}
-    (η : f ⟶ g) (Z : ↑(yonedaPairing.obj a)) :
+    (η : f ⟶ g) (Z : Pseudofunctor.StrongTrans (yoneda₀ (unop a.1)) a.2) :
     (Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ η.1.unop2 ≫ (λ_ g.1.unop).inv) ≫
       (Z.app b.1).toFunctor.map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ≫
         (Z.naturality g.1).hom.toNatTrans.app (𝟙 (unop a.1)) =
     ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) ≫
         (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
       (a.2.map₂ η.1).toNatTrans.app ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) := by
-  -- BROKEN BY THE COMPOSITE SWAP (2026-08-18): this had a complete proof against the
-  -- hand-rolled yonedaPairing; its statement now mentions the composite's mapId/mapComp,
-  -- which are NOT defeq to the old ones. cat_disch does not close it. See notes/.
-  sorry
+  rw [Category.assoc]
+  have h3 := Z.naturality_naturality_app η.1 (𝟙 (unop a.1))
+  dsimp [yoneda₀, precomposing, precomposingCat] at h3
+  erw [← h3]
+  conv_lhs => rw [← Category.assoc, ← Functor.map_comp]
+  conv_rhs => rw [← Category.assoc, ← Functor.map_comp]
+  congr 2
+  simp only [Category.assoc]
+  erw [Iso.inv_hom_id_assoc, Bicategory.rightUnitor_inv_naturality]
+  rfl
 
 /--
 The component core of the `naturality_naturality` obligation of `yonedaLemmaForwards`, stated
@@ -273,7 +294,7 @@ proof splits `η` into its two components: the modification part `η.2` contribu
 and the evaluation point is handled by `forwards_naturality_naturality_Z`.
 -/
 lemma forwards_naturality_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} {f g : a ⟶ b}
-    (η : f ⟶ g) (Z : ↑(yonedaPairing.obj a)) :
+    (η : f ⟶ g) (Z : Pseudofunctor.StrongTrans (yoneda₀ (unop a.1)) a.2) :
     (((yonedaPairing.map₂ η).toNatTrans.app Z).as.app b.1).toNatTrans.app (𝟙 (unop b.1)) ≫
         ((g.2.app b.1).toFunctor.map
             ((Z.app b.1).toFunctor.map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ≫
@@ -286,10 +307,32 @@ lemma forwards_naturality_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.
           ((Cat.Hom.toNatIso (f.2.naturality f.1)).app
               ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))).hom) ≫
       (yonedaEvaluation'.map₂ η).toNatTrans.app ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) := by
-  -- BROKEN BY THE COMPOSITE SWAP (2026-08-18): this had a complete proof against the
-  -- hand-rolled yonedaPairing; its statement now mentions the composite's mapId/mapComp,
-  -- which are NOT defeq to the old ones. cat_disch does not close it. See notes/.
-  sorry
+  simp only [yonedaPairing_map₂]
+  dsimp only [Cat.toCatHom₂_toNatTrans, yonedaPairingMap₂, yonedaEvaluation',
+    postcomposing₂, postcomposingCat]
+  simp only [NatTrans.comp_app, precomposing_map_app, postcomposing_map_app,
+    precomposing_obj, postcomposing_obj, precomp_map,
+    Cat.toCatHom₂_toNatTrans, whiskerLeft_as_app, whiskerRight_as_app,
+    homCategory_comp_as_app,
+    Cat.Hom.toNatTrans_comp, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
+    whiskerLeft_app, whiskerRight_app, Iso.app_hom, Cat.Hom.toNatIso]
+  simp only [Pseudofunctor.StrongTrans.comp_app, Functor.comp_map,
+    postcomp₂, postcomposingCat, postcomp_obj, Cat.Hom.comp_toFunctor,
+    Bicategory.id_whiskerLeft]
+  have h1 := modification_naturality_app η.2 f.1 ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))
+  have h2 := g.2.naturality_naturality_app η.1
+    ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))
+  dsimp at h1 h2
+  simp only [Category.assoc]
+  erw [← reassoc_of% h1, ← h2]
+  erw [(η.2.as.app b.1).toNatTrans.naturality,
+    (η.2.as.app b.1).toNatTrans.naturality_assoc]
+  erw [Category.assoc]
+  refine congrArg (fun m ↦ (η.2.as.app b.1).toNatTrans.app _ ≫ m) ?_
+  erw [← Functor.map_comp_assoc]
+  erw [forwards_naturality_naturality_Z η Z]
+  erw [Functor.map_comp_assoc]
+  rfl
 
 /--
 The component core of the `naturality_id` obligation of `yonedaLemmaForwards`, stated in the
@@ -301,14 +344,15 @@ after which both sides are pure unitor data and the remaining content is
 `Bicategory.unitors_equal` (`(λ_ (𝟙 x)).hom = (ρ_ (𝟙 x)).hom`).
 -/
 lemma forwards_naturality_id_core (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}))
-    (Z : ↑(yonedaPairing.obj a)) :
+    (Z : Pseudofunctor.StrongTrans (yoneda₀ (unop a.1)) a.2) :
     ((Z.app a.1).toFunctor.map ((λ_ (𝟙 a.1).unop).hom ≫ (ρ_ (𝟙 a.1).unop).inv) ≫
         (Z.naturality (𝟙 a.1)).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
       (yonedaEvaluation'.mapId a).hom.toNatTrans.app ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) =
     (((yonedaPairing.mapId a).hom.toNatTrans.app Z).as.app a.1).toNatTrans.app (𝟙 (unop a.1)) := by
-  -- BROKEN BY THE COMPOSITE SWAP (2026-08-18): this had a complete proof against the
-  -- hand-rolled yonedaPairing; its statement now mentions the composite's mapId/mapComp,
-  -- which are NOT defeq to the old ones. cat_disch does not close it. See notes/.
+  -- RE-PROOF PENDING (composite swap, 2026-08-18): the statement mentions
+  -- yonedaPairing.mapId/.mapComp, which the composite defines differently (NOT defeq to
+  -- the hand-rolled ones). Unlike its three siblings this cannot be recovered by retyping
+  -- or the .map₂ bridge; it needs a genuine re-proof. See notes/composite_swap_wip.md.
   sorry
 
 /-- Reduction: the lifted evaluation pseudofunctor's action on a lifted morphism. -/
@@ -354,7 +398,7 @@ set_option maxHeartbeats 500000 in
 -- exceed the default budget (measured floor ≈ 350k, so ~1.4× margin); does not fit in 200k
 /-- Core of `naturality_comp` for `yonedaLemmaForwards` (unlifted fibre form). -/
 lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
-    (Z : ↑(yonedaPairing.obj a)) :
+    (Z : Pseudofunctor.StrongTrans (yoneda₀ (unop a.1)) a.2) :
     (((f.2 ≫ g.2).app c.1).toFunctor.map
           ((Z.app c.1).toFunctor.map
               ((λ_ (f.1 ≫ g.1).unop).hom ≫ (ρ_ (f.1 ≫ g.1).unop).inv) ≫
@@ -378,9 +422,10 @@ lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
                 (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
             (f.2.naturality f.1).hom.toNatTrans.app
               ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))) := by
-  -- BROKEN BY THE COMPOSITE SWAP (2026-08-18): this had a complete proof against the
-  -- hand-rolled yonedaPairing; its statement now mentions the composite's mapId/mapComp,
-  -- which are NOT defeq to the old ones. cat_disch does not close it. See notes/.
+  -- RE-PROOF PENDING (composite swap, 2026-08-18): the statement mentions
+  -- yonedaPairing.mapId/.mapComp, which the composite defines differently (NOT defeq to
+  -- the hand-rolled ones). Unlike its three siblings this cannot be recovered by retyping
+  -- or the .map₂ bridge; it needs a genuine re-proof. See notes/composite_swap_wip.md.
   sorry
 /--
 The *forward strong transformation* `yonedaPairing ⟶ yonedaEvaluation` for the Yoneda lemma.
