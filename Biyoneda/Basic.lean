@@ -334,6 +334,8 @@ lemma forwards_naturality_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.
   erw [Functor.map_comp_assoc]
   rfl
 
+set_option backward.isDefEq.respectTransparency false in
+set_option maxHeartbeats 1000000 in
 /--
 The component core of the `naturality_id` obligation of `yonedaLemmaForwards`, stated in the
 unlifted fibre.
@@ -349,11 +351,21 @@ lemma forwards_naturality_id_core (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}))
         (Z.naturality (𝟙 a.1)).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
       (yonedaEvaluation'.mapId a).hom.toNatTrans.app ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) =
     (((yonedaPairing.mapId a).hom.toNatTrans.app Z).as.app a.1).toNatTrans.app (𝟙 (unop a.1)) := by
-  -- RE-PROOF PENDING (composite swap, 2026-08-18): the statement mentions
-  -- yonedaPairing.mapId/.mapComp, which the composite defines differently (NOT defeq to
-  -- the hand-rolled ones). Unlike its three siblings this cannot be recovered by retyping
-  -- or the .map₂ bridge; it needs a genuine re-proof. See notes/composite_swap_wip.md.
-  sorry
+  -- Re-proved against the composite's `mapId` (2026-08-18). The content is unchanged --
+  -- `Z.naturality_id` is still the whole mathematical input -- but the right-hand side now
+  -- unfolds through `Pseudofunctor.comp`/`prod`/`op` into `homPseudo`'s unitor iso, so the
+  -- descent differs from the pre-swap proof. The transparency override is needed for `erw`
+  -- to see past `postcomp₂` (same escape hatch as Gadgets.lean:246).
+  dsimp only [yonedaPairing, yonedaPairingComposite, Pseudofunctor.comp, homPseudo,
+    Pseudofunctor.prod, Pseudofunctor.op, prelax, yonedaEvaluation', evaluationPseudo]
+  simp only [Iso.trans_hom, Cat.Hom.isoMk_hom, NatIso.ofComponents_hom_app,
+    Cat.toCatHom₂_toNatTrans, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+    PrelaxFunctor.map₂Iso_hom, Category.assoc]
+  have hZ := Cat.Hom₂.congr_app (Z.naturality_id a.1) (𝟙 (unop a.1))
+  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app] at hZ
+  erw [hZ]
+  cat_disch
 
 /-- Reduction: the lifted evaluation pseudofunctor's action on a lifted morphism. -/
 lemma yonedaEvaluation_map_map_down {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
