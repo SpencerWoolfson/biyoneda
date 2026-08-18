@@ -199,10 +199,12 @@ def yonedaPairing : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{max u (ma
       -- transparency override is the same escape hatch Gadgets.lean:246 uses.
       set_option backward.isDefEq.respectTransparency false in
       exact congrArg _ (congrArg _ hnat)
-  -- The four coherence fields below were previously discharged by `sorry_if_sorry`
-  -- riding on the `mapComp` naturality sorry (measured 2026-08-18, see
-  -- notes/tech_debt_2026-08-18.md). With that sorry closed they must be real proofs;
-  -- explicit sorries make the true debt visible while they are attacked one by one.
+  -- The five coherence fields below were formerly discharged by `sorry_if_sorry` riding on
+  -- the `mapComp` naturality sorry (measured 2026-08-18, notes/tech_debt_2026-08-18.md), so
+  -- none of them had real proofs; these sorries make the true debt visible. All five resist
+  -- `cat_disch` in-field even under the transparency override (aesop exhausts its search;
+  -- goal dumps in notes/whisker_goals_2026-08-18.log.txt). Do NOT trust probe closures of
+  -- these goals against a built olean — the sorried projection lemmas make them circular.
   map₂_whisker_left := by sorry
   map₂_whisker_right := by sorry
   map₂_associator := by sorry
