@@ -6,6 +6,7 @@
 
 # Local AI-tooling config: not for the public repo
 /.mcp.json
+/CLAUDE.local.md
 
 # LaTeX build artifacts
 *.aux
@@ -26,3 +27,6 @@
 # PDFs: ignore all except the root compiled output (tracked so GitHub can display it)
 *.pdf
 !/Biyoneda.pdf
+
+# CI build log captured for the sorry/axiom gate
+/build.log

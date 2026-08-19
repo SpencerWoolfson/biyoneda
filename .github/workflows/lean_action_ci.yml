@@ -21,5 +21,18 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: leanprover/lean-action@v1
+
+      # `lake build` exiting 0 does not mean the development is sound: sorries are
+      # warnings, and a coherence field can be silently discharged by an autoparam
+      # riding on a sorry elsewhere. Replay the (now cached) build to capture the
+      # warnings and `#print axioms` output, then gate on both.
+      - name: Capture build output
+        shell: bash            # -eo pipefail, so a lake failure is not masked by tee
+        run: lake build 2>&1 | tee build.log
+
+      - name: Verify sorry count and axioms
+        shell: bash
+        run: ./scripts/verify-build.sh build.log
+
       - uses: leanprover-community/docgen-action@v1
         id: deployment
