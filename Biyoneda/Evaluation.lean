@@ -75,14 +75,14 @@ lemma evaluation_left_unitor_core {a b : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶ 
     erw [c1]
     erw [Category.comp_id]
     rfl
-  erw [hl]
+  rw [hl]
   erw [Functor.map_id]
   erw [Category.id_comp]
-  erw [hw]
+  rw [hw]
   simp only [Category.assoc]
   erw [← Functor.map_comp]
   erw [key]
-  erw [Category.comp_id]
+  rw [Category.comp_id]
   rfl
 
 /-- The cancellation core of `evaluationPseudo.map₂_right_unitor`, at a point `Z`. -/
@@ -107,11 +107,11 @@ lemma evaluation_right_unitor_core {a b : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶
     first
       | rfl
       | simp
-  erw [hr]
+  rw [hr]
   erw [Functor.map_id]
   erw [Category.id_comp]
-  erw [hw]
-  erw [hidt]
+  rw [hw]
+  rw [hidt]
   erw [Functor.map_id]
   simp only [Category.comp_id, Category.assoc]
   iterate 6 (first | erw [Category.id_comp] | erw [Category.comp_id] | skip)
@@ -271,11 +271,11 @@ lemma evaluation_associator_core {a b c d : C × (C ⥤ᵖ Cat.{w, v})}
       f.1).toFunctor.obj ((h.2.app a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj W))))) ≫
       (d.2.mapComp f.1 (g.1 ≫ h.1)).inv.toNatTrans.app ((h.2.app a.1).toFunctor.obj ((g.2.app
       a.1).toFunctor.obj W)) := by
-  erw [Functor.map_id]
-  erw [Category.id_comp]
+  rw [Functor.map_id]
+  rw [Category.id_comp]
   have hw := d.2.map₂_associator_app f.1 g.1 h.1
     ((h.2.app a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj W))
-  erw [hw]
+  rw [hw]
   rw [Pseudofunctor.StrongTrans.naturality_comp_inv_app h.2 f.1 g.1
     ((g.2.app a.1).toFunctor.obj W)]
   have hD := Cat.Hom₂.congr_app
@@ -378,7 +378,7 @@ lemma evaluation_associator_core {a b c d : C × (C ⥤ᵖ Cat.{w, v})}
         ((g.2.naturality f.1).inv.toNatTrans.app W)
   erw [key1]
   erw [← Functor.map_comp]
-  erw [Functor.map_comp]
+  rw [Functor.map_comp]
   simp only [Category.assoc]
   have key2 : (d.2.map h.1).toFunctor.map ((d.2.map g.1).toFunctor.map
         ((h.2.naturality f.1).inv.toNatTrans.app
@@ -428,7 +428,7 @@ lemma evaluation_associator_core {a b c d : C × (C ⥤ᵖ Cat.{w, v})}
          (h.2.app b.1).toFunctor.map
           ((g.2.naturality f.1).inv.toNatTrans.app W))
     rw [← Category.assoc]
-    erw [hn2]
+    rw [hn2]
     first | rw [Category.assoc] | erw [Category.assoc]
     erw [← Functor.map_comp_assoc]
     simp only [Category.assoc]
@@ -487,10 +487,10 @@ def evaluationPseudo : C × (C ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v} where
       Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
       Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id]
     simp only [prod_whiskerLeft_fst, prod_whiskerLeft_snd, whiskerLeft_as_app]
-    erw [Cat.whiskerLeft_app]
+    rw [Cat.whiskerLeft_app]
     have hw := c.2.map₂_whisker_left_app f.1 η.1
       (((f ≫ h).2.app a.1).toFunctor.obj Z)
-    erw [hw]
+    rw [hw]
     have h1 : (c.2.map (f ≫ g).1).toFunctor.map
           ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
         (c.2.mapComp f.1 g.1).hom.toNatTrans.app
@@ -516,7 +516,7 @@ def evaluationPseudo : C × (C ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v} where
     simp only [prod_whiskerRight_fst, prod_whiskerRight_snd, whiskerRight_as_app]
     have hw := c.2.map₂_whisker_right_app h.1 η.1
       (((g ≫ η).2.app a.1).toFunctor.obj Z)
-    erw [hw]
+    rw [hw]
     have hnn := η.2.naturality_naturality_app h.1
       ((g.2.app a.1).toFunctor.obj Z)
     have h1 : (c.2.map (f ≫ η).1).toFunctor.map
