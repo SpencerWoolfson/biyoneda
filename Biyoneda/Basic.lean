@@ -334,11 +334,8 @@ lemma forwards_naturality_id_core (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}))
         (Z.naturality (𝟙 a.1)).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
       (yonedaEvaluation'.mapId a).hom.toNatTrans.app ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) =
     (((yonedaPairing.mapId a).hom.toNatTrans.app Z).as.app a.1).toNatTrans.app (𝟙 (unop a.1)) := by
-  -- Re-proved against the composite's `mapId` (2026-08-18). The content is unchanged --
-  -- `Z.naturality_id` is still the whole mathematical input -- but the right-hand side now
-  -- unfolds through `Pseudofunctor.comp`/`prod`/`op` into `homPseudo`'s unitor iso, so the
-  -- descent differs from the pre-swap proof. The transparency override is needed for `erw`
-  -- to see past `postcomp₂` (same escape hatch as Gadgets.lean:246).
+  -- `Z.naturality_id` is the whole mathematical input; the descent below just follows the
+  -- composite's `mapId` down to `homPseudo`'s unitor iso.
   dsimp only [yonedaPairing, yonedaPairingComposite, Pseudofunctor.comp, homPseudo,
     Pseudofunctor.prod, Pseudofunctor.op, prelax, yonedaEvaluation', evaluationPseudo]
   simp only [Iso.trans_hom, Cat.Hom.isoMk_hom, NatIso.ofComponents_hom_app,
@@ -417,10 +414,8 @@ lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
                 (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
             (f.2.naturality f.1).hom.toNatTrans.app
               ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))) := by
-  -- RE-PROOF PENDING (composite swap, 2026-08-18): the statement mentions
-  -- yonedaPairing.mapId/.mapComp, which the composite defines differently (NOT defeq to
-  -- the hand-rolled ones). Unlike its three siblings this cannot be recovered by retyping
-  -- or the .map₂ bridge; it needs a genuine re-proof. See notes/composite_swap_wip.md.
+  -- Pending: the statement mentions `yonedaPairing.mapComp`, which the composite defines
+  -- differently (not defeq), so this needs a genuine re-proof rather than a re-spelling.
   sorry
 /--
 The *forward strong transformation* `yonedaPairing ⟶ yonedaEvaluation` for the Yoneda lemma.
@@ -445,7 +440,7 @@ def yonedaLemmaForwards : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B 
         exact ((X.app b.1).toFunctor.mapIso (λ_ f.1.unop ≪≫ (ρ_ f.1.unop).symm)) ≪≫
           (Cat.Hom.toNatIso (X.naturality f.1)).app (𝟙 (unop a.1))
       exact ULiftHom.up.mapIso (ULift.upFunctor.mapIso lem)
-    · -- BROKEN BY THE COMPOSITE SWAP (2026-08-18): goal shape changed; see notes/
+    · -- Pending: goal shape changed with the composite pairing.
       sorry
   naturality_naturality {a b f g} η := by
     apply catLift_hom₂_ext; intro Z
@@ -1088,7 +1083,7 @@ def yonedaHomInvIdFunctorIso {a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)} (b : Bᵒᵖ)
         ((yonedaLemmaForwards.app a).toFunctor.obj x)).app b).toFunctor ≅
     (x.app b).toFunctor := by
     refine NatIso.ofComponents (fun y ↦ yonedaUnitAppIso a b x y) ?_
-    -- BROKEN BY THE COMPOSITE SWAP (2026-08-18); see notes/composite_swap_wip.md
+    -- Pending: goal shape changed with the composite pairing.
     sorry
 /--
 At a fixed pair `a = (b₀, F)` and a strong transformation `x : yoneda₀ b₀ ⟶ F`, the
@@ -1103,7 +1098,7 @@ def yonedaHomInvIdObjIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) (x : ↑(yonedaPa
     (yonedaLemmaForwards.app a ≫ yonedaLemmaBackwards.app a).toFunctor.obj x ≅
     (𝟭 ↑(yonedaPairing.obj a)).obj x := by
     refine StrongTrans.isoMk (fun b ↦ (Cat.Hom.isoMk (yonedaHomInvIdFunctorIso b x))) ?_
-    -- BROKEN BY THE COMPOSITE SWAP (2026-08-18); see notes/composite_swap_wip.md
+    -- Pending: goal shape changed with the composite pairing.
     sorry
 /--
 For a pair `a = (b₀, F)`, the modification
@@ -1117,7 +1112,7 @@ def yonedaHomInvIdNatIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
     (yonedaLemmaForwards.app a ≫ yonedaLemmaBackwards.app a).toFunctor ≅
     (𝟭 ↑(yonedaPairing.obj a)) := by
   refine NatIso.ofComponents (fun x ↦ yonedaHomInvIdObjIso a x) ?_
-  -- BROKEN BY THE COMPOSITE SWAP (2026-08-18); see notes/composite_swap_wip.md
+  -- Pending: goal shape changed with the composite pairing.
   sorry
 
 /--

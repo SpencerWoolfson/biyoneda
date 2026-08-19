@@ -18,8 +18,8 @@ import Biyoneda.ForMathlib
 of warnings (see the history of this file for why that distinction matters): all three depend
 only on `[propext, Classical.choice, Quot.sound]`.
 
-This file is NOT imported by `Biyoneda.Basic` — nothing there depends on it yet. `CompositePairing.lean`
-uses these gadgets to assemble `yonedaPairing` as a composite; see that file for the payoff.
+`Biyoneda.Basic` imports this file and defines `yonedaPairing` as the composite assembled
+below, so these gadgets are load-bearing rather than experimental.
 
 ## Why this file exists
 
@@ -44,8 +44,10 @@ no `Pseudofunctor.op`, and no two-variable hom-pseudofunctor. This file supplies
 | gadget | state |
 |---|---|
 | `Pseudofunctor.prod` | **complete** — all five coherence fields auto-discharged |
-| `Pseudofunctor.op` | **complete** — four coherence fields auto-discharge; `map₂_associator` proved via `mapComp_assoc_left_inv` |
-| `homPseudo` | **complete** — `mapId`/`mapComp` proved directly; all five coherence fields close via `Cat.Hom₂.ext_app` descent + `bicategory` (see the recipe below) |
+| `Pseudofunctor.op` | **complete** — four coherence fields auto-discharge;
+  `map₂_associator` via `mapComp_assoc_left_inv` |
+| `homPseudo` | **complete** — `mapId`/`mapComp` proved directly; all five coherence
+  fields close by `Cat.Hom₂.ext_app` descent + `bicategory` (recipe below) |
 
 This confirms the premise of the file: when the data is assembled from existing gadgets, the
 coherence really does come for free — including, in the end, for the two-variable hom.
@@ -298,7 +300,7 @@ With `K := Bᵒᵖ ⥤ᵖ Cat` the functor bicategory,
 
 This lives here (not in `Biyoneda/CompositePairing.lean`) because `Biyoneda.Basic`'s own
 `yonedaPairing` is defined as this composite directly — see the results, the alias-trap history,
-and the axiom check verifying it is `sorryAx`-free in `notes/level2_refactor.md` and
+and the axiom check verifying it is `sorryAx`-free lives in
 `Biyoneda/CompositePairing.lean`. -/
 
 universe u
