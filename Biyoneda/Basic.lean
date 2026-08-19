@@ -111,26 +111,7 @@ lemma yonedaPairingMap₂_hcomp {x y : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} {
           ((postcomposing₂ (unop y.1) (unop x.1)).map η.1.unop2)) :=
   (NatTrans.hcomp_eq_whiskerLeft_comp_whiskerRight _ _).symm
 
-/-- `yonedaPairingMap₂` sends identity 2-morphisms to the identity. -/
-lemma yonedaPairingMap₂_id {x y : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : x ⟶ y) :
-    yonedaPairingMap₂ (𝟙 f) = 𝟙 (yonedaPairingMapFunctor f) := by
-  dsimp only [yonedaPairingMap₂]
-  rw [show (𝟙 f : f ⟶ f).1 = 𝟙 f.1 from rfl, show (𝟙 f : f ⟶ f).2 = 𝟙 f.2 from rfl,
-    unop2_id, Functor.map_id, Functor.map_id]
-  erw [(precomposing (yoneda₀ (unop y.1)) (yoneda₀ (unop x.1)) y.2).map_id]
-  erw [Functor.whiskerLeft_id', Functor.whiskerRight_id', Category.comp_id]
-  rfl
 
-/-- `yonedaPairingMap₂` is compatible with vertical composition of 2-morphisms. -/
-lemma yonedaPairingMap₂_comp {x y : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} {f g h : x ⟶ y}
-    (η : f ⟶ g) (θ : g ⟶ h) :
-    yonedaPairingMap₂ (η ≫ θ) = yonedaPairingMap₂ η ≫ yonedaPairingMap₂ θ := by
-  simp only [yonedaPairingMap₂_hcomp]
-  rw [show (η ≫ θ).1 = η.1 ≫ θ.1 from rfl, show (η ≫ θ).2 = η.2 ≫ θ.2 from rfl,
-    unop2_comp, Functor.map_comp, Functor.map_comp]
-  erw [(precomposing (yoneda₀ (unop y.1)) (yoneda₀ (unop x.1)) y.2).map_comp]
-  rw [NatTrans.exchange]
-  rfl
 
 /--
 The *pairing pseudofunctor* `Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat) ⥤ᵖ Cat`.
@@ -164,61 +145,6 @@ bridge — the composite's are genuinely different terms — so no such lemma ex
 lemma yonedaPairing_map' {x y : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : x ⟶ y) :
     (yonedaPairing (B := B)).map f = Functor.toCatHom (yonedaPairingMapFunctor f) := rfl
 
-/-! ### Transport: the composite's `mapId`/`mapComp` in hand-rolled spelling
-
-`yonedaPairing` is the gadget composite, which inherits its five coherence laws (that is the
-whole point of the swap). But its `mapId`/`mapComp` are *different terms* from the hand-rolled
-ones -- not defeq, unlike `.obj`/`.map`/`.map₂` which bridge by `rfl` above. Every proof in the
-`forwards_*` layer was written against the hand-rolled shape.
-
-Rather than re-derive each of those proofs against the composite, we reconstruct the
-hand-rolled isos here and record the two transport equalities. Downstream proofs then `rw`
-with the transport lemmas and continue in their original spelling.
-
-STATUS: the transport equalities and the two component-naturality obligations are `sorry`.
-This is a deliberate concentration of debt: 2 + 2 sorries here replace 7 broken proofs
-downstream. See notes/composite_swap_wip.md.
--/
-
-def yonedaPairingMapIdIso (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})) :
-    yonedaPairing.map (𝟙 x) ≅ 𝟙 (yonedaPairing.obj x) := by
-  refine Cat.Hom.isoMk (NatIso.ofComponents ?_ ?_)
-  · intro X
-    change Pseudofunctor.StrongTrans (yoneda₀ (unop x.1)) x.2 at X
-    refine Iso.trans (postcompId₂ (unop x.1) ▷ᵢ (X ≫ 𝟙 x.2)) ?_
-    exact (bicategoricalIso X (𝟙 (yoneda₀ (unop x.1)) ≫ X ≫ 𝟙 x.2)).symm
-  · -- TRANSPORT SCAFFOLD: naturality of the hand-rolled component iso.
-    sorry
-def yonedaPairingMapCompIso {x y z : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : x ⟶ y) (g : y ⟶ z) :
-    yonedaPairing.map (f ≫ g) ≅ yonedaPairing.map f ≫ yonedaPairing.map g := by
-  refine Cat.Hom.isoMk ?_
-  refine NatIso.ofComponents ?_ ?_
-  · intro x
-    refine ?_ ≪≫ (α_ _ _ _)
-    refine (α_ (postcomp₂ (g.1.unop ≫ f.1.unop)) x (f.2 ≫ g.2)).symm ≪≫ ?_
-    refine (α_ (postcomp₂ (g.1.unop ≫ f.1.unop) ≫ x) f.2 g.2).symm ≪≫ ?_
-    refine (?_ ▷ᵢ g.2)
-    refine (α_ (postcomp₂ (g.1.unop ≫ f.1.unop)) x f.2) ≪≫ ?_
-    refine ?_ ≪≫ (α_ _ _ _)
-    refine (?_ ▷ᵢ (x ≫ f.2))
-    apply postcompComp₂
-  · -- TRANSPORT SCAFFOLD: naturality of the hand-rolled component iso.
-    sorry
--- The five coherence fields below were formerly discharged by `sorry_if_sorry` riding on
--- the `mapComp` naturality sorry (measured 2026-08-18, notes/tech_debt_2026-08-18.md), so
--- none of them had real proofs; these sorries make the true debt visible. All five resist
--- `cat_disch` in-field even under the transparency override (aesop exhausts its search;
--- goal dumps in notes/whisker_goals_2026-08-18.log.txt). Do NOT trust probe closures of
--- these goals against a built olean — the sorried projection lemmas make them circular.
-
-/-- TRANSPORT (sorried): the composite's `mapId` equals the hand-rolled one. -/
-lemma yonedaPairing_mapId_transport (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})) :
-    (yonedaPairing (B := B)).mapId x = yonedaPairingMapIdIso x := sorry
-
-/-- TRANSPORT (sorried): the composite's `mapComp` equals the hand-rolled one. -/
-lemma yonedaPairing_mapComp_transport {x y z : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})}
-    (f : x ⟶ y) (g : y ⟶ z) :
-    (yonedaPairing (B := B)).mapComp f g = yonedaPairingMapCompIso f g := sorry
 
 
 /--
