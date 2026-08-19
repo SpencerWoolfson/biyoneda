@@ -560,15 +560,31 @@ This is the "Yoneda element" — the object in `yonedaPairing.obj x` that
 -/
 @[simp]
 def yonedaLemmaBackwardsFunctorObj (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat))
-    (eval : yonedaEvaluation.obj x) : yonedaPairing.obj x where
+    (eval : yonedaEvaluation.obj x) : Pseudofunctor.StrongTrans (yoneda₀ (unop x.1)) x.2 where
   app a := {toFunctor := yonedaLemmaBackwardsFunctorObjFunctor x eval a}
   naturality {a b} f := by
     refine Cat.Hom.isoMk (NatIso.ofComponents ?_ ?_)
     · intro X
       exact (Cat.Hom.toNatIso (x.2.mapComp (Quiver.Hom.op X) f)).app
         (ULift.casesOn eval fun eval ↦ eval)
-    · -- BROKEN BY THE COMPOSITE SWAP (2026-08-18): goal shape changed; see notes/
-      sorry
+    · intro X Y g
+      rcases eval with ⟨eval⟩
+      simp only [yoneda₀_toPrelaxFunctor_toPrelaxFunctorStruct_toPrefunctor_obj_α,
+        yonedaLemmaBackwardsFunctorObjFunctor, op_unop, Cat.Hom.comp_toFunctor, comp_obj,
+        yoneda₀_toPrelaxFunctor_toPrelaxFunctorStruct_toPrefunctor_map_toFunctor_obj, op_comp,
+        Quiver.Hom.op_unop, Functor.comp_map,
+        yoneda₀_toPrelaxFunctor_toPrelaxFunctorStruct_toPrefunctor_map_toFunctor_map,
+        op2_whiskerLeft, map₂_whisker_right, Cat.Hom.toNatTrans_comp, Cat.whiskerRight_toNatTrans,
+        NatTrans.comp_app, whiskerRight_app,
+        Category.assoc]
+      congr 1
+      rcases x.2.mapComp (Quiver.Hom.op Y) f with ⟨hom, inv, _, inv_hom⟩
+      dsimp [yonedaEvaluation'] at eval
+      have : inv.toNatTrans.app eval ≫ hom.toNatTrans.app eval =
+          (inv ≫ hom).toNatTrans.app eval := by
+        simp
+      erw [this, inv_hom]
+      simp
   naturality_naturality {a b c} f g := by
     rcases eval with ⟨eval⟩
     exact Cat.Hom₂.ext_app fun X ↦
@@ -580,6 +596,7 @@ def yonedaLemmaBackwardsFunctorObj (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat))
     rcases eval with ⟨eval⟩
     exact Cat.Hom₂.ext_app fun X ↦ mapComp_assoc_component x.2 f g X eval
 
+set_option backward.isDefEq.respectTransparency false in
 /--
 At a fixed pair `x = (b₀, F)`, the *Yoneda embedding functor*
 `F.obj b₀ ⥤ StrongTrans (yoneda₀ b₀) F`.
@@ -606,8 +623,9 @@ def yonedaLemmaBackwardsFunctor (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
       · exact fun X ↦ (x.2.map (Quiver.Hom.op X)).toFunctor.map
           ((catLiftEquiv.{w, max u v, v, max u (max v w)} ↑(yonedaEvaluation'.obj x)).inverse.map f)
       · intro X Y g
-        -- BROKEN BY THE COMPOSITE SWAP (2026-08-18); see notes/composite_swap_wip.md
-        sorry
+        simp only [yoneda₀_toPrelaxFunctor_toPrelaxFunctorStruct_toPrefunctor_obj_α,
+          yonedaLemmaBackwardsFunctorObj, yonedaLemmaBackwardsFunctorObjFunctor, op_unop,
+          Cat.Hom.comp_toFunctor, Cat.coe_of, NatTrans.naturality]
     · intro t u g
       refine Cat.Hom₂.ext_iff.mpr ?_
       ext c
