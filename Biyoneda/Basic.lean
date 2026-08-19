@@ -344,7 +344,7 @@ lemma forwards_naturality_id_core (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}))
   have hZ := Cat.Hom₂.congr_app (Z.naturality_id a.1) (𝟙 (unop a.1))
   simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
     Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app] at hZ
-  erw [hZ]
+  rw [hZ]
   cat_disch
 
 /-- Reduction: the lifted evaluation pseudofunctor's action on a lifted morphism. -/
@@ -785,10 +785,10 @@ lemma backwards_square_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : 
   have hN := h1
   rw [h2] at hN
   simp only [Category.assoc] at hN
-  erw [← hN]
+  rw [← hN]
   erw [reassoc_of% h1]
-  erw [reassoc_of% c1]
-  erw [reassoc_of% h2]
+  rw [reassoc_of% c1]
+  rw [reassoc_of% h2]
   erw [reassoc_of% c2]
   rw [← Functor.map_comp, ← Functor.map_comp]
   erw [reassoc_of% c3]
@@ -822,19 +822,19 @@ lemma backwards_square_component {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} 
   obtain ⟨X⟩ := X
   simp only [categoryStruct_comp_naturality_hom]
   iterate 4 erw [Cat.Hom₂.comp_app]
-  erw [Cat.associator_inv_app]
-  erw [Cat.whiskerRight_app]
-  erw [Cat.associator_hom_app]
-  erw [Cat.whiskerLeft_app]
+  rw [Cat.associator_inv_app]
+  rw [Cat.whiskerRight_app]
+  rw [Cat.associator_hom_app]
+  rw [Cat.whiskerLeft_app]
   iterate 4 erw [Cat.Hom₂.comp_app]
-  erw [Cat.associator_inv_app]
-  erw [Cat.whiskerRight_app]
-  erw [Cat.associator_hom_app]
-  erw [Cat.whiskerLeft_app]
+  rw [Cat.associator_inv_app]
+  rw [Cat.whiskerRight_app]
+  rw [Cat.associator_hom_app]
+  rw [Cat.whiskerLeft_app]
   erw [Cat.whiskerLeft_app]
   iterate 3 erw [eqToHom_refl]
   iterate 3 erw [Category.id_comp]
-  erw [Cat.associator_inv_app]
+  rw [Cat.associator_inv_app]
   iterate 4 (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id])
   dsimp only [postcomp₂, postcomposingCat]
   simp only [Category.assoc]
@@ -1148,7 +1148,7 @@ def yonedaHomInvId : yonedaLemmaForwards ≫ yonedaLemmaBackwards ≅ 𝟙 (@yon
   --     ≫ (yonedaPairing.map f).map ((yonedaHomInvIdNatIso a).hom.app x)
   -- Same shape as the (now-proven) yonedaHomInvIdObjIso naturality square (Cat.Hom₂.congr_app
   -- on a naturality_comp-style coherence, then cancel the invertible associator/naturality
-  -- factors via the erw [← NatTrans.comp_app, ← Cat.Hom.toNatTrans_comp, iso.inv_hom_id, ...]
+  -- factors via the rw [← NatTrans.comp_app, ← Cat.Hom.toNatTrans_comp, iso.inv_hom_id, ...]
   -- recipe), but roughly twice the size (two StrongTrans naturalities instead of one) and each
   -- dsimp/build cycle here runs ~5 min instead of ~20s, so this was parked rather than ground
   -- out in-session. Next step if resumed: `dsimp only [CategoryStruct.id, CategoryStruct.comp,
