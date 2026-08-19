@@ -1014,8 +1014,37 @@ def yonedaLemmaBackwards : StrongTrans (@yonedaEvaluation B _)  (@yonedaPairing 
     Cat.Hom.isoMk (NatIso.ofComponents (fun X ↦ backwardsNaturalityIso f X)
       (fun {X Y} f₁ ↦ backwards_naturality_iso_natural f f₁))
   naturality_naturality {a b f g} η := by
-    -- BROKEN BY THE COMPOSITE SWAP (2026-08-18); see notes/composite_swap_wip.md
-    sorry
+    apply Cat.Hom₂.ext_app
+    intro X
+    obtain ⟨x⟩ := X
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+      yonedaEvaluation_map₂_app_down, Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans,
+      NatIso.ofComponents_hom_app]
+    apply homCategory.ext
+    intro γ
+    erw [homCategory_comp_as_app, homCategory_comp_as_app]
+    apply Cat.Hom₂.ext_app
+    intro ZZ
+    dsimp only [backwardsNaturalityIso, backwardsNaturalityIsoApp]
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, isoMk_hom_as_app, Cat.Hom.isoMk_hom,
+      Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, Iso.trans_hom, Iso.symm_hom,
+      Iso.app_hom, Cat.Hom.toNatIso]
+    erw [back_map_comp]
+    simp only [yonedaPairing_map₂]
+    simp only [NatTrans.toCatHom₂_toNatTrans]
+    dsimp only [yonedaPairingMap₂, yonedaPairingMapFunctor, Functor.whiskerLeft,
+      Functor.whiskerRight, precomposing, postcomposing, precomposingCat, postcomposingCat,
+      postcomposing₂]
+    erw [homCategory_comp_as_app]
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerRight_toNatTrans,
+      whiskerRight_app, whiskerRight_as_app, Cat.toCatHom₂_toNatTrans]
+    simp only [precomp_map, postcomp₂, postcomposingCat, postcomp_obj,
+      Pseudofunctor.StrongTrans.comp_app, Functor.comp_map, Cat.Hom.comp_toFunctor]
+    dsimp only [yonedaLemmaBackwardsFunctor, yonedaLemmaBackwardsFunctorObj,
+      yonedaLemmaBackwardsFunctorObjFunctor, yonedaEvaluation']
+    simp only [Cat.whiskerLeft_toNatTrans, whiskerLeft_app, whiskerLeft_as_app]
+    exact backwards_naturality_naturality_core η x ZZ
   naturality_id a := by sorry
   naturality_comp {a b c} f g := by sorry
 
