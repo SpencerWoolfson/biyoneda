@@ -37,4 +37,3 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms yonedaPairing
 #print axioms StrongTransIntoCats.lift
 #print axioms StrongTransIntoCats.liftDom
-#print axioms StrongTransIntoCats.toStrongTrans

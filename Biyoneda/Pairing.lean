@@ -11,7 +11,6 @@ import Mathlib.Tactic.CategoryTheory.Bicategory.Basic
 import Mathlib.Tactic.CategoryTheory.Slice
 import Biyoneda.Evaluation
 import Biyoneda.UniverseLift
-import Biyoneda.LiftStrongTrans
 import Biyoneda.BiEquiv
 import Biyoneda.Gadgets
 

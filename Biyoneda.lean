@@ -1,7 +1,6 @@
 -- General, Yoneda-independent material (all upstream candidates, all sorry-free).
 import Biyoneda.ForMathlib
 import Biyoneda.UniverseLift
-import Biyoneda.LiftStrongTrans
 import Biyoneda.BiEquiv
 import Biyoneda.EvaluationCore
 import Biyoneda.EvaluationAssociator
