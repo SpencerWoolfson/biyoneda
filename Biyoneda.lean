@@ -3,6 +3,8 @@ import Biyoneda.ForMathlib
 import Biyoneda.UniverseLift
 import Biyoneda.LiftStrongTrans
 import Biyoneda.BiEquiv
+import Biyoneda.EvaluationCore
+import Biyoneda.EvaluationAssociator
 import Biyoneda.Evaluation
 -- The bicategorical Yoneda development itself, in dependency order.
 import Biyoneda.Pairing
