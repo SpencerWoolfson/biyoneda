@@ -14,4 +14,5 @@ import Biyoneda.Yoneda
 -- Gadgets for rebuilding `yonedaPairing` as a composite, and that composite.
 -- Experimental; nothing above depends on them.
 import Biyoneda.Gadgets
+import Biyoneda.TransIntoCats
 import Biyoneda.CompositePairing

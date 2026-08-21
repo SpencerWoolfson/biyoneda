@@ -13,6 +13,7 @@ import Biyoneda.Evaluation
 import Biyoneda.UniverseLift
 import Biyoneda.BiEquiv
 import Biyoneda.Gadgets
+import Biyoneda.TransIntoCats
 
 /-!
 # The Yoneda pairing and evaluation pseudofunctors
