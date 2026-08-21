@@ -413,7 +413,7 @@ def backwardsNaturalityIso {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a
 
 /-- The cancellation core of `backwards_naturality_iso_natural`: two `NatTrans.naturality`
 squares of the component isos, in canonical spellings. -/
-lemma backwards_natural_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
+lemma backwards_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
     {X Y : ↑(yonedaEvaluation'.obj a)} (f₁ : X ⟶ Y) {γ : Bᵒᵖ}
     (ZZ : ↑((yoneda₀ (unop b.1)).obj γ)) :
     (b.2.map f.1 ≫ b.2.map (Quiver.Hom.op ZZ)).toFunctor.map
@@ -453,7 +453,7 @@ lemma backwards_naturality_iso_natural {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w,
   erw [homCategory_comp_as_app, homCategory_comp_as_app]
   dsimp only [backwardsNaturalityIso]
   simp only [isoMk_hom_as_app]
-  exact backwards_natural_core f f₁ ZZ
+  exact backwards_naturality_core f f₁ ZZ
 
 /-- Lift-plumbing reduction: the backwards functor's `.map` component, stated with the
 morphism generic so the def's internal `rcases` fires, so it holds by `rfl`.  Must be applied
