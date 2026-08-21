@@ -62,6 +62,11 @@ def catLift : Cat.{v₁, u₁} ⥤ Cat.{max v₁ v₂, max u₁ u₂} where
     Functor.toCatHom (ULiftHomULiftCategory.equivCongrLeft.toFun
       (ULiftHom.down ⋙ ULift.downFunctor ⋙ F.toFunctor))
 
+def catLiftUnit (A : Cat.{v₁, u₁}) : A ⥤ (catLift.obj A) where
+  obj x := {down := x}
+  map {x y} f := {down := f}
+
+
 /--
 The equivalence of categories `C ≃ catLift.obj (Cat.of C)`.
 
@@ -154,3 +159,128 @@ lemma catLift_hom₂_congr_down {E : Cat} {D : Cat.{v₁, u₁}}
     {H K : E ⟶ catPseudoULift.{v₁, v₂, u₁, u₂}.obj D} {η θ : H ⟶ K}
     (h : η = θ) (X : E) :
     (η.toNatTrans.app X).down = (θ.toNatTrans.app X).down := by rw [h]
+
+/-! ### Stripping the lift at the functor level
+
+The lemmas below eliminate a `catPseudoULift` while it is still applied as a *functor*, rather
+than unfolding `catLift`/`ULiftHom` down to raw `ULift.up` wrappers. Unfolding all the way
+leaves goals of the form `ULift.up x ≫ ULift.up y`, which do not recombine; rewriting at the
+functor level keeps everything inside `catLiftUnit` and stays composable. All hold by `rfl`
+because `ULift`/`ULiftHom` are strictly functorial and the lift's coherence isos are identities.
+-/
+
+@[simp] lemma catLiftUnit_map_down {C : Cat.{v₁, u₁}} {x y : C} (m : x ⟶ y) :
+    ((catLiftUnit C).map m).down = m := rfl
+
+@[simp] lemma catPseudoULift_map_catLiftUnit_map {C D : Cat.{v₁, u₁}} (F : C ⟶ D)
+    {x y : C} (m : x ⟶ y) :
+    (catPseudoULift.{v₁, v₂, u₁, u₂}.map F).toFunctor.map ((catLiftUnit C).map m)
+      = (catLiftUnit D).map (F.toFunctor.map m) := rfl
+
+@[simp] lemma catPseudoULift_map₂_app_catLiftUnit {C D : Cat.{v₁, u₁}} {F G : C ⟶ D}
+    (η : F ⟶ G) (x : C) :
+    (catPseudoULift.{v₁, v₂, u₁, u₂}.map₂ η).toNatTrans.app ((catLiftUnit C).obj x)
+      = (catLiftUnit D).map (η.toNatTrans.app x) := rfl
+
+@[simp] lemma catPseudoULift_mapComp_hom_app {C D E : Cat.{v₁, u₁}} (F : C ⟶ D) (G : D ⟶ E)
+    (x : ↑(catPseudoULift.{v₁, v₂, u₁, u₂}.obj C)) :
+    (catPseudoULift.{v₁, v₂, u₁, u₂}.mapComp F G).hom.toNatTrans.app x = 𝟙 _ := rfl
+
+@[simp] lemma catPseudoULift_mapId_hom_app {C : Cat.{v₁, u₁}}
+    (x : ↑(catPseudoULift.{v₁, v₂, u₁, u₂}.obj C)) :
+    (catPseudoULift.{v₁, v₂, u₁, u₂}.mapId C).hom.toNatTrans.app x = 𝟙 _ := rfl
+
+
+structure CatliftStrongTransData {A : Type u} [Bicategory A] (F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂})
+  (G : Pseudofunctor A Cat.{v₁, u₁}) where
+  app : (a : A) → (F.obj a ⥤ G.obj a)
+  naturality : {a b : A} → (f : a ⟶ b) → ((F.map f).toFunctor ⋙ (app b)) ≅ (app a ⋙ (G.map f).toFunctor)
+  naturality_naturality' {a b : A} {f g : a ⟶ b} (η : f ⟶ g) (x : F.obj a) :
+      (app b).map ((F.map₂ η).toNatTrans.app x) ≫ (naturality g).hom.app x =
+      (naturality f).hom.app x ≫ (G.map₂ η).toNatTrans.app ((app a).obj x) := by cat_disch
+  naturality_id' (a : A) (x : (F.obj a)): (naturality (𝟙 a)).hom.app x ≫ (G.mapId a).hom.toNatTrans.app ((app a).obj x) =
+  (app a).map ((F.mapId a).hom.toNatTrans.app x) := by
+    cat_disch
+  naturality_comp' {a b c : A} (f : a ⟶ b) (g : b ⟶ c) (x : F.obj a) : (naturality (f ≫ g)).hom.app x ≫ (G.mapComp f g).hom.toNatTrans.app ((app a).obj x) =
+    (app c).map ((F.mapComp f g).hom.toNatTrans.app x) ≫ (naturality g).hom.app ((F.map f).toFunctor.obj x) ≫ (G.map g).toFunctor.map ((naturality f).hom.app x) := by cat_disch
+
+def CatliftStrongTransData.naturality_naturality {A : Type u} [Bicategory A] {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}}
+  {G : Pseudofunctor A Cat.{v₁, u₁}} (data : CatliftStrongTransData F G) {a b : A} {f g : a ⟶ b} (η : f ⟶ g) : Functor.whiskerRight (F.map₂ η).toNatTrans (data.app b) ≫ (data.naturality g).hom = (data.naturality f).hom ≫ (Functor.whiskerLeft (data.app a) (G.map₂ η).toNatTrans) := by
+    ext x
+    simp
+    exact data.naturality_naturality' η x
+
+def CatliftStrongTransData.naturality_id {A : Type u} [Bicategory A] {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}}
+  {G : Pseudofunctor A Cat.{v₁, u₁}} (data : CatliftStrongTransData F G) (a : A) :
+      (data.naturality (𝟙 a)).hom ≫ Functor.whiskerLeft (data.app a) (G.mapId a).hom.toNatTrans =
+        Functor.whiskerRight (F.mapId a).hom.toNatTrans (data.app a) ≫
+          (Functor.leftUnitor (data.app a)).hom ≫ (Functor.rightUnitor (data.app a)).inv := by
+          ext x
+          dsimp [Functor.whiskerLeft]
+          simp only [Category.comp_id]
+          exact data.naturality_id' a x
+
+def CatliftStrongTransData.naturality_comp {A : Type u} [Bicategory A] {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}}
+  {G : Pseudofunctor A Cat.{v₁, u₁}} (data : CatliftStrongTransData F G) {a b c : A} (f : a ⟶ b) (g : b ⟶ c) :
+      (data.naturality (f ≫ g)).hom ≫ Functor.whiskerLeft (data.app a) (G.mapComp f g).hom.toNatTrans =
+        Functor.whiskerRight (F.mapComp f g).hom.toNatTrans (data.app c) ≫
+          (Functor.associator (F.map f).toFunctor (F.map g).toFunctor (data.app c)).hom ≫
+          Functor.whiskerLeft (F.map f).toFunctor (data.naturality g).hom ≫
+          (Functor.associator (F.map f).toFunctor (data.app b) (G.map g).toFunctor).inv ≫
+          Functor.whiskerRight (data.naturality f).hom (G.map g).toFunctor ≫
+          (Functor.associator (data.app a) (G.map f).toFunctor (G.map g).toFunctor).hom := by
+          ext x
+          simp [Functor.associator,Functor.whiskerRight]
+          exact data.naturality_comp' f g x
+
+set_option backward.isDefEq.respectTransparency false in
+def CatliftStrongTrans.lift {A : Type u} [Bicategory A] {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}}
+  {G : Pseudofunctor A Cat.{v₁, u₁}} (data : CatliftStrongTransData F G) : StrongTrans F (G.comp catPseudoULift) where
+  app a := { toFunctor := data.app a ⋙ catLiftUnit (G.obj a) }
+  naturality {a b} f :=
+    Cat.Hom.isoMk (Functor.isoWhiskerRight (data.naturality f) (catLiftUnit (G.obj b)) ≪≫
+      Iso.refl ((data.app a ⋙ (G.map f).toFunctor) ⋙ catLiftUnit (G.obj b)))
+  naturality_naturality {a b f g} η := by
+    apply catLift_hom₂_ext; intro X
+    dsimp [catLiftUnit]
+    simp only [Category.comp_id, Category.id_comp]
+    exact NatTrans.congr_app (data.naturality_naturality η) X
+  naturality_id a := by
+    apply catLift_hom₂_ext; intro X
+    dsimp [catLiftUnit, catPseudoULift, catLift, ULiftHom.up]
+    simpa using NatTrans.congr_app (data.naturality_id a) X
+  naturality_comp {a b c} f g := by
+    apply catLift_hom₂_ext; intro X
+    have h := NatTrans.congr_app (data.naturality_comp f g) X
+    simp at h
+    -- reduce the Cat-level structure and unfold the composite pseudofunctor's projections,
+    -- but keep `catLiftUnit` folded so the stripping lemmas above can fire
+    dsimp only [Pseudofunctor.comp, Functor.comp_map]
+    simp [Cat.Hom.isoMk_hom, Iso.trans_hom, isoWhiskerRight_hom, Iso.refl_hom,
+      Cat.toCatHom₂_toNatTrans, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+      Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans, whiskerLeft_app,
+      whiskerRight_app, Cat.associator_hom_app, Cat.associator_inv_app,
+      Functor.whiskerRight_app, Functor.whiskerLeft_app, eqToHom_refl,
+      catPseudoULift_map_catLiftUnit_map, catPseudoULift_map₂_app_catLiftUnit,
+      catPseudoULift_mapComp_hom_app, catPseudoULift_mapId_hom_app,
+      Category.comp_id, Category.id_comp]
+    -- every factor is now `catLiftUnit.map _`; combine through the functor and apply `h`
+    exact congrArg (catLiftUnit.{v₁, u₁, v₂, u₂} (G.obj c)).map h
+
+section LiftSimp
+variable {A : Type u} [Bicategory A] {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}}
+  {G : Pseudofunctor A Cat.{v₁, u₁}} (data : CatliftStrongTransData F G)
+
+/-- The lifted transformation's component, at the **functor** level: it is the unlifted
+component followed by the (strict, transparent) unit.  Downstream reasoning should translate
+through this rather than unfolding the lift to `ULift.up`/`.down`. -/
+@[simp] lemma CatliftStrongTrans.lift_app_toFunctor (a : A) :
+    ((CatliftStrongTrans.lift data).app a).toFunctor
+      = data.app a ⋙ catLiftUnit (G.obj a) := rfl
+
+/-- `Cat.Hom`-level form of `lift_app_toFunctor`. -/
+lemma CatliftStrongTrans.lift_app (a : A) :
+    (CatliftStrongTrans.lift data).app a
+      = Functor.toCatHom (data.app a ⋙ catLiftUnit (G.obj a)) := rfl
+
+end LiftSimp
