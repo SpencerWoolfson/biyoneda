@@ -226,51 +226,68 @@ counit followed by the unlifted 1-cell. -/
     (catPseudoULift.{v₁, v₂, u₁, u₂}.mapId C).hom.toNatTrans.app x = 𝟙 _ := rfl
 
 
-structure CatliftStrongTransData {A : Type u} [Bicategory A] (F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂})
-  (G : Pseudofunctor A Cat.{v₁, u₁}) where
+section CatliftCodomain
+
+variable {A : Type u} [Bicategory A]
+
+/-- Pointwise data for a strong transformation *into* a universe-lifted pseudofunctor.
+
+`F ⟶ G.comp catPseudoULift` cannot be handed a plain `StrongTrans F G`: `F` and `G` live in
+different universes, so that type does not even elaborate.  This is the heterogeneous stand-in.
+Its three coherence obligations are stated *at a point*, which is the form fibre-level lemmas
+are usually already in; `CatliftStrongTrans.lift` supplies the plumbing. -/
+structure CatliftStrongTransData (F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂})
+    (G : Pseudofunctor A Cat.{v₁, u₁}) where
   app : (a : A) → (F.obj a ⥤ G.obj a)
-  naturality : {a b : A} → (f : a ⟶ b) → ((F.map f).toFunctor ⋙ (app b)) ≅ (app a ⋙ (G.map f).toFunctor)
+  naturality : {a b : A} → (f : a ⟶ b) →
+    ((F.map f).toFunctor ⋙ app b) ≅ (app a ⋙ (G.map f).toFunctor)
   naturality_naturality' {a b : A} {f g : a ⟶ b} (η : f ⟶ g) (x : F.obj a) :
       (app b).map ((F.map₂ η).toNatTrans.app x) ≫ (naturality g).hom.app x =
       (naturality f).hom.app x ≫ (G.map₂ η).toNatTrans.app ((app a).obj x) := by cat_disch
-  naturality_id' (a : A) (x : (F.obj a)): (naturality (𝟙 a)).hom.app x ≫ (G.mapId a).hom.toNatTrans.app ((app a).obj x) =
-  (app a).map ((F.mapId a).hom.toNatTrans.app x) := by
-    cat_disch
-  naturality_comp' {a b c : A} (f : a ⟶ b) (g : b ⟶ c) (x : F.obj a) : (naturality (f ≫ g)).hom.app x ≫ (G.mapComp f g).hom.toNatTrans.app ((app a).obj x) =
-    (app c).map ((F.mapComp f g).hom.toNatTrans.app x) ≫ (naturality g).hom.app ((F.map f).toFunctor.obj x) ≫ (G.map g).toFunctor.map ((naturality f).hom.app x) := by cat_disch
+  naturality_id' (a : A) (x : F.obj a) :
+      (naturality (𝟙 a)).hom.app x ≫ (G.mapId a).hom.toNatTrans.app ((app a).obj x) =
+      (app a).map ((F.mapId a).hom.toNatTrans.app x) := by cat_disch
+  naturality_comp' {a b c : A} (f : a ⟶ b) (g : b ⟶ c) (x : F.obj a) :
+      (naturality (f ≫ g)).hom.app x ≫ (G.mapComp f g).hom.toNatTrans.app ((app a).obj x) =
+      (app c).map ((F.mapComp f g).hom.toNatTrans.app x) ≫
+        (naturality g).hom.app ((F.map f).toFunctor.obj x) ≫
+        (G.map g).toFunctor.map ((naturality f).hom.app x) := by cat_disch
 
-def CatliftStrongTransData.naturality_naturality {A : Type u} [Bicategory A] {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}}
-  {G : Pseudofunctor A Cat.{v₁, u₁}} (data : CatliftStrongTransData F G) {a b : A} {f g : a ⟶ b} (η : f ⟶ g) : Functor.whiskerRight (F.map₂ η).toNatTrans (data.app b) ≫ (data.naturality g).hom = (data.naturality f).hom ≫ (Functor.whiskerLeft (data.app a) (G.map₂ η).toNatTrans) := by
-    ext x
-    simp
-    exact data.naturality_naturality' η x
+variable {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}} {G : Pseudofunctor A Cat.{v₁, u₁}}
+  (data : CatliftStrongTransData F G)
 
-def CatliftStrongTransData.naturality_id {A : Type u} [Bicategory A] {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}}
-  {G : Pseudofunctor A Cat.{v₁, u₁}} (data : CatliftStrongTransData F G) (a : A) :
-      (data.naturality (𝟙 a)).hom ≫ Functor.whiskerLeft (data.app a) (G.mapId a).hom.toNatTrans =
-        Functor.whiskerRight (F.mapId a).hom.toNatTrans (data.app a) ≫
-          (Functor.leftUnitor (data.app a)).hom ≫ (Functor.rightUnitor (data.app a)).inv := by
-          ext x
-          dsimp [Functor.whiskerLeft]
-          simp only [Category.comp_id]
-          exact data.naturality_id' a x
+/-- Whiskered form of `naturality_naturality'`, in the shape `StrongTrans` asks for. -/
+lemma CatliftStrongTransData.naturality_naturality {a b : A} {f g : a ⟶ b} (η : f ⟶ g) :
+    Functor.whiskerRight (F.map₂ η).toNatTrans (data.app b) ≫ (data.naturality g).hom =
+      (data.naturality f).hom ≫ Functor.whiskerLeft (data.app a) (G.map₂ η).toNatTrans := by
+  ext x
+  simpa using data.naturality_naturality' η x
 
-def CatliftStrongTransData.naturality_comp {A : Type u} [Bicategory A] {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}}
-  {G : Pseudofunctor A Cat.{v₁, u₁}} (data : CatliftStrongTransData F G) {a b c : A} (f : a ⟶ b) (g : b ⟶ c) :
-      (data.naturality (f ≫ g)).hom ≫ Functor.whiskerLeft (data.app a) (G.mapComp f g).hom.toNatTrans =
-        Functor.whiskerRight (F.mapComp f g).hom.toNatTrans (data.app c) ≫
-          (Functor.associator (F.map f).toFunctor (F.map g).toFunctor (data.app c)).hom ≫
-          Functor.whiskerLeft (F.map f).toFunctor (data.naturality g).hom ≫
-          (Functor.associator (F.map f).toFunctor (data.app b) (G.map g).toFunctor).inv ≫
-          Functor.whiskerRight (data.naturality f).hom (G.map g).toFunctor ≫
-          (Functor.associator (data.app a) (G.map f).toFunctor (G.map g).toFunctor).hom := by
-          ext x
-          simp [Functor.associator,Functor.whiskerRight]
-          exact data.naturality_comp' f g x
+/-- Whiskered form of `naturality_id'`, in the shape `StrongTrans` asks for. -/
+lemma CatliftStrongTransData.naturality_id (a : A) :
+    (data.naturality (𝟙 a)).hom ≫ Functor.whiskerLeft (data.app a) (G.mapId a).hom.toNatTrans =
+      Functor.whiskerRight (F.mapId a).hom.toNatTrans (data.app a) ≫
+        (Functor.leftUnitor (data.app a)).hom ≫ (Functor.rightUnitor (data.app a)).inv := by
+  ext x
+  dsimp [Functor.whiskerLeft]
+  simpa only [Category.comp_id] using data.naturality_id' a x
+
+/-- Whiskered form of `naturality_comp'`, in the shape `StrongTrans` asks for. -/
+lemma CatliftStrongTransData.naturality_comp {a b c : A} (f : a ⟶ b) (g : b ⟶ c) :
+    (data.naturality (f ≫ g)).hom ≫
+        Functor.whiskerLeft (data.app a) (G.mapComp f g).hom.toNatTrans =
+      Functor.whiskerRight (F.mapComp f g).hom.toNatTrans (data.app c) ≫
+        (Functor.associator (F.map f).toFunctor (F.map g).toFunctor (data.app c)).hom ≫
+        Functor.whiskerLeft (F.map f).toFunctor (data.naturality g).hom ≫
+        (Functor.associator (F.map f).toFunctor (data.app b) (G.map g).toFunctor).inv ≫
+        Functor.whiskerRight (data.naturality f).hom (G.map g).toFunctor ≫
+        (Functor.associator (data.app a) (G.map f).toFunctor (G.map g).toFunctor).hom := by
+  ext x
+  simpa [Functor.associator, Functor.whiskerRight] using data.naturality_comp' f g x
 
 set_option backward.isDefEq.respectTransparency false in
-def CatliftStrongTrans.lift {A : Type u} [Bicategory A] {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}}
-  {G : Pseudofunctor A Cat.{v₁, u₁}} (data : CatliftStrongTransData F G) : StrongTrans F (G.comp catPseudoULift) where
+/-- Assemble `CatliftStrongTransData` into a genuine strong transformation into the lift. -/
+def CatliftStrongTrans.lift : StrongTrans F (G.comp catPseudoULift) where
   app a := { toFunctor := data.app a ⋙ catLiftUnit (G.obj a) }
   naturality {a b} f :=
     Cat.Hom.isoMk (Functor.isoWhiskerRight (data.naturality f) (catLiftUnit (G.obj b)) ≪≫
@@ -278,8 +295,7 @@ def CatliftStrongTrans.lift {A : Type u} [Bicategory A] {F : Pseudofunctor A Cat
   naturality_naturality {a b f g} η := by
     apply catLift_hom₂_ext; intro X
     dsimp [catLiftUnit]
-    simp only [Category.comp_id]
-    exact NatTrans.congr_app (data.naturality_naturality η) X
+    simpa only [Category.comp_id] using NatTrans.congr_app (data.naturality_naturality η) X
   naturality_id a := by
     apply catLift_hom₂_ext; intro X
     dsimp [catLiftUnit, catPseudoULift, catLift, ULiftHom.up]
@@ -291,14 +307,16 @@ def CatliftStrongTrans.lift {A : Type u} [Bicategory A] {F : Pseudofunctor A Cat
     -- reduce the Cat-level structure and unfold the composite pseudofunctor's projections,
     -- but keep `catLiftUnit` folded so the stripping lemmas above can fire
     dsimp only [Pseudofunctor.comp, Functor.comp_map]
-    simp [Cat.Hom.isoMk_hom, Iso.trans_hom, isoWhiskerRight_hom,
+    -- every factor becomes `catLiftUnit.map _`; combine through the functor and apply `h`
+    simpa [Cat.Hom.isoMk_hom, Iso.trans_hom, isoWhiskerRight_hom,
       Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
       Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans, whiskerLeft_app,
       whiskerRight_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
       catPseudoULift_map_catLiftUnit_map, catPseudoULift_map₂_app_catLiftUnit,
       catPseudoULift_mapComp_hom_app, Category.comp_id]
-    -- every factor is now `catLiftUnit.map _`; combine through the functor and apply `h`
-    exact congrArg (catLiftUnit.{v₁, u₁, v₂, u₂} (G.obj c)).map h
+      using congrArg (catLiftUnit.{v₁, u₁, v₂, u₂} (G.obj c)).map h
+
+end CatliftCodomain
 
 section LiftSimp
 variable {A : Type u} [Bicategory A] {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}}
@@ -358,6 +376,9 @@ structure CatliftStrongTransDomData {A : Type u} [Bicategory A]
         (naturality g).hom.app ((G.map f).toFunctor.obj x) ≫
         (F.map g).toFunctor.map ((naturality f).hom.app x) := by cat_disch
 
+-- see the note on `yonedaLemmaForwardsStructure`: squeezing `naturality_comp`'s `simp` would
+-- freeze 34 lemma names right before the Mathlib walk, for a proof that fails loudly anyway
+set_option linter.flexible false in
 set_option backward.isDefEq.respectTransparency false in
 /-- Assemble `CatliftStrongTransDomData` into a genuine strong transformation out of the lift. -/
 def CatliftStrongTrans.liftDom {A : Type u} [Bicategory A]
