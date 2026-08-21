@@ -37,6 +37,8 @@ pastings whose content, once descended into a fibre, is a short chain of `mapCom
 `naturality_naturality`.
 -/
 
+namespace CategoryTheory.Bicategory
+
 open CategoryTheory Bicategory Pseudofunctor StrongTrans Functor
 open scoped Pseudofunctor.StrongTrans
 
@@ -668,3 +670,5 @@ lemma evaluationPseudo_mapComp_inv_app {a b c : C × (C ⥤ᵖ Cat.{w, v})} (f :
   rfl
 
 end API
+
+end CategoryTheory.Bicategory

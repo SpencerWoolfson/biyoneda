@@ -4,12 +4,12 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Spencer Woolfson
 -/
 import Biyoneda.Gadgets
-import Biyoneda.Basic
+import Biyoneda.Yoneda
 
 /-!
 # Regression check: the load-bearing declarations are `sorryAx`-free
 
-`Biyoneda.Basic.yonedaPairing` is defined as `Bicategory.yonedaPairingComposite`, so its five
+`Biyoneda.Pairing.yonedaPairing` is defined as `Bicategory.yonedaPairingComposite`, so its five
 `Pseudofunctor` coherence laws are inherited from the gadget layer (`Biyoneda/Gadgets.lean`)
 rather than proved by hand.
 
@@ -26,7 +26,7 @@ by everything downstream while each individual definition still looked clean.
 `scripts/verify-build.sh` gates on these four; keep the two lists in step.
 -/
 
-open CategoryTheory Bicategory
+open CategoryTheory Bicategory Biyoneda
 
 universe u v w
 

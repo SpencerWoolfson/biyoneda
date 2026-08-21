@@ -20,9 +20,9 @@ BASELINE_FILE="$ROOT/.github/sorry-baseline"
 # bad output passes vacuously if the output disappears, so assert presence too.
 REQUIRED_AXIOM_DECLS=(
   "CategoryTheory.Bicategory.yonedaPairingComposite"
-  "yonedaPairing"
-  "CatLiftStrongTransData.lift"
-  "CatLiftStrongTransDomData.lift"
+  "Biyoneda.yonedaPairing"
+  "CategoryTheory.Bicategory.CatLiftStrongTransData.lift"
+  "CategoryTheory.Bicategory.CatLiftStrongTransDomData.lift"
 )
 
 fail=0
