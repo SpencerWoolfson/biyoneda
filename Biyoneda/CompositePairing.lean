@@ -19,7 +19,7 @@ assert it at every build. A green build is not evidence on its own — a coheren
 silently closed by an autoparam riding on a `sorry` elsewhere — so the axiom list is checked
 directly, and the build output records it.
 
-The same argument now covers `CatliftStrongTrans.lift` and `.liftDom`: both directions of the
+The same argument now covers `CatLiftStrongTransData.lift` and `.liftDom`: both directions of the
 Yoneda equivalence are assembled through them, so a `sorry` reaching either would be inherited
 by everything downstream while each individual definition still looked clean.
 
@@ -35,5 +35,5 @@ variable {B : Type u} [Bicategory.{w, v} B]
 -- All four must report `[propext, Classical.choice, Quot.sound]` with no `sorryAx`.
 #print axioms CategoryTheory.Bicategory.yonedaPairingComposite
 #print axioms yonedaPairing
-#print axioms CatliftStrongTrans.lift
-#print axioms CatliftStrongTrans.liftDom
+#print axioms CatLiftStrongTransData.lift
+#print axioms CatLiftStrongTransDomData.lift
