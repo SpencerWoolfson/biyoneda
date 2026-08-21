@@ -220,6 +220,20 @@ counit followed by the unlifted 1-cell. -/
     (catLiftCounit.{v₁, v₂, u₁, u₂} D).map
         ((catPseudoULift.{v₁, v₂, u₁, u₂}.map₂ η).toNatTrans.app ((catLiftUnit C).obj x))
       = η.toNatTrans.app x := rfl
+/-- A lifted 2-cell brought back down, at an **arbitrary** point of the lifted category.  The
+`catLiftUnit`-shaped version above only matches points that are syntactically lifted; this one
+matches anything, which is what consumers of `catPseudoULift` actually have. -/
+@[simp] lemma catLiftCounit_map_catPseudoULift_map₂' {C D : Cat.{v₁, u₁}} {F G : C ⟶ D}
+    (η : F ⟶ G) (x : ↑(catPseudoULift.{v₁, v₂, u₁, u₂}.obj C)) :
+    (catLiftCounit.{v₁, v₂, u₁, u₂} D).map
+        ((catPseudoULift.{v₁, v₂, u₁, u₂}.map₂ η).toNatTrans.app x)
+      = η.toNatTrans.app ((catLiftCounit C).obj x) := rfl
+
+/-- Likewise for the identity coherence, at an arbitrary point. -/
+@[simp] lemma catPseudoULift_mapId_hom_app' {C : Cat.{v₁, u₁}}
+    (x : ↑(catPseudoULift.{v₁, v₂, u₁, u₂}.obj C)) :
+    (catPseudoULift.{v₁, v₂, u₁, u₂}.mapId C).hom.toNatTrans.app x = 𝟙 _ := rfl
+
 
 @[simp] lemma catPseudoULift_map_catLiftUnit_map {C D : Cat.{v₁, u₁}} (F : C ⟶ D)
     {x y : C} (m : x ⟶ y) :

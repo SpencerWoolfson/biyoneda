@@ -156,4 +156,57 @@ def StrongTransIntoCats.liftDom {A : Type u} [Bicategory A]
     erw [Category.id_comp]
     exact data.naturality_comp' f g x
 
+/-- Precompose the data with the counit, turning a transformation out of `F` into one out of
+the *lifted* `F`.  `catLiftCounit`'s interaction with `catPseudoULift` is definitional, so each
+obligation is `d`'s own at the lowered point.
+
+`naturality_naturality'` closes outright.  The other two reduce to `d`'s field modulo a single
+residual `≫ 𝟙` that `Category.comp_id` will not collapse reducibly and `erw` does not bridge
+either -- see the note on `toStrongTransMax`. -/
+def StrongTransIntoCats.precomposeCounit {A : Type u} [Bicategory A]
+    {F : Pseudofunctor A Cat.{v₁, u₁}} {G : Pseudofunctor A Cat.{v₂, u₂}}
+    (d : StrongTransIntoCats F G) :
+    StrongTransIntoCats (F.comp catPseudoULift.{v₁, v₂, u₁, u₂}) G where
+  app a := catLiftCounit (F.obj a) ⋙ d.app a
+  naturality {a b} f := Functor.isoWhiskerLeft (catLiftCounit (F.obj a)) (d.naturality f)
+  naturality_naturality' {a b} {f g} η x :=
+    d.naturality_naturality' η ((catLiftCounit (F.obj a)).obj x)
+  naturality_id' a x := by
+    dsimp only [Pseudofunctor.comp, Functor.comp_map, Functor.comp_obj]
+    simp only [Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.trans_hom,
+      PrelaxFunctor.map₂Iso_hom, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+      catLiftCounit_map_catPseudoULift_map₂', catPseudoULift_mapId_hom_app',
+      catPseudoULift_mapComp_hom_app, catLiftCounit_obj_catLiftUnit_obj,
+      Functor.map_id, Functor.map_comp, Category.comp_id, Category.id_comp, Category.assoc]
+    -- residual: `(d.app a).map ((counit).map ((map₂ (F.mapId a).hom).app x ≫ 𝟙 _))`
+    -- against `(d.app a).map ((F.mapId a).hom.app (counit.obj x))`.
+    sorry
+  naturality_comp' {a b c} f g x := by
+    dsimp only [Pseudofunctor.comp, Functor.comp_map, Functor.comp_obj]
+    simp only [Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.trans_hom,
+      PrelaxFunctor.map₂Iso_hom, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+      catLiftCounit_map_catPseudoULift_map₂', catPseudoULift_mapId_hom_app',
+      catPseudoULift_mapComp_hom_app, catLiftCounit_obj_catLiftUnit_obj,
+      Functor.map_id, Functor.map_comp, Category.comp_id, Category.id_comp, Category.assoc]
+    sorry
+
+/-- The symmetric lift: a strong transformation between the *lifted copies* of both sides, so
+neither is privileged.
+
+This is the general form.  `lift` and `liftDom` are the cases where one side is already at the
+target universe and can be left alone -- which is what makes them land on `yonedaPairing` and
+`yonedaEvaluation` themselves rather than on lifted copies.
+
+The construction is modular rather than hand-rolled: lower the domain with `precomposeCounit`,
+then reuse the already-proven `lift`.  The universe arithmetic works because Lean's `max` is
+commutative, so `F.comp catPseudoULift.{v₁, v₂, u₁, u₂}` and
+`G.comp catPseudoULift.{v₂, v₁, u₂, u₁}` land in the same universe.  **That part typechecks**;
+what is open is two of `precomposeCounit`'s three coherence fields. -/
+def StrongTransIntoCats.toStrongTransMax {A : Type u} [Bicategory A]
+    {F : Pseudofunctor A Cat.{v₁, u₁}} {G : Pseudofunctor A Cat.{v₂, u₂}}
+    (d : StrongTransIntoCats F G) :
+    StrongTrans (F.comp catPseudoULift.{v₁, v₂, u₁, u₂})
+                (G.comp catPseudoULift.{v₂, v₁, u₂, u₁}) :=
+  d.precomposeCounit.lift
+
 end CategoryTheory.Bicategory

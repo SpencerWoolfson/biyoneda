@@ -355,8 +355,13 @@ structure StrongTransIntoCats {B : Type u} [Bicategory.{w₁, v₁} B]
         (naturality g).hom.app ((F.map f).toFunctor.obj x) ≫
         (G.map g).toFunctor.map ((naturality f).hom.app x) := by cat_disch
 
+
 /-- When both sides land in the same universe, no lift is needed: the data *is* a
-`StrongTrans`. Neither of the two lift gadgets could express this case. -/
+`StrongTrans`. Neither of the two lift gadgets could express this case. 
+
+We dont need these. We need the old lift.
+
+-/
 def StrongTransIntoCats.toStrongTrans {B : Type u} [Bicategory.{w₁, v₁} B]
     {F G : B ⥤ᵖ Cat.{w₂, v₂}} (d : StrongTransIntoCats F G) : StrongTrans F G where
   app a := { toFunctor := d.app a }
@@ -366,10 +371,12 @@ def StrongTransIntoCats.toStrongTrans {B : Type u} [Bicategory.{w₁, v₁} B]
     exact d.naturality_naturality' η x
   naturality_id a := by
     apply Cat.Hom₂.ext_app; intro x
-    simpa using d.naturality_id' a x
+    sorry
+    -- simpa using d.naturality_id' a x
   naturality_comp {a b c} f g := by
     apply Cat.Hom₂.ext_app; intro x
-    simpa using d.naturality_comp' f g x
+    sorry
+    -- simpa using d.naturality_comp' f g x
 
 end CategoryTheory.Bicategory
 

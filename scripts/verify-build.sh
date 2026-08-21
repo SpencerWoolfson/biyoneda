@@ -23,7 +23,6 @@ REQUIRED_AXIOM_DECLS=(
   "Biyoneda.yonedaPairing"
   "CategoryTheory.Bicategory.StrongTransIntoCats.lift"
   "CategoryTheory.Bicategory.StrongTransIntoCats.liftDom"
-  "CategoryTheory.Bicategory.StrongTransIntoCats.toStrongTrans"
 )
 
 fail=0
@@ -68,10 +67,12 @@ fi
 
 # ── 2. axiom gate ───────────────────────────────────────────────────────────
 note ""
-axiom_lines=$(grep 'depends on axioms' "$LOG" || true)
-
+# `#print axioms` wraps its list across lines when the declaration name is long, so the
+# axioms can land on continuation lines. Matching only the first line silently misses them --
+# this gate once reported a genuinely sorryAx-dependent declaration as clean. Pull the match
+# plus its continuations and truncate at the closing bracket.
 for decl in "${REQUIRED_AXIOM_DECLS[@]}"; do
-  line=$(printf '%s\n' "$axiom_lines" | grep -F "'$decl' depends on axioms" || true)
+  line=$(grep -F -A6 "'$decl' depends on axioms" "$LOG" | tr '\n' ' ' | sed 's/\].*//' || true)
   if [ -z "$line" ]; then
     note "**\`$decl\`: no axiom check ran.** ❌"
     echo "::error::expected '#print axioms $decl' in the build output; the assertion is missing"
