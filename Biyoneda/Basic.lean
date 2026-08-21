@@ -414,9 +414,50 @@ lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
                 (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
             (f.2.naturality f.1).hom.toNatTrans.app
               ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))) := by
+
   -- Pending: the statement mentions `yonedaPairing.mapComp`, which the composite defines
   -- differently (not defeq), so this needs a genuine re-proof rather than a re-spelling.
   sorry
+
+set_option backward.isDefEq.respectTransparency false in
+/-- The data for `yonedaLemmaForwards`, stated against the *unlifted* `yonedaEvaluation'`.
+`CatliftStrongTrans.lift` then supplies the lifted strong transformation. -/
+def yonedaLemmaForwardsStructure :
+    CatliftStrongTransData (@yonedaPairing B _) (@yonedaEvaluation' B _) where
+  app := yonedaLemmaForwardsFunctor'
+  naturality {a b} f :=
+    NatIso.ofComponents
+      (fun X =>
+        (f.2.app b.1).toFunctor.mapIso
+            ((X.app b.1).toFunctor.mapIso (λ_ f.1.unop ≪≫ (ρ_ f.1.unop).symm) ≪≫
+              (Cat.Hom.toNatIso (X.naturality f.1)).app (𝟙 (unop a.1))) ≪≫
+          (Cat.Hom.toNatIso (f.2.naturality f.1)).app
+            ((X.app a.1).toFunctor.obj (𝟙 (unop a.1))))
+      (by
+        intro X Y h
+        -- The mathematical content is exactly `forwards_naturality_component`; the simp set
+        -- descends the composite pairing to its shape.  `convert` absorbs the residual
+        -- `Cat`-instance mismatch (the two sides spell the fibre category differently), leaving
+        -- pure `Functor.map_comp` regrouping.
+        have key := forwards_naturality_component f h
+        simp only [Category.assoc] at key
+        simp [yonedaPairing_map', yonedaPairingMapFunctor, postcomposing, precomposing,
+              postcomposingCat, postcomp₂, yonedaEvaluation', evaluationPseudo]
+        convert key using 2 <;>
+          first
+            | simp only [Functor.map_comp, Category.assoc]
+            | (erw [Functor.map_comp]; simp only [Category.assoc])
+            | cat_disch)
+  naturality_naturality' {a b} {f g} η Z := forwards_naturality_naturality_core η Z
+  naturality_id' a Z := by
+    have core := forwards_naturality_id_core a Z
+    simp at core ⊢
+    erw [Category.id_comp]
+    exact core
+  naturality_comp' {a b c} f g Z := forwards_naturality_comp_core f g Z
+
+def yonedaLemmaForwards' : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B _) := CatliftStrongTrans.lift yonedaLemmaForwardsStructure
+
 /--
 The *forward strong transformation* `yonedaPairing ⟶ yonedaEvaluation` for the Yoneda lemma.
 
