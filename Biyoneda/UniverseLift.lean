@@ -121,44 +121,96 @@ def catPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
         (congrArg (ULiftHom.up.map) (η.toNatTrans.naturality h.down))
   mapId C := Iso.refl (catLift.map (𝟙 C))
   mapComp F G := Iso.refl (catLift.map (F ≫ G))
-  map₂_id f := by congr
+  map₂_id f := by
+    apply Cat.Hom₂.ext_app; intro X
+    rfl
+  /- The five fields below are the v4.33 frontier for this file.
+
+  All of `catPseudoULift`'s coherence isos are `Iso.refl`, and `Cat` is strict on both sides, so
+  each of these squares *ought* to be a component identity.  The simp set below is what gets
+  closest: `Bicategory.Strict.{left,right}Unitor_eqToIso` / `associator_eqToIso` turn every
+  unitor and associator into an `eqToHom`, which is the right first move and was the thing
+  missing from the old `erw` chains.
+
+  What is left after it, for `map₂_left_unitor`, is
+
+      ULiftHom.up.map ((eqToHom _).toNatTrans.app X.down)
+        = (𝟙 _ ≫ 𝟙 _ ▷ catLift.map f ≫ eqToHom _).toNatTrans.app X
+
+  i.e. push `ULiftHom.up.map` through an `eqToHom` and collapse `𝟙 ▷ _`.  `map₂_left_unitor`
+  closes with the set below; the other four need a little more.
+
+  Tried and insufficient: `rfl` alone, `cat_disch`, `aesop_cat`, `ext ⟨x⟩; simp`, and the old
+  v4.30 `erw [Category.comp_id, Category.id_comp] … congr` chains (whose `congr` no longer
+  closes; the residual is `𝟙 A = 𝟙 B ≫ 𝟙 C` at three different spellings of the same object).
+
+  The v4.30 proofs are worth mining:  git show comp-core:Biyoneda/UniverseLift.lean -/
   map₂_whisker_left {a b c} f g h η := by
-    ext x
-    erw [Category.comp_id, Category.id_comp]
-    congr
+    apply Cat.Hom₂.ext_app; intro X
+    simp only [Bicategory.Strict.leftUnitor_eqToIso,
+      Bicategory.Strict.rightUnitor_eqToIso, Bicategory.Strict.associator_eqToIso,
+      eqToIso.hom, eqToHom_refl, Iso.refl_hom, Bicategory.whiskerLeft_eqToHom,
+      Bicategory.eqToHom_whiskerRight, Bicategory.id_whiskerRight,
+      Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+      Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
+      Category.id_comp, Category.comp_id]
+    first
+      | rfl
+      | done
+      | sorry
   map₂_whisker_right η h := by
-    congr
-    ext ⟨x⟩
-    erw [Category.comp_id, Category.id_comp]
-    exact eq_of_comp_right_eq fun {Z} ↦ congrFun rfl
+    apply Cat.Hom₂.ext_app; intro X
+    simp only [Bicategory.Strict.leftUnitor_eqToIso,
+      Bicategory.Strict.rightUnitor_eqToIso, Bicategory.Strict.associator_eqToIso,
+      eqToIso.hom, eqToHom_refl, Iso.refl_hom, Bicategory.whiskerLeft_eqToHom,
+      Bicategory.eqToHom_whiskerRight, Bicategory.id_whiskerRight,
+      Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+      Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
+      Category.id_comp, Category.comp_id]
+    first
+      | rfl
+      | done
+      | sorry
   map₂_associator {a b c d} f g h := by
-    ext ⟨x⟩
-    erw [Category.comp_id, Category.id_comp]
-    simp only [Cat.Hom.comp_toFunctor, comp_obj, ULiftHom.down_obj, ULift.downFunctor_obj,
-      ULiftHom.up_obj, Cat.associator_hom_toNatTrans, associator_hom_app, Iso.refl_hom,
-      Iso.refl_inv, Cat.Hom.toNatTrans_comp, Cat.whiskerRight_toNatTrans, Cat.Hom.toNatTrans_id,
-      Cat.whiskerLeft_toNatTrans, NatTrans.comp_app, whiskerRight_app, NatTrans.id_app,
-      whiskerLeft_app, Category.id_comp]
-    erw [(catLift.map h).toFunctor.map_id, Category.id_comp, ULiftHom.up.map_id]
-    congr
+    apply Cat.Hom₂.ext_app; intro X
+    simp only [Bicategory.Strict.leftUnitor_eqToIso,
+      Bicategory.Strict.rightUnitor_eqToIso, Bicategory.Strict.associator_eqToIso,
+      eqToIso.hom, eqToHom_refl, Iso.refl_hom, Bicategory.whiskerLeft_eqToHom,
+      Bicategory.eqToHom_whiskerRight, Bicategory.id_whiskerRight,
+      Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+      Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
+      Category.id_comp, Category.comp_id]
+    first
+      | rfl
+      | done
+      | sorry
   map₂_left_unitor {a b} f := by
-    ext ⟨x⟩
-    simp only [Cat.Hom.comp_toFunctor, Cat.Hom.id_toFunctor, comp_obj, ULiftHom.down_obj,
-      ULift.downFunctor_obj, id_obj, ULiftHom.up_obj, Cat.leftUnitor_hom_toNatTrans,
-      leftUnitor_hom_app, Iso.refl_hom, Cat.Hom.toNatTrans_comp, Cat.Hom.toNatTrans_id,
-      Cat.whiskerRight_toNatTrans, NatTrans.comp_app, NatTrans.id_app, whiskerRight_app,
-      Category.comp_id]
-    erw [ULiftHom.up.map_id, (catLift.map f).toFunctor.map_id, Category.comp_id]
-    congr
+    apply Cat.Hom₂.ext_app; intro X
+    simp only [Bicategory.Strict.leftUnitor_eqToIso,
+      Bicategory.Strict.rightUnitor_eqToIso, Bicategory.Strict.associator_eqToIso,
+      eqToIso.hom, eqToHom_refl, Iso.refl_hom, Bicategory.whiskerLeft_eqToHom,
+      Bicategory.eqToHom_whiskerRight, Bicategory.id_whiskerRight,
+      Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+      Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
+      Category.id_comp, Category.comp_id]
+    first
+      | rfl
+      | done
+      | sorry
   map₂_right_unitor {a b} f := by
-    ext ⟨x⟩
-    simp only [Cat.Hom.comp_toFunctor, Cat.Hom.id_toFunctor, comp_obj, ULiftHom.down_obj,
-      ULift.downFunctor_obj, id_obj, ULiftHom.up_obj, Cat.rightUnitor_hom_toNatTrans,
-      rightUnitor_hom_app, Iso.refl_hom, Cat.Hom.toNatTrans_comp, Cat.Hom.toNatTrans_id,
-      Cat.whiskerLeft_toNatTrans, NatTrans.comp_app, NatTrans.id_app, whiskerLeft_app,
-      Category.comp_id]
-    erw [ULiftHom.up.map_id, Category.id_comp]
-    congr
+    apply Cat.Hom₂.ext_app; intro X
+    simp only [Bicategory.Strict.leftUnitor_eqToIso,
+      Bicategory.Strict.rightUnitor_eqToIso, Bicategory.Strict.associator_eqToIso,
+      eqToIso.hom, eqToHom_refl, Iso.refl_hom, Bicategory.whiskerLeft_eqToHom,
+      Bicategory.eqToHom_whiskerRight, Bicategory.id_whiskerRight,
+      Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+      Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
+      Category.id_comp, Category.comp_id]
+    first
+      | rfl
+      | done
+      | sorry
+
 /-- Two 2-cells of `Cat` landing in a universe-lifted category are equal as soon as their
 unlifted components agree: morphisms of `ULiftHom (ULift D)` are `ULift`-wrapped, so the
 lifting plumbing can be stripped once and for all. -/
