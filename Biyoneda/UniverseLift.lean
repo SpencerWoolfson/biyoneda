@@ -20,8 +20,10 @@ smaller one, so the two can be compared.
   `ULift`/`ULiftHom` are strictly functorial).
 * `catLiftEquiv` — the equivalence `C ≃ catLift.obj (Cat.of C)`, witnessing that the lift is
   lossless; used to lower morphisms back through the lift.
-* `catLift_hom₂_ext` / `catLift_hom₂_congr_down` — the "strip the plumbing" pair: 2-cells into a
-  lifted category are determined by their unlifted components.
+* `catLift_hom₂_ext` — 2-cells into a lifted category are determined by their unlifted
+  components.
+* `CatliftStrongTransData` / `CatliftStrongTrans.lift` — define a strong transformation into a
+  universe-lifted codomain from pointwise data, paying the `ULift` plumbing once.
 
 Nothing here mentions the Yoneda development; this is general `Cat` universe machinery and is a
 candidate for upstreaming (Mathlib has `uliftFunctor` for `Type`, and this is its `Cat`
@@ -154,11 +156,6 @@ lemma catLift_hom₂_ext {E : Cat} {D : Cat.{v₁, u₁}}
   intro X
   exact congrArg ULift.up (h X)
 
-/-- Components of equal 2-cells into a lifted category have equal unlifted parts. -/
-lemma catLift_hom₂_congr_down {E : Cat} {D : Cat.{v₁, u₁}}
-    {H K : E ⟶ catPseudoULift.{v₁, v₂, u₁, u₂}.obj D} {η θ : H ⟶ K}
-    (h : η = θ) (X : E) :
-    (η.toNatTrans.app X).down = (θ.toNatTrans.app X).down := by rw [h]
 
 /-! ### Stripping the lift at the functor level
 
@@ -243,7 +240,7 @@ def CatliftStrongTrans.lift {A : Type u} [Bicategory A] {F : Pseudofunctor A Cat
   naturality_naturality {a b f g} η := by
     apply catLift_hom₂_ext; intro X
     dsimp [catLiftUnit]
-    simp only [Category.comp_id, Category.id_comp]
+    simp only [Category.comp_id]
     exact NatTrans.congr_app (data.naturality_naturality η) X
   naturality_id a := by
     apply catLift_hom₂_ext; intro X
@@ -256,14 +253,12 @@ def CatliftStrongTrans.lift {A : Type u} [Bicategory A] {F : Pseudofunctor A Cat
     -- reduce the Cat-level structure and unfold the composite pseudofunctor's projections,
     -- but keep `catLiftUnit` folded so the stripping lemmas above can fire
     dsimp only [Pseudofunctor.comp, Functor.comp_map]
-    simp [Cat.Hom.isoMk_hom, Iso.trans_hom, isoWhiskerRight_hom, Iso.refl_hom,
-      Cat.toCatHom₂_toNatTrans, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+    simp [Cat.Hom.isoMk_hom, Iso.trans_hom, isoWhiskerRight_hom,
+      Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
       Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans, whiskerLeft_app,
-      whiskerRight_app, Cat.associator_hom_app, Cat.associator_inv_app,
-      Functor.whiskerRight_app, Functor.whiskerLeft_app, eqToHom_refl,
+      whiskerRight_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
       catPseudoULift_map_catLiftUnit_map, catPseudoULift_map₂_app_catLiftUnit,
-      catPseudoULift_mapComp_hom_app, catPseudoULift_mapId_hom_app,
-      Category.comp_id, Category.id_comp]
+      catPseudoULift_mapComp_hom_app, Category.comp_id]
     -- every factor is now `catLiftUnit.map _`; combine through the functor and apply `h`
     exact congrArg (catLiftUnit.{v₁, u₁, v₂, u₂} (G.obj c)).map h
 
