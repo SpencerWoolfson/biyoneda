@@ -60,18 +60,12 @@ universe w₁
 
 /-- `postcomp₂` at an identity 1-morphism is isomorphic to the identity strong transformation.
 This is `Bicategory.yoneda.mapId` restated for `postcomp₂`. -/
-def postcompId₂ (a : B) : postcomp₂ (𝟙 a) ≅ 𝟙 (yoneda₀ a) := by
-  let := Bicategory.yoneda.mapId a
-  dsimp [yoneda, postcomposing₂] at this
-  exact this
+def postcompId₂ (a : B) : postcomp₂ (𝟙 a) ≅ 𝟙 (yoneda₀ a) := Bicategory.yoneda.mapId a
 
 /-- `postcomp₂` is functorial in the 1-morphism, up to isomorphism: `postcomp₂ (f ≫ g)` is
 isomorphic to `postcomp₂ f ≫ postcomp₂ g`.  This is `Bicategory.yoneda.mapComp` restated. -/
 def postcompComp₂ {a b c : B} (f : a ⟶ b) (g : b ⟶ c) :
-    postcomp₂ (f ≫ g) ≅ postcomp₂ f ≫ postcomp₂ g := by
-  let := Bicategory.yoneda.mapComp f g
-  dsimp [yoneda, postcomposing₂] at this
-  exact this
+    postcomp₂ (f ≫ g) ≅ postcomp₂ f ≫ postcomp₂ g := Bicategory.yoneda.mapComp f g
 
 /--
 The functor underlying `yonedaPairing.map f`, expressed as the composite of the
@@ -183,6 +177,12 @@ def yonedaLemmaForwardsFunctor (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
     yonedaPairing.obj x ⥤ yonedaEvaluation.obj x where
   obj pair := { down := (pair.app x.1).toFunctor.obj (𝟙 (unop x.1)) }
   map {a b} f := { down := (f.as.app x.1).toNatTrans.app (𝟙 (unop x.1)) }
+
+@[simp]
+def yonedaLemmaForwardsFunctor' (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
+    yonedaPairing.obj x ⥤ yonedaEvaluation'.obj x where
+  obj pair := (pair.app x.1).toFunctor.obj (𝟙 (unop x.1))
+  map {a b} f := (f.as.app x.1).toNatTrans.app (𝟙 (unop x.1))
 
 /-- The component form of the naturality square for `yonedaLemmaForwards`. -/
 lemma forwards_naturality_component {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
@@ -385,7 +385,7 @@ lemma forwards_naturality_comp_head {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
     NatIso.ofComponents_hom_app, NatIso.ofComponents_inv_app, isoMk_inv_as_app]
   bicategory
 
-set_option maxHeartbeats 500000 in
+-- set_option maxHeartbeats 500000 in
 -- the long descent + `naturality_comp_hom_app` telescoping + three `u_f`-transport squares
 -- exceed the default budget (measured floor ≈ 350k, so ~1.4× margin); does not fit in 200k
 /-- Core of `naturality_comp` for `yonedaLemmaForwards` (unlifted fibre form). -/
@@ -485,6 +485,16 @@ def yonedaLemmaForwards : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B 
     simp only [Category.comp_id, Category.id_comp, Cat.Hom.comp_toFunctor, Functor.comp_obj]
     erw [yonedaEvaluation_map_map_down]
     exact forwards_naturality_comp_core f g Z
+
+
+
+
+-- def yonedaLemmaForwards' : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B _) := by
+--   dsimp [yonedaPairing,yonedaPairingComposite,yonedaEvaluation,yonedaEvaluation']
+--   apply?
+
+
+
 
 /--
 At a fixed pair `x = (b₀, F)`, an evaluation point `eval : F.obj b₀`, and a component
