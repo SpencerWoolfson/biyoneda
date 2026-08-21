@@ -83,6 +83,17 @@ def catLiftEquiv (C : Type u₁) [Category.{v₁} C] :
     Equivalence C (catLift.{v₁, v₂, u₁, u₂}.obj (Cat.of C)) :=
   (@ULift.equivalence.{v₁, u₁, u₂} C _).trans ULiftHom.equiv
 
+/-- The counit of the universe lift: `catLiftUnit`'s inverse, as a functor.  Kept at the functor
+level so that reasoning about a lifted *domain* never has to reach for `ULift.down`. -/
+def catLiftCounit (A : Cat.{v₁, u₁}) : (catLift.{v₁, v₂, u₁, u₂}.obj A) ⥤ A :=
+  (catLiftEquiv.{v₁, v₂, u₁, u₂} A.α).inverse
+
+@[simp] lemma catLiftUnit_comp_catLiftCounit (A : Cat.{v₁, u₁}) :
+    catLiftUnit A ⋙ catLiftCounit.{v₁, v₂, u₁, u₂} A = 𝟭 A := rfl
+
+@[simp] lemma catLiftCounit_comp_catLiftUnit (A : Cat.{v₁, u₁}) :
+    catLiftCounit.{v₁, v₂, u₁, u₂} A ⋙ catLiftUnit A = 𝟭 _ := rfl
+
 /--
 The pseudofunctor `Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂}` that promotes every small
 category to a larger universe.
@@ -168,6 +179,33 @@ because `ULift`/`ULiftHom` are strictly functorial and the lift's coherence isos
 
 @[simp] lemma catLiftUnit_map_down {C : Cat.{v₁, u₁}} {x y : C} (m : x ⟶ y) :
     ((catLiftUnit C).map m).down = m := rfl
+
+/-- Stripping the lift on the **domain** side: a lifted 1-cell precomposed with the counit is the
+counit followed by the unlifted 1-cell. -/
+@[simp] lemma catLiftCounit_naturality {C D : Cat.{v₁, u₁}} (F : C ⟶ D) :
+    (catPseudoULift.{v₁, v₂, u₁, u₂}.map F).toFunctor ⋙ catLiftCounit D
+      = catLiftCounit C ⋙ F.toFunctor := rfl
+
+/-- The unit followed by the counit is the identity, at a point.  The functor-level
+`catLiftUnit_comp_catLiftCounit` cannot fire here because `simp` normalises composites apart. -/
+@[simp] lemma catLiftCounit_obj_catLiftUnit_obj {C : Cat.{v₁, u₁}} (x : C) :
+    (catLiftCounit.{v₁, v₂, u₁, u₂} C).obj ((catLiftUnit C).obj x) = x := rfl
+
+@[simp] lemma catLiftCounit_map_catLiftUnit_map {C : Cat.{v₁, u₁}} {x y : C} (m : x ⟶ y) :
+    (catLiftCounit.{v₁, v₂, u₁, u₂} C).map ((catLiftUnit C).map m) = m := rfl
+
+/-- A lifted 1-cell applied to a lifted object, brought back down. -/
+@[simp] lemma catLiftCounit_obj_catPseudoULift_map_obj {C D : Cat.{v₁, u₁}} (F : C ⟶ D) (x : C) :
+    (catLiftCounit.{v₁, v₂, u₁, u₂} D).obj
+        ((catPseudoULift.{v₁, v₂, u₁, u₂}.map F).toFunctor.obj ((catLiftUnit C).obj x))
+      = F.toFunctor.obj x := rfl
+
+/-- A lifted 2-cell, evaluated at a lifted object and brought back down. -/
+@[simp] lemma catLiftCounit_map_catPseudoULift_map₂ {C D : Cat.{v₁, u₁}} {F G : C ⟶ D}
+    (η : F ⟶ G) (x : C) :
+    (catLiftCounit.{v₁, v₂, u₁, u₂} D).map
+        ((catPseudoULift.{v₁, v₂, u₁, u₂}.map₂ η).toNatTrans.app ((catLiftUnit C).obj x))
+      = η.toNatTrans.app x := rfl
 
 @[simp] lemma catPseudoULift_map_catLiftUnit_map {C D : Cat.{v₁, u₁}} (F : C ⟶ D)
     {x y : C} (m : x ⟶ y) :
@@ -279,3 +317,72 @@ lemma CatliftStrongTrans.lift_app (a : A) :
       = Functor.toCatHom (data.app a ⋙ catLiftUnit (G.obj a)) := rfl
 
 end LiftSimp
+
+/-! ### The dual gadget: a lifted *domain*
+
+`CatliftStrongTransData` / `CatliftStrongTrans.lift` handle a transformation *into* a lifted
+codomain, `StrongTrans F (G.comp catPseudoULift)`.  The Yoneda development also needs the other
+side — `yonedaLemmaBackwards : yonedaEvaluation ⟶ yonedaPairing` has the lift in its **domain**.
+The data is the same shape; only the plumbing moves from `catLiftUnit` to `catLiftCounit`.
+-/
+
+/-- Two 2-cells out of a universe-lifted category are equal as soon as they agree on the image
+of `catLiftUnit`, which hits every object.  The domain-side counterpart of `catLift_hom₂_ext`;
+stated through the unit functor rather than `ULift.down` so it composes with the functor-level
+stripping lemmas. -/
+lemma catLift_hom₂_dom_ext {D : Cat.{v₁, u₁}} {E : Cat}
+    {H K : catPseudoULift.{v₁, v₂, u₁, u₂}.obj D ⟶ E} {η θ : H ⟶ K}
+    (h : ∀ x : D, η.toNatTrans.app ((catLiftUnit D).obj x)
+        = θ.toNatTrans.app ((catLiftUnit D).obj x)) : η = θ := by
+  apply Cat.Hom₂.ext_app
+  intro X
+  exact h ((catLiftCounit D).obj X)
+
+/-- Pointwise data for a strong transformation *out of* a universe-lifted pseudofunctor.
+Mirrors `CatliftStrongTransData`; `CatliftStrongTrans.liftDom` supplies the plumbing. -/
+structure CatliftStrongTransDomData {A : Type u} [Bicategory A]
+    (G : Pseudofunctor A Cat.{v₁, u₁})
+    (F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}) where
+  app : (a : A) → (G.obj a ⥤ F.obj a)
+  naturality : {a b : A} → (f : a ⟶ b) →
+    ((G.map f).toFunctor ⋙ app b) ≅ (app a ⋙ (F.map f).toFunctor)
+  naturality_naturality' {a b : A} {f g : a ⟶ b} (η : f ⟶ g) (x : G.obj a) :
+      (app b).map ((G.map₂ η).toNatTrans.app x) ≫ (naturality g).hom.app x =
+      (naturality f).hom.app x ≫ (F.map₂ η).toNatTrans.app ((app a).obj x) := by cat_disch
+  naturality_id' (a : A) (x : G.obj a) :
+      (naturality (𝟙 a)).hom.app x ≫ (F.mapId a).hom.toNatTrans.app ((app a).obj x) =
+      (app a).map ((G.mapId a).hom.toNatTrans.app x) := by cat_disch
+  naturality_comp' {a b c : A} (f : a ⟶ b) (g : b ⟶ c) (x : G.obj a) :
+      (naturality (f ≫ g)).hom.app x ≫ (F.mapComp f g).hom.toNatTrans.app ((app a).obj x) =
+      (app c).map ((G.mapComp f g).hom.toNatTrans.app x) ≫
+        (naturality g).hom.app ((G.map f).toFunctor.obj x) ≫
+        (F.map g).toFunctor.map ((naturality f).hom.app x) := by cat_disch
+
+set_option backward.isDefEq.respectTransparency false in
+/-- Assemble `CatliftStrongTransDomData` into a genuine strong transformation out of the lift. -/
+def CatliftStrongTrans.liftDom {A : Type u} [Bicategory A]
+    {G : Pseudofunctor A Cat.{v₁, u₁}} {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}}
+    (data : CatliftStrongTransDomData G F) : StrongTrans (G.comp catPseudoULift) F where
+  app a := { toFunctor := catLiftCounit (G.obj a) ⋙ data.app a }
+  naturality {a b} f :=
+    Cat.Hom.isoMk (Functor.isoWhiskerLeft (catLiftCounit (G.obj a)) (data.naturality f))
+  naturality_naturality {a b f g} η := by
+    apply catLift_hom₂_dom_ext; intro x
+    exact data.naturality_naturality' η x
+  naturality_id a := by
+    apply catLift_hom₂_dom_ext; intro x
+    simpa using data.naturality_id' a x
+  naturality_comp {a b c} f g := by
+    apply catLift_hom₂_dom_ext; intro x
+    -- unfold the composite pseudofunctor's projections, then let the domain-side stripping
+    -- lemmas above bring every factor back down through `catLiftCounit`
+    dsimp only [Pseudofunctor.comp, Functor.comp_map]
+    simp [Cat.Hom.isoMk_hom, isoWhiskerLeft_hom, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+      Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+      Cat.associator_hom_toNatTrans, Cat.associator_inv_toNatTrans, associator_hom_app,
+      associator_inv_app, Functor.whiskerLeft_app, catPseudoULift_mapComp_hom_app,
+      Category.comp_id]
+    -- the residual `𝟙` sits at a different spelling of the fibre category, so `id_comp` needs
+    -- to match up to unfolding
+    erw [Category.id_comp]
+    exact data.naturality_comp' f g x
