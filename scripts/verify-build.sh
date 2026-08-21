@@ -21,6 +21,8 @@ BASELINE_FILE="$ROOT/.github/sorry-baseline"
 REQUIRED_AXIOM_DECLS=(
   "CategoryTheory.Bicategory.yonedaPairingComposite"
   "yonedaPairing"
+  "CatliftStrongTrans.lift"
+  "CatliftStrongTrans.liftDom"
 )
 
 fail=0
@@ -36,7 +38,11 @@ note "## Build verification"
 note ""
 
 # ── 1. sorry ratchet ────────────────────────────────────────────────────────
-count=$(grep -c 'declaration uses' "$LOG" || true)
+# Count distinct sorried DECLARATIONS, not warning lines: one declaration can be
+# reported more than once (a replayed build, or a `simp` whose arguments each carry
+# `sorryAx`), and counting lines would inflate the ratchet and mask a real regression.
+sorried=$(grep -oE '[^ ]+\.lean:[0-9]+:[0-9]+: declaration uses' "$LOG" | sort -u || true)
+if [ -z "$sorried" ]; then count=0; else count=$(printf '%s\n' "$sorried" | wc -l | tr -d ' '); fi
 baseline=$(tr -dc '0-9' < "$BASELINE_FILE" 2>/dev/null || echo "")
 if [ -z "$baseline" ]; then
   echo "::error::missing or unreadable baseline: $BASELINE_FILE"
@@ -46,8 +52,8 @@ fi
 if [ "$count" -gt "$baseline" ]; then
   note "**Sorries: $count — up from $baseline.** ❌"
   note ""
-  note "New sorried declarations:"
-  grep 'declaration uses' "$LOG" | sed 's/^/    /' | sed 's/warning: //'
+  note "Sorried declarations:"
+  printf '%s\n' "$sorried" | sed 's/: declaration uses$//' | sed 's/^/    /'
   echo "::error::sorry count rose from $baseline to $count"
   fail=1
 elif [ "$count" -lt "$baseline" ]; then
