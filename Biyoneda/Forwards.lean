@@ -11,7 +11,7 @@ import Biyoneda.Pairing
 `yonedaLemmaForwards : yonedaPairing ⟶ yonedaEvaluation` sends a strong transformation
 `η : yoneda₀ b ⟶ F` to the object `η.app b (𝟙 b) : F.obj b`.
 
-The transformation is assembled by `CatLiftStrongTransData.lift` from `yonedaLemmaForwardsData`,
+The transformation is assembled by `StrongTransIntoCats.lift` from `yonedaLemmaForwardsData`,
 so no `ULift` plumbing appears in any coherence proof.  Each of the three coherence obligations
 reduces to one of the `forwards_naturality_*_core` lemmas below, which state the content in the
 unlifted fibre.
@@ -244,9 +244,9 @@ lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
 set_option linter.flexible false in
 set_option backward.isDefEq.respectTransparency false in
 /-- The data for `yonedaLemmaForwards`, stated against the *unlifted* `yonedaEvaluation'`.
-`CatLiftStrongTransData.lift` then supplies the lifted strong transformation. -/
+`StrongTransIntoCats.lift` then supplies the lifted strong transformation. -/
 def yonedaLemmaForwardsData :
-    CatLiftStrongTransData (@yonedaPairing B _) (@yonedaEvaluation' B _) where
+    StrongTransIntoCats (@yonedaPairing B _) (@yonedaEvaluation' B _) where
   app := yonedaLemmaForwardsFunctor
   naturality {a b} f :=
     NatIso.ofComponents
@@ -285,10 +285,10 @@ Mathematically, this is the "evaluate at identity" direction of the equivalence
   `StrongTrans(yoneda₀ b, F)  ≃  F.obj b`.
 
 The data lives in `yonedaLemmaForwardsData`, stated against the unlifted
-`yonedaEvaluation'`; `CatLiftStrongTransData.lift` supplies the universe lift, so no `ULift`
+`yonedaEvaluation'`; `StrongTransIntoCats.lift` supplies the universe lift, so no `ULift`
 plumbing appears in any of the coherence proofs.
 -/
 def yonedaLemmaForwards : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B _) :=
-  CatLiftStrongTransData.lift yonedaLemmaForwardsData
+  StrongTransIntoCats.lift yonedaLemmaForwardsData
 
 end Biyoneda

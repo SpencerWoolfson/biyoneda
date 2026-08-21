@@ -21,8 +21,9 @@ BASELINE_FILE="$ROOT/.github/sorry-baseline"
 REQUIRED_AXIOM_DECLS=(
   "CategoryTheory.Bicategory.yonedaPairingComposite"
   "Biyoneda.yonedaPairing"
-  "CategoryTheory.Bicategory.CatLiftStrongTransData.lift"
-  "CategoryTheory.Bicategory.CatLiftStrongTransDomData.lift"
+  "CategoryTheory.Bicategory.StrongTransIntoCats.lift"
+  "CategoryTheory.Bicategory.StrongTransIntoCats.liftDom"
+  "CategoryTheory.Bicategory.StrongTransIntoCats.toStrongTrans"
 )
 
 fail=0

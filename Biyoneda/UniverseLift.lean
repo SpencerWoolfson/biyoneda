@@ -22,7 +22,7 @@ smaller one, so the two can be compared.
   lossless; used to lower morphisms back through the lift.
 * `catLift_hom₂_ext` — 2-cells into a lifted category are determined by their unlifted
   components.
-* `CatLiftStrongTransData` / `CatLiftStrongTransData.lift` — define a strong transformation into a
+* `StrongTransIntoCats` / `StrongTransIntoCats.lift` — define a strong transformation into a
   universe-lifted codomain from pointwise data, paying the `ULift` plumbing once.
 
 Nothing here mentions the Yoneda development; this is general `Cat` universe machinery and is a

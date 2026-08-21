@@ -11,12 +11,12 @@ import Biyoneda.Pairing
 `yonedaLemmaBackwards : yonedaEvaluation ⟶ yonedaPairing` sends an object `s : F.obj b` to the
 strong transformation `(a, f) ↦ (F.map f).obj s`.
 
-Unlike the forward direction this is still hand-rolled: the `ULift` in its *domain* is
-destructured by hand rather than handled by `CatLiftStrongTransDomData.lift`.  Porting it is
-what would remove the remaining lift plumbing from the development.
+Like the forward direction it is assembled by a lift — `StrongTransIntoCats.liftDom`, the
+domain-side gadget — from `yonedaLemmaBackwardsData`.  Everything below is therefore stated in
+the unlifted fibre `yonedaEvaluation'`, and no `ULift` appears in any proof.
 
-Naming: `_core` lemmas are stated in the unlifted fibre; `backwards_square_composite` is the one
-statement that lives in the lifted world.
+Naming: `_core` lemmas state the content at a fibre point; `backwards_square_composite` is the
+same square for the composite strong transformation.
 -/
 
 namespace Biyoneda
@@ -513,10 +513,10 @@ lemma backwards_naturality_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat
 
 set_option linter.flexible false in
 /-- The data for `yonedaLemmaBackwards`, stated against the *unlifted* `yonedaEvaluation'`.
-`CatLiftStrongTransDomData.lift` then supplies the domain-side universe lift, so no `ULift`
+`StrongTransIntoCats.liftDom` then supplies the domain-side universe lift, so no `ULift`
 appears in any coherence proof. -/
 def yonedaLemmaBackwardsData :
-    CatLiftStrongTransDomData (@yonedaEvaluation' B _) (@yonedaPairing B _) where
+    StrongTransIntoCats (@yonedaEvaluation' B _) (@yonedaPairing B _) where
   app := yonedaLemmaBackwardsFunctor
   naturality {a b} f :=
     NatIso.ofComponents (fun X ↦ backwardsNaturalityIso f X)
@@ -561,6 +561,6 @@ This is the inverse direction of the Yoneda equivalence.  Together with `yonedaL
 and the unit/counit isos (`yonedaHomInvId`, `yonedaInvHomId`), it forms `yonedaLemma`.
 -/
 def yonedaLemmaBackwards : StrongTrans (@yonedaEvaluation B _) (@yonedaPairing B _) :=
-  yonedaLemmaBackwardsData.lift
+  yonedaLemmaBackwardsData.liftDom
 
 end Biyoneda

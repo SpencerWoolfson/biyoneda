@@ -319,6 +319,58 @@ def yonedaPairingComposite :
     ((Bicategory.yoneda (B := B)).op.prod (Pseudofunctor.id (PairingTarget B)))
     (homPseudo (PairingTarget B))
 
+/-! ### Gadget 4 — strong transformations between `Cat`-valued pseudofunctors
+
+`StrongTrans F G` requires `F` and `G` to land in the *same* bicategory, so two `Cat`-valued
+pseudofunctors whose fibres sit in different universes cannot be related by one, even when the
+data is perfectly well defined. `StrongTransIntoCats` is that data, with the two universes left
+independent: `app a : F.obj a ⥤ G.obj a` typechecks across universes even though
+`F ⟶ G` does not.
+
+The coherence obligations are stated *pointwise*, which is the form fibre-level lemmas are
+usually already in.
+
+The universe relationship is deliberately absent from this type. It belongs to whatever consumes
+the data: `StrongTransIntoCats.lift` and `.liftDom` (in `Biyoneda/LiftStrongTrans.lean`) each
+lift one side, and when the two universes happen to agree the transformation can be read off
+directly with no lift at all. That is the improvement over carrying `catPseudoULift` in the
+type: nothing is forced to be the bigger side. -/
+structure StrongTransIntoCats {B : Type u} [Bicategory.{w₁, v₁} B]
+    (F : B ⥤ᵖ Cat.{w₂, v₂}) (G : B ⥤ᵖ Cat.{w₃, v₃}) where
+  /-- The component functor at each object. Its source and target may live in different
+  universes — this is what `StrongTrans` cannot express. -/
+  app : (b : B) → (F.obj b ⥤ G.obj b)
+  /-- The naturality isomorphism, as a functor iso rather than a `Cat` 2-cell. -/
+  naturality : {a b : B} → (f : a ⟶ b) →
+    ((F.map f).toFunctor ⋙ app b) ≅ (app a ⋙ (G.map f).toFunctor)
+  naturality_naturality' {a b : B} {f g : a ⟶ b} (η : f ⟶ g) (x : F.obj a) :
+      (app b).map ((F.map₂ η).toNatTrans.app x) ≫ (naturality g).hom.app x =
+      (naturality f).hom.app x ≫ (G.map₂ η).toNatTrans.app ((app a).obj x) := by cat_disch
+  naturality_id' (a : B) (x : F.obj a) :
+      (naturality (𝟙 a)).hom.app x ≫ (G.mapId a).hom.toNatTrans.app ((app a).obj x) =
+      (app a).map ((F.mapId a).hom.toNatTrans.app x) := by cat_disch
+  naturality_comp' {a b c : B} (f : a ⟶ b) (g : b ⟶ c) (x : F.obj a) :
+      (naturality (f ≫ g)).hom.app x ≫ (G.mapComp f g).hom.toNatTrans.app ((app a).obj x) =
+      (app c).map ((F.mapComp f g).hom.toNatTrans.app x) ≫
+        (naturality g).hom.app ((F.map f).toFunctor.obj x) ≫
+        (G.map g).toFunctor.map ((naturality f).hom.app x) := by cat_disch
+
+/-- When both sides land in the same universe, no lift is needed: the data *is* a
+`StrongTrans`. Neither of the two lift gadgets could express this case. -/
+def StrongTransIntoCats.toStrongTrans {B : Type u} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{w₂, v₂}} (d : StrongTransIntoCats F G) : StrongTrans F G where
+  app a := { toFunctor := d.app a }
+  naturality f := Cat.Hom.isoMk (d.naturality f)
+  naturality_naturality {a b f g} η := by
+    apply Cat.Hom₂.ext_app; intro x
+    exact d.naturality_naturality' η x
+  naturality_id a := by
+    apply Cat.Hom₂.ext_app; intro x
+    simpa using d.naturality_id' a x
+  naturality_comp {a b c} f g := by
+    apply Cat.Hom₂.ext_app; intro x
+    simpa using d.naturality_comp' f g x
+
 end CategoryTheory.Bicategory
 
 /-! The composite built from these three gadgets — `yonedaPairing` rebuilt as
