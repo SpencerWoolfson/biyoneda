@@ -174,12 +174,6 @@ This is the core of the Yoneda equivalence at the level of individual categories
 -/
 @[simp]
 def yonedaLemmaForwardsFunctor (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
-    yonedaPairing.obj x ⥤ yonedaEvaluation.obj x where
-  obj pair := { down := (pair.app x.1).toFunctor.obj (𝟙 (unop x.1)) }
-  map {a b} f := { down := (f.as.app x.1).toNatTrans.app (𝟙 (unop x.1)) }
-
-@[simp]
-def yonedaLemmaForwardsFunctor' (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
     yonedaPairing.obj x ⥤ yonedaEvaluation'.obj x where
   obj pair := (pair.app x.1).toFunctor.obj (𝟙 (unop x.1))
   map {a b} f := (f.as.app x.1).toNatTrans.app (𝟙 (unop x.1))
@@ -212,16 +206,6 @@ lemma forwards_naturality_component {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}
   simp only [Category.assoc]
   rfl
 
-/-- Reduction: the identity coherence of the lifted evaluation pseudofunctor, evaluated at a
-lifted point, is the unlifted `yonedaEvaluation'.mapId` component.  `catPseudoULift` is strict,
-so the lift is transparent up to a trivial `≫ 𝟙`. -/
-lemma yonedaEvaluation_mapId_app_down {a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})}
-    (x : ↑(yonedaEvaluation'.obj a)) :
-    (yonedaEvaluation.mapId a).hom.toNatTrans.app { down := x }
-      = { down := (yonedaEvaluation'.mapId a).hom.toNatTrans.app x } := by
-  dsimp [yonedaEvaluation, Pseudofunctor.comp, catPseudoULift, catLift, ULiftHom.up]
-  erw [Category.comp_id]; rfl
-
 /-- Reduction: the 2-morphism image of the lifted evaluation pseudofunctor at a lifted point is
 the unlifted `yonedaEvaluation'.map₂` component. -/
 lemma yonedaEvaluation_map₂_app_down {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} {f g : a ⟶ b}
@@ -230,15 +214,6 @@ lemma yonedaEvaluation_map₂_app_down {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w,
       = { down := (yonedaEvaluation'.map₂ η).toNatTrans.app x } := by
   dsimp [yonedaEvaluation, Pseudofunctor.comp, catPseudoULift, catLift, ULiftHom.up]
   rfl
-
-/-- Reduction: the composition coherence of the lifted evaluation pseudofunctor, evaluated at a
-lifted point, is the unlifted `yonedaEvaluation'.mapComp` component. -/
-lemma yonedaEvaluation_mapComp_app_down {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
-    (g : b ⟶ c) (x : ↑(yonedaEvaluation'.obj a)) :
-    (yonedaEvaluation.mapComp f g).hom.toNatTrans.app { down := x }
-      = { down := (yonedaEvaluation'.mapComp f g).hom.toNatTrans.app x } := by
-  dsimp [yonedaEvaluation, Pseudofunctor.comp, catPseudoULift, catLift, ULiftHom.up]
-  erw [Category.comp_id]; rfl
 
 /--
 The `Z`-side identity underlying `naturality_naturality` for `yonedaLemmaForwards`.
@@ -347,15 +322,10 @@ lemma forwards_naturality_id_core (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}))
   rw [hZ]
   cat_disch
 
-/-- Reduction: the lifted evaluation pseudofunctor's action on a lifted morphism. -/
-lemma yonedaEvaluation_map_map_down {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
-    {x y : ↑(yonedaEvaluation'.obj a)} (m : x ⟶ y) :
-    (yonedaEvaluation.map f).toFunctor.map { down := m }
-      = { down := (yonedaEvaluation'.map f).toFunctor.map m } := by
-  dsimp [yonedaEvaluation, Pseudofunctor.comp, catPseudoULift, catLift, ULiftHom.up]
-  rfl
+/-- Component form of the naturality constraint of a composite strong transformation.
 
-/-- Component form of the naturality constraint of a composite strong transformation. -/
+Currently unused: it is staged for the parked `yonedaHomInvId` / `yonedaInvHomId` naturality
+squares, whose notes call for exactly this decomposition of `(η ≫ θ).naturality`. -/
 lemma strongTrans_comp_naturality_hom_app {F G H : Bᵒᵖ ⥤ᵖ Cat.{w, v}} (η : F ⟶ G) (θ : G ⟶ H)
     {X Y : Bᵒᵖ} (k : X ⟶ Y) (x : ↑(F.obj X)) :
     ((η ≫ θ).naturality k).hom.toNatTrans.app x =
@@ -414,7 +384,6 @@ lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
                 (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
             (f.2.naturality f.1).hom.toNatTrans.app
               ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))) := by
-
   -- Pending: the statement mentions `yonedaPairing.mapComp`, which the composite defines
   -- differently (not defeq), so this needs a genuine re-proof rather than a re-spelling.
   sorry
@@ -424,7 +393,7 @@ set_option backward.isDefEq.respectTransparency false in
 `CatliftStrongTrans.lift` then supplies the lifted strong transformation. -/
 def yonedaLemmaForwardsStructure :
     CatliftStrongTransData (@yonedaPairing B _) (@yonedaEvaluation' B _) where
-  app := yonedaLemmaForwardsFunctor'
+  app := yonedaLemmaForwardsFunctor
   naturality {a b} f :=
     NatIso.ofComponents
       (fun X =>
@@ -456,8 +425,6 @@ def yonedaLemmaForwardsStructure :
     exact core
   naturality_comp' {a b c} f g Z := forwards_naturality_comp_core f g Z
 
-def yonedaLemmaForwards' : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B _) := CatliftStrongTrans.lift yonedaLemmaForwardsStructure
-
 /--
 The *forward strong transformation* `yonedaPairing ⟶ yonedaEvaluation` for the Yoneda lemma.
 
@@ -466,76 +433,13 @@ sends a strong transformation `η : yoneda₀ b ⟶ F` to the element `η.app b 
 
 Mathematically, this is the "evaluate at identity" direction of the equivalence
   `StrongTrans(yoneda₀ b, F)  ≃  F.obj b`.
+
+The data lives in `yonedaLemmaForwardsStructure`, stated against the unlifted
+`yonedaEvaluation'`; `CatliftStrongTrans.lift` supplies the universe lift, so no `ULift`
+plumbing appears in any of the coherence proofs.
 -/
-def yonedaLemmaForwards : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B _) where
-  app x := {toFunctor := yonedaLemmaForwardsFunctor x}
-  naturality {a b} f := by
-    refine Cat.Hom.isoMk (NatIso.ofComponents ?_ ?_)
-    · intro X
-      dsimp [yonedaEvaluation, catPseudoULift]
-      have lem : (((yonedaPairing.map f).toFunctor.obj X).app b.1).toFunctor.obj (𝟙 (unop b.1)) ≅
-          (yonedaEvaluation'.map f).toFunctor.obj ((X.app a.1).toFunctor.obj (𝟙 (unop a.1))) := by
-        refine ?_ ≪≫
-          (Cat.Hom.toNatIso (f.2.naturality f.1)).app ((X.app a.1).toFunctor.obj (𝟙 (unop a.1)))
-        refine (f.2.app b.1).toFunctor.mapIso ?_
-        exact ((X.app b.1).toFunctor.mapIso (λ_ f.1.unop ≪≫ (ρ_ f.1.unop).symm)) ≪≫
-          (Cat.Hom.toNatIso (X.naturality f.1)).app (𝟙 (unop a.1))
-      exact ULiftHom.up.mapIso (ULift.upFunctor.mapIso lem)
-    · -- Pending: goal shape changed with the composite pairing.
-      sorry
-  naturality_naturality {a b f g} η := by
-    apply catLift_hom₂_ext; intro Z
-    dsimp only [yonedaLemmaForwardsFunctor]
-    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
-      yonedaEvaluation_map₂_app_down,
-      Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, id_eq,
-      Functor.mapIso_hom, Iso.trans_hom, Iso.symm_hom]
-    exact forwards_naturality_naturality_core η Z
-  naturality_id a := by
-    apply catLift_hom₂_ext; intro Z
-    dsimp only [yonedaLemmaForwardsFunctor]
-    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
-      yonedaEvaluation_mapId_app_down,
-      Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, id_eq,
-      Functor.mapIso_hom, Iso.trans_hom, Iso.symm_hom, Cat.leftUnitor_hom_toNatTrans_app,
-      Cat.rightUnitor_inv_toNatTrans_app]
-    dsimp only [ULiftHom.up, ULift.upFunctor, ULiftHom.objDown, Functor.comp]
-    simp only [Bicategory.prod_id_fst, Bicategory.prod_id_snd,
-      Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_map,
-      Iso.app_hom, Cat.Hom.toNatIso,
-      Pseudofunctor.StrongTrans.categoryStruct_id_naturality_hom]
-    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.rightUnitor_hom_toNatTrans_app,
-      Cat.leftUnitor_inv_toNatTrans_app]
-    simp only [Category.comp_id, Cat.Hom.comp_toFunctor,
-      Cat.Hom.id_toFunctor, Functor.comp_obj, Functor.id_obj]
-    erw [Category.comp_id]
-    exact forwards_naturality_id_core a Z
-  naturality_comp {a b c} f g := by
-    apply catLift_hom₂_ext; intro Z
-    dsimp only [yonedaLemmaForwardsFunctor]
-    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
-      yonedaEvaluation_mapComp_app_down,
-      Cat.Hom.isoMk_hom, Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, id_eq,
-      Functor.mapIso_hom, Iso.trans_hom, Iso.symm_hom,
-      Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app]
-    dsimp only [ULiftHom.up, ULift.upFunctor, ULiftHom.objDown, Functor.comp]
-    simp only [Bicategory.prod_comp_fst, Bicategory.prod_comp_snd, Iso.app_hom, Cat.Hom.toNatIso]
-    simp only [Category.comp_id, Category.id_comp, Cat.Hom.comp_toFunctor, Functor.comp_obj]
-    erw [yonedaEvaluation_map_map_down]
-    exact forwards_naturality_comp_core f g Z
-
-
-
-
--- def yonedaLemmaForwards' : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B _) := by
---   dsimp [yonedaPairing,yonedaPairingComposite,yonedaEvaluation,yonedaEvaluation']
---   apply?
-
-
-
+def yonedaLemmaForwards : StrongTrans (@yonedaPairing B _) (@yonedaEvaluation B _) :=
+  CatliftStrongTrans.lift yonedaLemmaForwardsStructure
 
 /--
 At a fixed pair `x = (b₀, F)`, an evaluation point `eval : F.obj b₀`, and a component
