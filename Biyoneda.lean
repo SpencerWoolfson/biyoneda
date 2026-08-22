@@ -1,4 +1,6 @@
--- General, Yoneda-independent material (all upstream candidates, all sorry-free).
+-- General, Yoneda-independent material (all upstream candidates).
+-- NOTE: no longer sorry-free. `catPseudoULift` (UniverseLift) and the evaluation coherence
+-- cores carry parked coherence fields as of the Mathlib v4.33 bump; see README "Status".
 import Biyoneda.ForMathlib
 import Biyoneda.UniverseLift
 import Biyoneda.BiEquiv

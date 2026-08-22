@@ -18,6 +18,29 @@ $$\mathtt{yonedaPairing} \simeq \mathtt{yonedaEvaluation}$$
 
 on the product bicategory $\mathcal{B}^{\mathrm{op}} \times [\mathcal{B}^{\mathrm{op}}, \mathbf{Cat}]$.
 
+## Status
+
+**This is work in progress. The main theorem is not yet fully proved.**
+
+The project builds with no errors, but 26 declarations still contain `sorry`, and the
+headline `yonedaLemma` depends on `sorryAx` through them. Concretely:
+
+| | |
+|---|---|
+| Build | 0 errors |
+| Declarations using `sorry` | 26 |
+| `yonedaLemma` axioms | `propext`, `sorryAx`, `Classical.choice`, `Quot.sound` |
+
+The outstanding work is concentrated in the coherence fields of `catPseudoULift`
+(`UniverseLift.lean`) and `homPseudo` (`Gadgets.lean`) — everything downstream inherits
+`sorryAx` from those two — together with the unit/counit isomorphisms in `Unit.lean` and
+the naturality cores in `Forwards.lean` and `Backwards*.lean`. Each `sorry` is marked at
+its site with the residual goal and what has been tried.
+
+`scripts/verify-build.sh` gates CI on both a sorry ratchet and a per-declaration axiom
+check, so neither the count nor the set of `sorryAx`-dependent declarations can grow
+unnoticed. A green CI badge means "did not regress", not "fully proved".
+
 ## Key Definitions
 
 | Lean name | Mathematical meaning |
@@ -36,16 +59,24 @@ on the product bicategory $\mathcal{B}^{\mathrm{op}} \times [\mathcal{B}^{\mathr
 ```
 biyoneda/
 ├── Biyoneda/
-│   ├── Basic.lean          # All definitions and proofs
-│   └── ForMathlib.lean     # General Cat/bicategory lemmas staged for upstreaming
-├── paper/
-│   ├── Biyoneda.tex        # Paper source
-│   ├── preamble.tex        # LaTeX packages and macros
-│   └── references.bib      # Bibliography
-├── Biyoneda.pdf            # Compiled paper (built by CI)
-├── Makefile                # `make` to compile the paper locally
+│   ├── ForMathlib.lean            # General Cat/bicategory lemmas staged for upstreaming
+│   ├── UniverseLift.lean          # `catLift` / `catPseudoULift` and their stripping lemmas
+│   ├── Gadgets.lean               # Pseudofunctor `prod`, `op`, `homPseudo`
+│   ├── TransIntoCats.lean         # `StrongTransIntoCats` and its lifts
+│   ├── Evaluation*.lean           # The evaluation pseudofunctor and its coherence cores
+│   ├── Pairing.lean               # `yonedaPairing`
+│   ├── Forwards.lean              # Φ : pairing ⟶ evaluation
+│   ├── Backwards*.lean            # Ψ : evaluation ⟶ pairing
+│   ├── Unit.lean                  # Unit and counit isos
+│   ├── BiEquiv.lean               # Internal equivalence in a bicategory
+│   ├── Yoneda.lean                # The assembled theorem
+│   └── CompositePairing.lean      # `yonedaPairing` as a composite of gadgets; axiom checks
+├── paper/                         # Paper source (Biyoneda.tex, preamble, references)
+├── Biyoneda.pdf                   # Compiled paper (built by CI)
+├── scripts/verify-build.sh        # Sorry ratchet + axiom gate, run by CI
+├── Makefile                       # `make` to compile the paper locally
 ├── lakefile.toml
-└── lean-toolchain          # Lean 4 v4.29.0 / Mathlib v4.29.0
+└── lean-toolchain                 # Lean 4 v4.33.0 / Mathlib v4.33.0
 ```
 
 ## Paper
@@ -72,8 +103,8 @@ The first `lake exe cache get` step downloads compiled Mathlib oleans so you do 
 
 ## Dependencies
 
-- [Lean 4](https://github.com/leanprover/lean4) `v4.29.0`
-- [Mathlib4](https://github.com/leanprover-community/mathlib4) `v4.29.0`
+- [Lean 4](https://github.com/leanprover/lean4) `v4.33.0`
+- [Mathlib4](https://github.com/leanprover-community/mathlib4) `v4.33.0`
 
 Specifically, the formalization builds on:
 - `Mathlib.CategoryTheory.Bicategory.Yoneda`
@@ -81,7 +112,7 @@ Specifically, the formalization builds on:
 
 ## Notes on AI
 
-This project makes substantial use of AI assistance, including for proofs, not just comments, documentation, and CI setup. All proofs are machine-checked by Lean, but please take that into account and apply appropriate scrutiny.
+This project makes substantial use of AI assistance, including for proofs, not just comments, documentation, and CI setup. Everything that is proved is machine-checked by Lean — but see **Status** above: a number of results are still `sorry`, so "it builds" is not the same as "it is proved". Please apply appropriate scrutiny, and check `#print axioms` on anything you intend to rely on.
 
 ## License
 
