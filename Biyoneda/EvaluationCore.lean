@@ -56,11 +56,9 @@ lemma evaluation_left_unitor_core {a b : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶ 
       (f.2.naturality (𝟙 a.1)).hom.toNatTrans.app Z ≫
       (b.2.mapId a.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)
     rw [hid]
-    simp only [Category.id_comp]
     erw [Category.assoc]
     erw [c1]
     erw [Category.comp_id]
-    rfl
   rw [hl]
   erw [Functor.map_id]
   erw [Category.id_comp]
@@ -69,7 +67,6 @@ lemma evaluation_left_unitor_core {a b : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶ 
   erw [← Functor.map_comp]
   erw [key]
   rw [Category.comp_id]
-  rfl
 
 /-- The cancellation core of `evaluationPseudo.map₂_right_unitor`, at a point `Z`. -/
 lemma evaluation_right_unitor_core {a b : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
@@ -92,6 +89,7 @@ lemma evaluation_right_unitor_core {a b : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶
       𝟙 ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) := by
     first
       | rfl
+      | (simp; rfl)
       | simp
   rw [hr]
   erw [Functor.map_id]
@@ -100,8 +98,10 @@ lemma evaluation_right_unitor_core {a b : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶
   rw [hidt]
   erw [Functor.map_id]
   simp only [Category.comp_id, Category.assoc]
-  iterate 6 (first | erw [Category.id_comp] | erw [Category.comp_id] | skip)
-  rfl
+  -- the residual `𝟙` sits at a different spelling of the fibre category, so `simp only` will not
+  -- collapse it reducibly and `rw` reports a bad motive; `congrArg` sidesteps both by never
+  -- forming a motive at all
+  exact congrArg (· ≫ _) (Category.comp_id _).symm
 
 /-- The cancellation core of `evaluationPseudo.map₂_whisker_right`, at a point `Z`. -/
 lemma evaluation_whisker_right_core {a b c : C × (C ⥤ᵖ Cat.{w, v})} {f g : a ⟶ b}
@@ -145,31 +145,36 @@ lemma evaluation_whisker_right_core {a b c : C × (C ⥤ᵖ Cat.{w, v})} {f g : 
   simp only [Functor.map_comp] at hnnG
   have hsG := congrArg (fun m ↦ (c.2.map η.1).toFunctor.map m) hs
   simp only [Functor.map_comp] at hsG
-  slice_rhs 3 4 =>
-    erw [Category.assoc]
-    erw [hnnG]
+  -- `Functor.map_comp` above reintroduced a `(_ ≫ _) ≫ _` group after the earlier `assoc` pass,
+  -- so renormalise before slicing; the factors `hnnG` matches sit at 4-5 once flattened
+  simp only [Category.assoc]
+  slice_rhs 4 5 => erw [hnnG]
   slice_rhs 2 3 => erw [hsG]
+  -- stated flattened: the slices above leave the right-hand side associated to the left, so a
+  -- `map (_ ≫ _) ≫ map (_ ≫ _)` phrasing no longer matches it
   have key : (c.2.map η.1).toFunctor.map
         ((c.2.map f.1).toFunctor.map
-          ((η.2.app a.1).toFunctor.map ((h.2.as.app a.1).toNatTrans.app Z)) ≫
-          (η.2.naturality f.1).inv.toNatTrans.app ((g.2.app a.1).toFunctor.obj Z)) ≫
+          ((η.2.app a.1).toFunctor.map ((h.2.as.app a.1).toNatTrans.app Z))) ≫
       (c.2.map η.1).toFunctor.map
-        ((η.2.naturality f.1).hom.toNatTrans.app ((g.2.app a.1).toFunctor.obj Z) ≫
-          (c.2.map₂ h.1).toNatTrans.app
-            ((η.2.app a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj Z))) =
+        ((η.2.naturality f.1).inv.toNatTrans.app ((g.2.app a.1).toFunctor.obj Z)) ≫
+      (c.2.map η.1).toFunctor.map
+        ((η.2.naturality f.1).hom.toNatTrans.app ((g.2.app a.1).toFunctor.obj Z)) ≫
+      (c.2.map η.1).toFunctor.map
+        ((c.2.map₂ h.1).toNatTrans.app
+          ((η.2.app a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj Z))) =
       (c.2.map η.1).toFunctor.map
         ((c.2.map f.1).toFunctor.map ((h.2.as.app a.1 ▷ η.2.app a.1).toNatTrans.app Z)) ≫
       (c.2.map η.1).toFunctor.map
         ((c.2.map₂ h.1).toNatTrans.app
           ((η.2.app a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj Z))) := by
-    rw [← Functor.map_comp, ← Functor.map_comp]
+    conv_lhs => rw [← Functor.map_comp, ← Functor.map_comp, ← Functor.map_comp]
+    conv_rhs => rw [← Functor.map_comp]
     refine congrArg _ ?_
-    rw [Category.assoc]
     erw [c1']
     rfl
-  erw [key]
-  erw [Category.assoc]
-  rfl
+  simp only [Category.assoc]
+  slice_rhs 2 5 => erw [key]
+  simp only [Category.assoc]
 
 /-- The cancellation core of `evaluationPseudo.map₂_whisker_left`, at a point `Z`. -/
 lemma evaluation_whisker_left_core {a b c : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
@@ -203,9 +208,7 @@ lemma evaluation_whisker_left_core {a b c : C × (C ⥤ᵖ Cat.{w, v})} (f : a �
       ((h.2.naturality f.1).hom.toNatTrans.app W)
   simp only [Category.assoc]
   slice_rhs 4 5 => rw [← h3]
-  slice_rhs 3 4 =>
-    erw [← Category.assoc]
-    erw [← Functor.map_comp]
+  slice_rhs 3 4 => erw [← Functor.map_comp]
   erw [h2]
   slice_rhs 2 3 => erw [← Functor.map_comp]
   have c1' := Cat.Hom.inv_hom_id_toNatTrans_app_assoc (g.2.naturality f.1)
@@ -214,7 +217,6 @@ lemma evaluation_whisker_left_core {a b c : C × (C ⥤ᵖ Cat.{w, v})} (f : a �
       ((η.2.as.app a.1).toNatTrans.app W))
   erw [c1']
   simp only [Category.assoc]
-  rfl
 
 /-- In the product bicategory `C × (C ⥤ᵖ Cat)`, the second component of the associator is a
 modification whose components are identities — `Cat` is strict, so this holds by `rfl`.  Stating
