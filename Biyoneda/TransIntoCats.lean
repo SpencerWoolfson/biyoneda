@@ -264,20 +264,24 @@ def StrongTransIntoCats.precomposeCounit {A : Type u} [Bicategory A]
   naturality_naturality' {a b} {f g} η x :=
     d.naturality_naturality' η ((catLiftCounit (F.obj a)).obj x)
   naturality_id' a x := by
-    -- PARKED.  The reduction that gets closest is
-    --   dsimp only [Pseudofunctor.comp, Functor.comp_map, Functor.comp_obj]
-    --   simp only [Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.trans_hom,
-    --     PrelaxFunctor.map₂Iso_hom, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
-    --     catLiftCounit_map_catPseudoULift_map₂', catPseudoULift_mapId_hom_app']
-    -- after which the goal is `d`'s own `naturality_id'` at `(catLiftCounit _).obj x`, except
-    -- for a residual `≫ 𝟙` on the right that neither `Category.comp_id` nor `erw` collapses:
-    --   (d.app a).map ((counit).map ((map₂ (F.mapId a).hom).app x ≫ 𝟙 _))
-    -- versus
-    --   (d.app a).map ((F.mapId a).hom.app (counit.obj x))
-    sorry
+    dsimp only [Pseudofunctor.comp, Functor.comp_map, Functor.comp_obj]
+    simp only [Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.trans_hom,Functor.whiskerLeft]
+    dsimp [Functor.comp ]
+    let check := d.naturality_id' a (((catLiftCounit (F.obj a)).obj x))
+    erw [check]
+    clear check
+    apply congr_arg
+    erw [Iso.trans_hom, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+      catPseudoULift_mapId_hom_app', Category.comp_id]
+    rfl
+
   naturality_comp' {a b c} f g x := by
-    -- PARKED.  Same shape as `naturality_id'` above, with more factors.
-    sorry
+    dsimp only [Pseudofunctor.comp, Functor.comp_map, Functor.comp_obj]
+    simp only [Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.trans_hom,Functor.whiskerLeft]
+    dsimp [Functor.comp ]
+    erw [Iso.trans_hom, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+      catPseudoULift_mapComp_hom_app, Category.comp_id]
+    exact d.naturality_comp' f g ((catLiftCounit (F.obj a)).obj x)
 
 /-- The symmetric lift: a strong transformation between the *lifted copies* of both sides, so
 neither is privileged.

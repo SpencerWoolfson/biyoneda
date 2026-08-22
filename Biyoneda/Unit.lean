@@ -128,8 +128,7 @@ no associators, and only the forward direction (the inverse comes for free). -/
 def yonedaHomInvIdIso :
     (yonedaLemmaForwardsData.comp yonedaLemmaBackwardsData) ≅
       (StrongTransIntoCats.Id (F := @yonedaPairing B _)) :=
-  ModificationIntoCats.isoMk (fun a ↦ yonedaHomInvIdNatIso a) (fun {a b} f x ↦ by
-    sorry)
+  ModificationIntoCats.isoMk (fun a ↦ yonedaHomInvIdNatIso a) (fun {a b} f x ↦ by sorry)
 
 /--
 The *unit isomorphism* `yonedaLemmaForwards ≫ yonedaLemmaBackwards ≅ 𝟙 yonedaPairing`.
@@ -149,9 +148,8 @@ def yonedaHomInvId : yonedaLemmaForwards ≫ yonedaLemmaBackwards ≅ 𝟙 (@yon
   clear rw2
   refine Cat.Hom₂.ext_iff.mpr ?_
   ext x
-  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
-    Cat.Hom.isoMk_hom, NatTrans.toCatHom₂_toNatTrans]
+  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+    Cat.whiskerRight_toNatTrans, whiskerRight_app]
   -- The two bridges turn `(forwards ≫ backwards).naturality` -- a five-factor associator
   -- sandwich -- into `comp`'s naturality, and `(𝟙 _).naturality` into `Id`'s.  What is left is
   -- exactly the modification square of `yonedaHomInvIdIso`, at a point.
@@ -204,6 +202,9 @@ def yonedaInvHomId : yonedaLemmaBackwards ≫ yonedaLemmaForwards ≅ 𝟙 (@yon
   simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
     Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
     Cat.Hom.isoMk_hom, NatTrans.toCatHom₂_toNatTrans]
+  dsimp [CategoryStruct.id,StrongTrans.id]
+  rw [Category.comp_id]
+  erw [Category.comp_id]
   -- Parked (2026-07-29): same shape and size as yonedaHomInvId's naturality goal (see the note
   -- there). After the descent above, the goal is
   --   (yonedaInvHomIdNatIso b).hom.app ((yonedaEvaluation.map f).obj x) ≫
