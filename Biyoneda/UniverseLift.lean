@@ -90,6 +90,20 @@ level so that reasoning about a lifted *domain* never has to reach for `ULift.do
 def catLiftCounit (A : Cat.{v₁, u₁}) : (catLift.{v₁, v₂, u₁, u₂}.obj A) ⥤ A :=
   (catLiftEquiv.{v₁, v₂, u₁, u₂} A.α).inverse
 
+/-! `catLift` is *strictly* functorial -- that is what lets `catPseudoULift`'s `mapId` and
+`mapComp` be `Iso.refl`.  Stating that strictness as `rfl` bridges matters: without them the
+coherence goals below carry the same functor spelled two ways (`catLift.map (f ≫ g)` on one
+side, `catLift.map f ≫ catLift.map g` on the other), and `NatTrans.comp_app` cannot instantiate
+its middle object, so the composite never distributes -- not under `simp`, `simp only`, or
+`erw`. -/
+
+@[simp] lemma catLift_map_comp {a b c : Cat.{v₁, u₁}} (f : a ⟶ b) (g : b ⟶ c) :
+    catLift.{v₁, v₂, u₁, u₂}.map (f ≫ g)
+      = catLift.{v₁, v₂, u₁, u₂}.map f ≫ catLift.{v₁, v₂, u₁, u₂}.map g := rfl
+
+@[simp] lemma catLift_map_id {a : Cat.{v₁, u₁}} :
+    catLift.{v₁, v₂, u₁, u₂}.map (𝟙 a) = 𝟙 (catLift.{v₁, v₂, u₁, u₂}.obj a) := rfl
+
 @[simp] lemma catLiftUnit_comp_catLiftCounit (A : Cat.{v₁, u₁}) :
     catLiftUnit A ⋙ catLiftCounit.{v₁, v₂, u₁, u₂} A = 𝟭 A := rfl
 
@@ -155,10 +169,13 @@ def catPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
       Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
       Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
       Category.id_comp, Category.comp_id]
-    first
-      | rfl
-      | done
-      | sorry
+    -- put both sides at the same spelling first (see `catLift_map_comp` above), then the
+    -- composite distributes and the `𝟙`s drop out
+    simp only [catLift_map_comp, catLift_map_id]
+    repeat erw [Cat.Hom.toNatTrans_comp]
+    repeat erw [Cat.Hom.toNatTrans_id]
+    simp
+    rfl
   map₂_whisker_right η h := by
     apply Cat.Hom₂.ext_app; intro X
     simp only [Bicategory.Strict.leftUnitor_eqToIso,
@@ -168,10 +185,13 @@ def catPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
       Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
       Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
       Category.id_comp, Category.comp_id]
-    first
-      | rfl
-      | done
-      | sorry
+    -- put both sides at the same spelling first (see `catLift_map_comp` above), then the
+    -- composite distributes and the `𝟙`s drop out
+    simp only [catLift_map_comp, catLift_map_id]
+    repeat erw [Cat.Hom.toNatTrans_comp]
+    repeat erw [Cat.Hom.toNatTrans_id]
+    simp
+    rfl
   map₂_associator {a b c d} f g h := by
     apply Cat.Hom₂.ext_app; intro X
     simp only [Bicategory.Strict.leftUnitor_eqToIso,
@@ -181,10 +201,13 @@ def catPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
       Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
       Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
       Category.id_comp, Category.comp_id]
-    first
-      | rfl
-      | done
-      | sorry
+    -- put both sides at the same spelling first (see `catLift_map_comp` above), then the
+    -- composite distributes and the `𝟙`s drop out
+    simp only [catLift_map_comp, catLift_map_id]
+    repeat erw [Cat.Hom.toNatTrans_comp]
+    repeat erw [Cat.Hom.toNatTrans_id]
+    simp
+    rfl
   map₂_left_unitor {a b} f := by
     apply Cat.Hom₂.ext_app; intro X
     simp only [Bicategory.Strict.leftUnitor_eqToIso,
@@ -194,10 +217,13 @@ def catPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
       Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
       Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
       Category.id_comp, Category.comp_id]
-    first
-      | rfl
-      | done
-      | sorry
+    -- put both sides at the same spelling first (see `catLift_map_comp` above), then the
+    -- composite distributes and the `𝟙`s drop out
+    simp only [catLift_map_comp, catLift_map_id]
+    repeat erw [Cat.Hom.toNatTrans_comp]
+    repeat erw [Cat.Hom.toNatTrans_id]
+    simp
+    rfl
   map₂_right_unitor {a b} f := by
     apply Cat.Hom₂.ext_app; intro X
     simp only [Bicategory.Strict.leftUnitor_eqToIso,
@@ -207,10 +233,13 @@ def catPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
       Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
       Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
       Category.id_comp, Category.comp_id]
-    first
-      | rfl
-      | done
-      | sorry
+    -- put both sides at the same spelling first (see `catLift_map_comp` above), then the
+    -- composite distributes and the `𝟙`s drop out
+    simp only [catLift_map_comp, catLift_map_id]
+    repeat erw [Cat.Hom.toNatTrans_comp]
+    repeat erw [Cat.Hom.toNatTrans_id]
+    simp
+    rfl
 
 /-- Two 2-cells of `Cat` landing in a universe-lifted category are equal as soon as their
 unlifted components agree: morphisms of `ULiftHom (ULift D)` are `ULift`-wrapped, so the

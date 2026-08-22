@@ -30,17 +30,17 @@ BASELINE_FILE="$ROOT/.github/sorry-baseline"
 # The ratchet therefore still runs in both directions: nothing clean can silently rot,
 # and nothing that gets fixed can silently stay untracked.
 #
-# As of the Mathlib v4.33 bump all four are contaminated, via two roots:
-#   * `catPseudoULift`'s parked coherence fields (UniverseLift.lean) -> reaches `lift`/`liftDom`
-#   * `homPseudo`'s parked coherence fields (Gadgets.lean)           -> reaches the pairings
-# Fixing those two declarations is what empties CONTAMINATED_DECLS.
-CLEAN_DECLS=()
+# There were two roots. `catPseudoULift` (UniverseLift.lean) is now fully proved, which took
+# `lift` and `liftDom` clean -- they are promoted below. `homPseudo` (Gadgets.lean) is still
+# parked, and is the only thing keeping the two pairings contaminated.
+CLEAN_DECLS=(
+  "CategoryTheory.Bicategory.StrongTransIntoCats.lift"
+  "CategoryTheory.Bicategory.StrongTransIntoCats.liftDom"
+)
 
 CONTAMINATED_DECLS=(
   "CategoryTheory.Bicategory.yonedaPairingComposite"
   "Biyoneda.yonedaPairing"
-  "CategoryTheory.Bicategory.StrongTransIntoCats.lift"
-  "CategoryTheory.Bicategory.StrongTransIntoCats.liftDom"
 )
 
 fail=0
