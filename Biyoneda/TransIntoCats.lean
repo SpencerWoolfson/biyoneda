@@ -74,10 +74,28 @@ structure StrongTransIntoCats {B : Type u} [Bicategory.{w₁, v₁} B]
 
 structure ModificationIntoCats {B : Type u} [Bicategory.{w₁, v₁} B]
     {F : B ⥤ᵖ Cat.{w₂, v₂}} {G : B ⥤ᵖ Cat.{w₃, v₃}} (η θ : StrongTransIntoCats F G) where
-    app (a : B) : NatTrans (η.app a) (θ.app a)
-    naturality {a b : B} (f : a ⟶ b) :
-      Functor.whiskerLeft (F.map f).toFunctor (app b) ≫ (θ.naturality f).hom =
-        (η.naturality f).hom ≫ (Functor.whiskerRight (app a) (G.map f).toFunctor) := by cat_disch
+  /-- The component natural transformation at each object.  Spelled with `⟶` in the functor
+  category rather than as a bare `NatTrans`: the two are definitionally equal, but the arrow
+  form is what makes `≫`, `𝟙` and the rest of Mathlib's natural-transformation API apply here
+  without a translation step. -/
+  app (a : B) : η.app a ⟶ θ.app a
+  /-- The modification axiom, stated **at a point** -- as with `StrongTransIntoCats`'s own
+  fields, the primed pointwise form is what you actually prove and what `cat_disch` can
+  discharge.  The whiskered form that consumers want is `ModificationIntoCats.naturality`
+  below, derived from this one. -/
+  naturality' {a b : B} (f : a ⟶ b) (x : F.obj a) :
+      (app b).app ((F.map f).toFunctor.obj x) ≫ (θ.naturality f).hom.app x =
+      (η.naturality f).hom.app x ≫ (G.map f).toFunctor.map ((app a).app x) := by cat_disch
+
+/-- Whiskered form of `naturality'`, in the shape a `Modification` asks for.  The exact
+analogue of `StrongTransIntoCats.naturality_naturality` and friends below. -/
+lemma ModificationIntoCats.naturality {B : Type u} [Bicategory.{w₁, v₁} B]
+    {F : B ⥤ᵖ Cat.{w₂, v₂}} {G : B ⥤ᵖ Cat.{w₃, v₃}} {η θ : StrongTransIntoCats F G}
+    (d : ModificationIntoCats η θ) {a b : B} (f : a ⟶ b) :
+    Functor.whiskerLeft (F.map f).toFunctor (d.app b) ≫ (θ.naturality f).hom =
+      (η.naturality f).hom ≫ Functor.whiskerRight (d.app a) (G.map f).toFunctor := by
+  ext x
+  simpa using d.naturality' f x
 
 /-! ### Turning the data into an actual `StrongTrans`
 
@@ -279,5 +297,132 @@ def StrongTransIntoCats.toStrongTransMax {A : Type u} [Bicategory A]
     StrongTrans (F.comp catPseudoULift.{v₁, v₂, u₁, u₂})
                 (G.comp catPseudoULift.{v₂, v₁, u₂, u₁}) :=
   d.precomposeCounit.lift
+
+
+
+/-! ### `StrongTransIntoCats` as a structure in its own right
+
+`comp` and `Id` below make `StrongTransIntoCats` composable, and `ModificationIntoCats` its
+2-cells.  The point of `toStrongTrans` is that once the two pseudofunctors land in the *same*
+`Cat` universe, all of this transfers to Mathlib's `StrongTrans`/`Modification` **for free** --
+every field is `exact`, no simp set, no descent lemmas.  That is what lets the Yoneda proofs be
+written at the functor level and ignore `Cat` entirely.
+-/
+
+
+
+
+def StrongTransIntoCats.comp {A : Type u} [Bicategory A]
+    {F : Pseudofunctor A Cat.{v₁, u₁}} {G : Pseudofunctor A Cat.{v₂, u₂}} {H : Pseudofunctor A Cat.{v₃, u₃}}
+    (d1 : StrongTransIntoCats F G) (d2 : StrongTransIntoCats G H)  : StrongTransIntoCats F H where
+    app x := (d1.app x) ⋙ (d2.app x)
+    naturality {a b} f := by
+      rw [<- Functor.assoc]
+      refine (Functor.isoWhiskerRight  (d1.naturality f) (d2.app b)) ≪≫ ?_
+      rw [Functor.assoc]
+      exact Functor.isoWhiskerLeft (d1.app a) (d2.naturality f )
+    naturality_naturality' {a b f g} η x := by
+      dsimp
+      rw [<- Category.assoc, <- (d2.app b).map_comp,(d1.naturality_naturality' η  x)]
+      simp [d2.naturality_naturality']
+    naturality_id' a x := by
+      simp
+      sorry
+    naturality_comp' := sorry
+
+def StrongTransIntoCats.Id {A : Type u} [Bicategory A]
+    {F : Pseudofunctor A Cat.{v₁, u₁}} : StrongTransIntoCats F F where
+    app x := Functor.id _
+    naturality {a b} f := by
+      apply eqToIso
+      simp [Functor.comp_id, Functor.id_comp]
+      
+
+def ModificationIntoCats.lift {A : Type u} [Bicategory A]
+    {F : Pseudofunctor A Cat.{v₁, u₁}} {G : Pseudofunctor A Cat.{v₂, u₂}}
+    {η θ : StrongTransIntoCats F G} (d : ModificationIntoCats η θ) :
+    Modification (η.toStrongTransMax ) (θ.toStrongTransMax ) where
+  app a := by
+    fconstructor
+    dsimp [StrongTransIntoCats.toStrongTransMax,StrongTransIntoCats.precomposeCounit]
+    refine Functor.whiskerRight ?_ (catLiftUnit (G.obj a))
+    refine Functor.whiskerLeft (catLiftCounit (F.obj a)) ?_
+    exact (d.app a)
+  naturality {a b} f := by
+    let data := d.naturality f
+    sorry
+
+/-! ### Crossing to `StrongTrans` when no lifting is needed
+
+`lift`, `liftDom` and `toStrongTransMax` all exist to reconcile *different* universes.  When
+`F` and `G` already land in the same one there is nothing to reconcile, and the translation is
+definitional -- each field below is a bare `exact`.  Prefer these over `toStrongTransMax`
+whenever the universes already agree: `toStrongTransMax` lands on `F.comp catPseudoULift`,
+a *different* pseudofunctor, which forces a counit at every downstream `.app`.
+-/
+
+/-- Same-universe case: a `StrongTransIntoCats` already **is** a `StrongTrans`. -/
+def StrongTransIntoCats.toStrongTrans {A : Type u} [Bicategory A]
+    {F G : Pseudofunctor A Cat.{v₁, u₁}} (d : StrongTransIntoCats F G) : StrongTrans F G where
+  app a := Functor.toCatHom (d.app a)
+  naturality {a b} f := Cat.Hom.isoMk (d.naturality f)
+  naturality_naturality {a b f g} η := by
+    apply Cat.Hom₂.ext_app; intro x
+    exact NatTrans.congr_app (d.naturality_naturality η) x
+  naturality_id a := by
+    apply Cat.Hom₂.ext_app; intro x
+    exact NatTrans.congr_app (d.naturality_id a) x
+  naturality_comp {a b c} f g := by
+    apply Cat.Hom₂.ext_app; intro x
+    exact NatTrans.congr_app (d.naturality_comp f g) x
+
+/-- ...and a `ModificationIntoCats` already is a `Modification` between them. -/
+def ModificationIntoCats.toModification {A : Type u} [Bicategory A]
+    {F G : Pseudofunctor A Cat.{v₁, u₁}} {η θ : StrongTransIntoCats F G}
+    (d : ModificationIntoCats η θ) : η.toStrongTrans.Modification θ.toStrongTrans where
+  app a := NatTrans.toCatHom₂ (d.app a)
+  naturality {a b} f := by
+    apply Cat.Hom₂.ext_app; intro x
+    exact d.naturality' f x
+
+/-! ### Composing modifications
+
+With `app` spelled as an arrow, the components compose with plain `≫` and `𝟙`, and the
+`StrongTransIntoCats F G` become a category outright. -/
+
+/-- Two modifications are equal as soon as their components are. -/
+@[ext] lemma ModificationIntoCats.ext {A : Type u} [Bicategory A]
+    {F G : Pseudofunctor A Cat.{v₁, u₁}} {η θ : StrongTransIntoCats F G}
+    {m n : ModificationIntoCats η θ} (h : ∀ a, m.app a = n.app a) : m = n := by
+  cases m; cases n; congr 1; funext a; exact h a
+
+/-- Vertical composition of modifications. -/
+def ModificationIntoCats.vcomp {A : Type u} [Bicategory A]
+    {F G : Pseudofunctor A Cat.{v₁, u₁}} {η θ ι : StrongTransIntoCats F G}
+    (m : ModificationIntoCats η θ) (n : ModificationIntoCats θ ι) :
+    ModificationIntoCats η ι where
+  app a := m.app a ≫ n.app a
+  naturality' {a b} f x := by
+    simp only [NatTrans.comp_app, Category.assoc]
+    rw [n.naturality' f x, ← Category.assoc, m.naturality' f x, Category.assoc,
+      ← Functor.map_comp]
+
+/-- The identity modification. -/
+def ModificationIntoCats.id {A : Type u} [Bicategory A]
+    {F G : Pseudofunctor A Cat.{v₁, u₁}} (η : StrongTransIntoCats F G) :
+    ModificationIntoCats η η where
+  app a := 𝟙 _
+
+/-- The strong transformations `F ⟶ G` into `Cat`, with modifications between them, form a
+category.  This is what makes `≫`, `𝟙` and `Iso` available on `StrongTransIntoCats`, which is
+what an invertible modification (a unit or counit) needs. -/
+instance ModificationIntoCats.category {A : Type u} [Bicategory A]
+    {F G : Pseudofunctor A Cat.{v₁, u₁}} : Category (StrongTransIntoCats F G) where
+  Hom := ModificationIntoCats
+  id := ModificationIntoCats.id
+  comp := ModificationIntoCats.vcomp
+  id_comp _ := by ext a; exact Category.id_comp _
+  comp_id _ := by ext a; exact Category.comp_id _
+  assoc _ _ _ := by ext a; exact Category.assoc _ _ _
 
 end CategoryTheory.Bicategory

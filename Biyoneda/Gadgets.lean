@@ -185,17 +185,8 @@ def op (F : B ⥤ᵖ C) : Bᵒᵖ ⥤ᵖ Cᵒᵖ where
       intro p q u v x y hxy
       rw [← Bicategory.Opposite.op2_unop2 x, ← Bicategory.Opposite.op2_unop2 y, hxy]
     apply ext2
-    dsimp
-    -- PARKED (v4.33).  `rw [F.mapComp_assoc_left_inv]` no longer finds its pattern.
-    -- Goal:  `F.map₂ (α_ (op f) (op g) (op h)).hom.unop2 = (<opFunctor composite>).unop2`
-    -- with `h'` giving the un-opped associator identity.  The right-hand side needs `unop2`
-    -- distributed through `≫`, `▷`, `◁` and `opFunctor.map` before it can meet `h'`;
-    -- tried and
-    -- failed: `simpa [unop2_comp, whiskerLeft_unop2, whiskerRight_unop2] using h'`, and the same
-    -- simp set followed by the original rewrite.  The `opFunctor.map` wrappers are what block it
-    -- -- there is no `unop2`-of-`opFunctor.map` lemma, and that is probably what to add.
-    sorry
-
+    dsimp [opFunctor]
+    simp [F.map₂_iso_inv (α_ h g f)]
 
 end CategoryTheory.Pseudofunctor
 
@@ -291,7 +282,7 @@ naturality is a targeted `simp only`). All five coherence fields then close by d
 point (`Cat.Hom₂.ext_app`) and retyping it past the `Cat.of` coercion before calling `bicategory`
 — see the module docstring's "unblocking `bicategory`" note for why the retype is needed. -/
 def homPseudo : Bᵒᵖ × B ⥤ᵖ Cat.{w₁, v₁} where
-  toPrelaxFunctor := prelax B
+  toPrelaxFunctor := prelax B -- prelax here needs a better name
   mapId p := by
     rcases p with ⟨a, b⟩
     refine CategoryTheory.Cat.Hom.isoMk ?_
