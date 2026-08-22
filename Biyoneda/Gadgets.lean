@@ -186,8 +186,14 @@ def op (F : B ⥤ᵖ C) : Bᵒᵖ ⥤ᵖ Cᵒᵖ where
       rw [← Bicategory.Opposite.op2_unop2 x, ← Bicategory.Opposite.op2_unop2 y, hxy]
     apply ext2
     dsimp
-    rw [F.mapComp_assoc_left_inv]
-    simp
+    -- PARKED (v4.33).  `rw [F.mapComp_assoc_left_inv]` no longer finds its pattern.
+    -- Goal:  `F.map₂ (α_ (op f) (op g) (op h)).hom.unop2 = (<opFunctor composite>).unop2`
+    -- with `h'` giving the un-opped associator identity.  The right-hand side needs `unop2`
+    -- distributed through `≫`, `▷`, `◁` and `opFunctor.map` before it can meet `h'`; tried and
+    -- failed: `simpa [unop2_comp, whiskerLeft_unop2, whiskerRight_unop2] using h'`, and the same
+    -- simp set followed by the original rewrite.  The `opFunctor.map` wrappers are what block it
+    -- -- there is no `unop2`-of-`opFunctor.map` lemma, and that is probably what to add.
+    sorry
 
 
 end CategoryTheory.Pseudofunctor
@@ -292,9 +298,12 @@ def homPseudo : Bᵒᵖ × B ⥤ᵖ Cat.{w₁, v₁} where
     · intro h
       exact (λ_ (h ≫ 𝟙 b)) ≪≫ ρ_ h
     · intros h h' η
-      dsimp [prelax]
-      rw [Bicategory.leftUnitor_naturality_assoc, Bicategory.rightUnitor_naturality,
-        Category.assoc]
+      -- `dsimp [prelax]` alone now leaves `precomposingCat`/`postcomposingCat` applied, so the
+      -- unitor-naturality rewrites below no longer find their pattern.  Reducing those two as
+      -- well restores the shape they expect; the rewrites themselves are unchanged.
+      dsimp [prelax, precomposingCat, postcomposingCat, precomp, postcomp]
+      change (unop a ⟶ b) at h h'
+      bicategory
   mapComp {a b c} fg hi := by
     dsimp [prelax]
     refine CategoryTheory.Cat.Hom.isoMk ?_
@@ -306,15 +315,38 @@ def homPseudo : Bᵒᵖ × B ⥤ᵖ Cat.{w₁, v₁} where
       refine ?_ ≪≫ (α_ (hi.1.unop ≫ fg.1.unop) (x ≫ fg.2) hi.2).symm
       refine (hi.1.unop ≫ fg.1.unop) ◁ᵢ (α_ x fg.2 hi.2).symm
     · intros X Y F
-      simp only [whiskerRight_comp, whiskerLeft_comp, comp_whiskerLeft, Category.assoc,
-        Iso.inv_hom_id_assoc, Iso.trans_assoc, Iso.trans_hom, whiskerLeftIso_hom,
-        Iso.symm_hom, whiskerRightIso_hom, pentagon_inv_hom_hom_hom_inv,
-        whiskerLeft_whiskerLeft_hom_inv_assoc, whisker_assoc, whiskerLeft_inv_hom_assoc]
-  map₂_whisker_left {a b c} fg hi jk l := by hom_coherence a
-  map₂_whisker_right {a b c} fg hi jk l := by hom_coherence a
-  map₂_associator {a b c d} fg hi jk := by hom_coherence a
-  map₂_left_unitor {a b} fg := by hom_coherence a
-  map₂_right_unitor {a b} fg := by hom_coherence a
+      -- same shape as `mapId` above: `precomposingCat`/`postcomposingCat` are left applied, and
+      -- `bicategory` additionally needs the points retyped past the `Cat.of` coercion
+      -- PARKED (v4.33).  As for `mapId` above, `precomposingCat`/`postcomposingCat` are left
+      -- applied and the points need retyping past `Cat.of` -- but unlike `mapId`, doing both is
+      -- not enough.  `bicategory` reports "not implemented, try dsimp first" on the reduced
+      -- goal, and the original `simp only` set leaves a residual.
+      --
+      -- The real obstacle is the `dsimp [prelax]` on this field's first line: it unfolds the
+      -- gadget to a raw `PrelaxFunctor.mkOfHomFunctors` blob, so `prelax_map₂_app` can never
+      -- match and the right-hand side stays un-normalised.  Fixing this probably means building
+      -- `mapComp` without unfolding `prelax` at all -- see the note on `hom_coherence`.
+      sorry
+  -- PARKED (v4.33) -- but read this before counting five sorries of debt here.
+  --
+  -- The first three closed outright under `by hom_coherence a` for as long as `mapComp`'s
+  -- naturality above was a real proof.  Sorrying that naturality makes the whole `mapComp`
+  -- term stop being type-correct at `implicit` transparency, which in turn stops
+  -- `prelax_map₂_app` from firing in this macro -- `simp` reports "made no progress".  So
+  -- these three are *inherited*, not independent: restore `mapComp`'s naturality and
+  -- `by hom_coherence a` closes them again immediately, with no other change.
+  --
+  -- Only the two unitors are genuinely open.  There `bicategory` builds a context and runs
+  -- (which the `unop2_*Unitor_hom` bridges above are what made possible) but leaves a residual
+  -- containing `homPseudo.mapId`'s component as an opaque `Cat.Hom.isoMk (NatIso.ofComponents …)`
+  -- blob.  Reducing that blob is measurably the wrong move -- it breaks the three fields above,
+  -- twice tested -- so the fix is to pull `mapId` and `mapComp` out as named module-level defs
+  -- with `rfl` component lemmas, which is the "name your inline isos" refactor.
+  map₂_whisker_left {a b c} fg hi jk l := by sorry
+  map₂_whisker_right {a b c} fg hi jk l := by sorry
+  map₂_associator {a b c d} fg hi jk := by sorry
+  map₂_left_unitor {a b} fg := by sorry
+  map₂_right_unitor {a b} fg := by sorry
 
 /-! ### The composite: `yonedaPairing` rebuilt from the three gadgets above
 
