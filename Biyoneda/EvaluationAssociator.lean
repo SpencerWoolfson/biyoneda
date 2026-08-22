@@ -81,62 +81,6 @@ lemma evaluation_associator_core {a b c d : C × (C ⥤ᵖ Cat.{w, v})}
       (h.2.naturality f.1).hom.toNatTrans.app
         ((g.2.app a.1).toFunctor.obj W) := rfl
   erw [hsplit]
-  simp only [← Functor.map_comp]
-  change(d.2.mapComp (f.1 ≫ g.1) h.1).hom.toNatTrans.app
-        ((h.2.app a.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj W)) ≫
-      (d.2.map h.1).toFunctor.map
-        ((d.2.mapComp f.1 g.1).hom.toNatTrans.app
-          ((h.2.app a.1).toFunctor.obj
-            ((g.2.app a.1).toFunctor.obj W))) ≫
-      (d.2.mapComp g.1 h.1).inv.toNatTrans.app
-        ((d.2.map f.1).toFunctor.obj
-          ((h.2.app a.1).toFunctor.obj
-            ((g.2.app a.1).toFunctor.obj W))) ≫
-      (d.2.mapComp f.1 (g.1 ≫ h.1)).inv.toNatTrans.app
-        ((h.2.app a.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj W)) =
-    (d.2.mapComp (f.1 ≫ g.1) h.1).hom.toNatTrans.app
-        ((h.2.app a.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj W)) ≫
-      (d.2.map h.1).toFunctor.map
-        ((d.2.mapComp f.1 g.1).hom.toNatTrans.app
-            ((h.2.app a.1).toFunctor.obj
-              ((g.2.app a.1).toFunctor.obj W)) ≫
-          (d.2.map g.1).toFunctor.map
-            ((h.2.naturality f.1).inv.toNatTrans.app
-              ((g.2.app a.1).toFunctor.obj W)) ≫
-          (h.2.naturality g.1).inv.toNatTrans.app
-            ((c.2.map f.1).toFunctor.obj
-              ((g.2.app a.1).toFunctor.obj W)) ≫
-          (h.2.app c.1).toFunctor.map
-            ((c.2.mapComp f.1 g.1).inv.toNatTrans.app
-              ((g.2.app a.1).toFunctor.obj W))) ≫
-      (d.2.map h.1).toFunctor.map
-        ((h.2.app c.1).toFunctor.map
-          ((c.2.mapComp f.1 g.1).hom.toNatTrans.app
-              ((g.2.app a.1).toFunctor.obj W) ≫
-            (c.2.map g.1).toFunctor.map
-              ((g.2.naturality f.1).inv.toNatTrans.app W) ≫
-            𝟙 ((c.2.map g.1).toFunctor.obj
-              ((g.2.app b.1).toFunctor.obj
-                ((b.2.map f.1).toFunctor.obj W))))) ≫
-      (d.2.map h.1).toFunctor.map
-        ((h.2.naturality g.1).hom.toNatTrans.app
-          ((g.2.app b.1).toFunctor.obj
-            ((b.2.map f.1).toFunctor.obj W))) ≫
-      (d.2.mapComp g.1 h.1).inv.toNatTrans.app
-        ((h.2.app b.1).toFunctor.obj
-          ((g.2.app b.1).toFunctor.obj
-            ((b.2.map f.1).toFunctor.obj W))) ≫
-      (d.2.map (g.1 ≫ h.1)).toFunctor.map
-        ((h.2.app b.1).toFunctor.map
-            ((g.2.naturality f.1).hom.toNatTrans.app W) ≫
-          (h.2.naturality f.1).hom.toNatTrans.app
-            ((g.2.app a.1).toFunctor.obj W)) ≫
-      (d.2.mapComp f.1 (g.1 ≫ h.1)).inv.toNatTrans.app
-        ((h.2.app a.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj W))
   rw [← Functor.map_comp_assoc]
   first
     | rw [← Functor.map_comp_assoc]
@@ -145,90 +89,33 @@ lemma evaluation_associator_core {a b c d : C × (C ⥤ᵖ Cat.{w, v})}
   first
     | rw [← Functor.map_comp_assoc]
     | erw [← Functor.map_comp_assoc]
-  first
-    | rw [Cat.Hom.inv_hom_id_toNatTrans_app_assoc]
-    | erw [Cat.Hom.inv_hom_id_toNatTrans_app_assoc]
-  first
-    | rw [Category.comp_id]
-    | erw [Category.comp_id]
-  have key1 : (h.2.naturality g.1).inv.toNatTrans.app
-        ((c.2.map f.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj W)) ≫
-      (h.2.app c.1).toFunctor.map ((c.2.map g.1).toFunctor.map
-        ((g.2.naturality f.1).inv.toNatTrans.app W)) ≫
-      (h.2.naturality g.1).hom.toNatTrans.app
-        ((g.2.app b.1).toFunctor.obj
-          ((b.2.map f.1).toFunctor.obj W)) =
-      (d.2.map g.1).toFunctor.map ((h.2.app b.1).toFunctor.map
-        ((g.2.naturality f.1).inv.toNatTrans.app W)) := by
-    simpa only [Cat.Hom.comp_toFunctor, Functor.comp_map] using
-      Cat.naturality_1 (h.2.naturality g.1)
-        ((g.2.naturality f.1).inv.toNatTrans.app W)
-  erw [key1]
-  erw [← Functor.map_comp]
-  rw [Functor.map_comp]
-  simp only [Category.assoc]
-  have key2 : (d.2.map h.1).toFunctor.map ((d.2.map g.1).toFunctor.map
-        ((h.2.naturality f.1).inv.toNatTrans.app
-          ((g.2.app a.1).toFunctor.obj W) ≫
-         (h.2.app b.1).toFunctor.map
-          ((g.2.naturality f.1).inv.toNatTrans.app W))) ≫
-      (d.2.mapComp g.1 h.1).inv.toNatTrans.app
-        ((h.2.app b.1).toFunctor.obj
-          ((g.2.app b.1).toFunctor.obj
-            ((b.2.map f.1).toFunctor.obj W))) ≫
-      (d.2.map (g.1 ≫ h.1)).toFunctor.map
-        ((h.2.app b.1).toFunctor.map
-          ((g.2.naturality f.1).hom.toNatTrans.app W) ≫
-         (h.2.naturality f.1).hom.toNatTrans.app
-          ((g.2.app a.1).toFunctor.obj W)) ≫
-      (d.2.mapComp f.1 (g.1 ≫ h.1)).inv.toNatTrans.app
-        ((h.2.app a.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj W)) =
-      (d.2.mapComp g.1 h.1).inv.toNatTrans.app
-        ((d.2.map f.1).toFunctor.obj
-          ((h.2.app a.1).toFunctor.obj
-            ((g.2.app a.1).toFunctor.obj W))) ≫
-      (d.2.mapComp f.1 (g.1 ≫ h.1)).inv.toNatTrans.app
-        ((h.2.app a.1).toFunctor.obj
-          ((g.2.app a.1).toFunctor.obj W)) := by
-    have hn2 : (d.2.map h.1).toFunctor.map ((d.2.map g.1).toFunctor.map
-          ((h.2.naturality f.1).inv.toNatTrans.app
-            ((g.2.app a.1).toFunctor.obj W) ≫
-           (h.2.app b.1).toFunctor.map
-            ((g.2.naturality f.1).inv.toNatTrans.app W))) ≫
-        (d.2.mapComp g.1 h.1).inv.toNatTrans.app
-          ((h.2.app b.1).toFunctor.obj
-            ((g.2.app b.1).toFunctor.obj
-              ((b.2.map f.1).toFunctor.obj W))) =
-        (d.2.mapComp g.1 h.1).inv.toNatTrans.app
-          ((d.2.map f.1).toFunctor.obj
-            ((h.2.app a.1).toFunctor.obj
-              ((g.2.app a.1).toFunctor.obj W))) ≫
-        (d.2.map (g.1 ≫ h.1)).toFunctor.map
-          ((h.2.naturality f.1).inv.toNatTrans.app
-            ((g.2.app a.1).toFunctor.obj W) ≫
-           (h.2.app b.1).toFunctor.map
-            ((g.2.naturality f.1).inv.toNatTrans.app W)) :=
-      (d.2.mapComp g.1 h.1).inv.toNatTrans.naturality
-        ((h.2.naturality f.1).inv.toNatTrans.app
-          ((g.2.app a.1).toFunctor.obj W) ≫
-         (h.2.app b.1).toFunctor.map
-          ((g.2.naturality f.1).inv.toNatTrans.app W))
-    rw [← Category.assoc]
-    rw [hn2]
-    first | rw [Category.assoc] | erw [Category.assoc]
-    erw [← Functor.map_comp_assoc]
-    simp only [Category.assoc]
-    erw [← Functor.map_comp_assoc]
-    erw [Cat.Hom.inv_hom_id_toNatTrans_app]
-    first | rw [Functor.map_id] | erw [Functor.map_id]
-    erw [Category.id_comp]
-    erw [Cat.Hom.inv_hom_id_toNatTrans_app]
-    first | rw [Functor.map_id] | erw [Functor.map_id]
-    erw [Category.id_comp]
-    rfl
-  erw [key2]
-  rfl
+  -- the cancelling inv/hom pair is split across two `(d.2.map h.1).map _` applications, so
+  -- recombine (and clear the `map (𝟙 _)`) before trying to cancel it
+  simp only [Functor.map_id, Category.id_comp, Category.comp_id, ← Functor.map_comp,
+    Category.assoc]
+  -- PARKED (v4.33).  Everything above this point works; the proof gets three
+  -- `← Functor.map_comp_assoc` steps further than it did on v4.30, and the large hand-written
+  -- `change` block that used to sit after `erw [hsplit]` turned out to be redundant and is gone.
+  --
+  -- Residual goal: the right-hand side still carries a cancelling
+  --   `(h.2.app c.1).map ((c.2.mapComp f.1 g.1).inv.app X)` / `... .hom.app X`
+  -- pair split across two *separate* `(d.2.map h.1).map _` applications, plus an
+  -- `(h.2.app c.1).map (𝟙 _)`.  Cancelling needs them under one `map`, and recombining is what
+  -- fails: `simp only [← Functor.map_comp]`, `erw [← Functor.map_comp]` and
+  -- `simp only [Functor.map_id]` all decline.  The blocker is a spelling mismatch at the join
+  -- -- `(c.2.map (f.1 ≫ g.1)).obj _` against `(c.2.map f.1 ≫ c.2.map g.1).obj _` -- so the
+  -- endpoints are defeq but not syntactically equal and `Functor.map_comp` cannot instantiate.
+  --
+  -- Candidate next moves, in the order worth trying:
+  --   1. a pinned `have` doing the cancellation at the inner level, in the style of `key1`
+  --      below -- that is the pattern that already works elsewhere in this file;
+  --   2. a `mapComp`-spelling bridge lemma (`rfl`) for the join, then plain `simp`;
+  --   3. re-prove the lemma from `prod_associator_snd_as_app_app` rather than patching.
+  --
+  -- The parked tail included two worked sublemmas, `key1` (naturality of `h.2.naturality g.1`
+  -- against `(g.2.naturality f.1).inv`) and `key2` (the `mapComp` cancellation), both of which
+  -- still look right and should be reused rather than rewritten.  They live, with the rest of
+  -- the v4.30 proof, in `git show comp-core:Biyoneda/EvaluationAssociator.lean`.
+  sorry
 
 end CategoryTheory.Bicategory
