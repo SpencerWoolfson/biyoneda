@@ -72,6 +72,9 @@ lemma evaluation_associator_core {a b c d : C × (C ⥤ᵖ Cat.{w, v})}
   rw [hD]
   simp only [Category.id_comp, Category.comp_id, Category.assoc, Functor.map_comp,
     Cat.Hom.comp_map]
+  -- NOTE: `| skip` makes this loop unable to fail, so it silently stops making progress rather
+  -- than reporting where it got stuck.  It is left as-is only because the proof below it is
+  -- parked; replace it with an explicit simp set when this lemma is picked up again.
   iterate 12 (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id] | skip)
   have hsplit : ((g.2.naturality f.1).hom ▷ h.2.app b.1 ≫
       g.2.app a.1 ◁ (h.2.naturality f.1).hom).toNatTrans.app

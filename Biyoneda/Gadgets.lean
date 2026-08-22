@@ -189,7 +189,8 @@ def op (F : B ⥤ᵖ C) : Bᵒᵖ ⥤ᵖ Cᵒᵖ where
     -- PARKED (v4.33).  `rw [F.mapComp_assoc_left_inv]` no longer finds its pattern.
     -- Goal:  `F.map₂ (α_ (op f) (op g) (op h)).hom.unop2 = (<opFunctor composite>).unop2`
     -- with `h'` giving the un-opped associator identity.  The right-hand side needs `unop2`
-    -- distributed through `≫`, `▷`, `◁` and `opFunctor.map` before it can meet `h'`; tried and
+    -- distributed through `≫`, `▷`, `◁` and `opFunctor.map` before it can meet `h'`;
+    -- tried and
     -- failed: `simpa [unop2_comp, whiskerLeft_unop2, whiskerRight_unop2] using h'`, and the same
     -- simp set followed by the original rewrite.  The `opFunctor.map` wrappers are what block it
     -- -- there is no `unop2`-of-`opFunctor.map` lemma, and that is probably what to add.

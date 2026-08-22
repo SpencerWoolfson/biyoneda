@@ -142,7 +142,8 @@ def catPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
 
   Tried and insufficient: `rfl` alone, `cat_disch`, `aesop_cat`, `ext ⟨x⟩; simp`, and the old
   v4.30 `erw [Category.comp_id, Category.id_comp] … congr` chains (whose `congr` no longer
-  closes; the residual is `𝟙 A = 𝟙 B ≫ 𝟙 C` at three different spellings of the same object).
+  closes; the residual is `𝟙 A = 𝟙 B ≫ 𝟙 C` at three different spellings of the same
+  object).
 
   The v4.30 proofs are worth mining:  git show comp-core:Biyoneda/UniverseLift.lean -/
   map₂_whisker_left {a b c} f g h η := by

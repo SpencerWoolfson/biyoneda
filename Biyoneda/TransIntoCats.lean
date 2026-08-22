@@ -106,7 +106,8 @@ so bridging it once here is what lets the default simp set finish those goals. -
     (catLiftCounit.{v₁, v₂, u₁, u₂} (G.obj b)).map
         (((G.toPrelaxFunctor.comp
           catPseudoULift.{v₁, v₂, u₁, u₂}.toPrelaxFunctor).map₂ η).toNatTrans.app x)
-      = (G.map₂ η).toNatTrans.app ((catLiftCounit.{v₁, v₂, u₁, u₂} (G.obj a)).obj x) := rfl
+      = (G.map₂ η).toNatTrans.app
+          ((catLiftCounit.{v₁, v₂, u₁, u₂} (G.obj a)).obj x) := rfl
 
 /-- The object-level companion: a 1-cell of the composite, applied to a lifted object and brought
 back down. -/

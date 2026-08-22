@@ -87,10 +87,12 @@ lemma evaluation_right_unitor_core {a b : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶
   have hidt : ((𝟙 b.2 : b.2 ⟶ b.2).naturality f.1).inv.toNatTrans.app
       ((f.2.app a.1).toFunctor.obj Z) =
       𝟙 ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) := by
+    -- `rfl` alone no longer closes it: `simp` has to normalise the identity's spelling first,
+    -- and then the residual is definitional.  The trailing branch is `(simp; rfl)`, not `simp`,
+    -- so this cannot succeed while leaving a goal open.
     first
       | rfl
       | (simp; rfl)
-      | simp
   rw [hr]
   erw [Functor.map_id]
   erw [Category.id_comp]
