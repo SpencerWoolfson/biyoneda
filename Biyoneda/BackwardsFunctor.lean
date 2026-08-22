@@ -119,14 +119,19 @@ def backwardsTrans (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat))
         op2_whiskerLeft, map₂_whisker_right, Cat.Hom.toNatTrans_comp, Cat.whiskerRight_toNatTrans,
         NatTrans.comp_app, whiskerRight_app,
         Category.assoc]
-      congr 1
+      -- PARKED (v4.33).  The `have` below is fixed -- it needed `rfl`, not `simp`, since `simp`
+      -- rewrites `(inv ≫ hom).toNatTrans` to `inv.toNatTrans ≫ hom.toNatTrans` and then cannot
+      -- close what is left.  What is broken is the descent: `congr 1` now over-descends, giving
+      -- an object equation (`e_4`) plus two `HEq` goals (`e_6`, `e_7`) where it used to give a
+      -- single 2-cell equation for `erw [this, inv_hom]` to discharge.  Dropping `congr 1`
+      -- entirely does not work either -- the `erw` then has nothing to match.
+      -- Next move: a controlled descent (an explicit `Cat.Hom₂.ext_app` / `NatTrans.ext`) rather
+      -- than `congr`, so the goal stays at the 2-cell level.
       rcases x.2.mapComp (Quiver.Hom.op Y) f with ⟨hom, inv, _, inv_hom⟩
       dsimp [yonedaEvaluation'] at eval
       have : inv.toNatTrans.app eval ≫ hom.toNatTrans.app eval =
-          (inv ≫ hom).toNatTrans.app eval := by
-        simp
-      erw [this, inv_hom]
-      simp
+          (inv ≫ hom).toNatTrans.app eval := rfl
+      sorry
   naturality_naturality {a b c} f g := by
     exact Cat.Hom₂.ext_app fun X ↦
       Cat.Hom₂.congr_app (x.2.toOplax.mapComp_naturality_right (Quiver.Hom.op X) g) eval
