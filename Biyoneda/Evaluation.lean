@@ -103,8 +103,7 @@ def evaluationPseudo : C × (C ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v} where
       (c.2.mapComp f.1 g.1).hom.toNatTrans.naturality
         ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))
     erw [reassoc_of% h1]
-    simpa only [Cat.Hom.comp_toFunctor, Functor.comp_obj, Functor.comp_map, Category.assoc]
-      using evaluation_whisker_left_core f η ((f.2.app a.1).toFunctor.obj Z)
+    simpa using evaluation_whisker_left_core f η ((f.2.app a.1).toFunctor.obj Z)
   map₂_whisker_right {a b c f g h} η := by
     apply Cat.Hom₂.ext_app
     intro Z
@@ -131,8 +130,7 @@ def evaluationPseudo : C × (C ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v} where
       (c.2.mapComp f.1 η.1).hom.toNatTrans.naturality
         ((h.2.as.app a.1 ▷ η.2.app a.1).toNatTrans.app Z)
     erw [reassoc_of% h1]
-    simpa only [Cat.Hom.comp_toFunctor, Functor.comp_obj, Functor.comp_map, Category.assoc]
-      using evaluation_whisker_right_core h η Z
+    simpa using evaluation_whisker_right_core h η Z
   map₂_associator {a b c d} f g h := by
     apply Cat.Hom₂.ext_app
     intro Z
@@ -144,11 +142,11 @@ def evaluationPseudo : C × (C ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v} where
       Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id,
       Bicategory.prod_comp_fst, Bicategory.prod_comp_snd, Bicategory.prod_associator_hom_fst,
       Pseudofunctor.StrongTrans.comp_app]
-    erw [prod_associator_snd_as_app_app, Functor.map_id, Category.id_comp]
-    simpa only [Cat.Hom.comp_toFunctor, Functor.comp_obj, Functor.comp_map, Functor.map_id,
-      Functor.map_comp, Category.id_comp, Category.comp_id, Category.assoc,
-      Pseudofunctor.StrongTrans.comp_app]
-      using evaluation_associator_core f g h ((f.2.app a.1).toFunctor.obj Z)
+    -- PARKED (v4.33).  `erw [prod_associator_snd_as_app_app, ...]` no longer finds its pattern
+    -- after the `simp only` above.  Note this field is blocked anyway:
+    -- `evaluation_associator_core` is itself parked in EvaluationAssociator.lean, so even a
+    -- working rewrite chain here would only inherit that sorry.  Fix the core first.
+    sorry
   map₂_left_unitor {a b} f := by
     apply Cat.Hom₂.ext_app
     intro Z
@@ -162,12 +160,15 @@ def evaluationPseudo : C × (C ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v} where
       Bicategory.prod_id_fst, Bicategory.prod_id_snd,
       Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_toFunctor, Functor.id_obj,
       Pseudofunctor.StrongTrans.comp_app]
-    simpa only [Cat.Hom.comp_toFunctor, Functor.comp_obj, Functor.comp_map, Functor.map_id,
-      Functor.map_comp, Category.id_comp, Category.comp_id, Category.assoc,
-      Bicategory.prod_id_fst, Bicategory.prod_id_snd,
-      Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_toFunctor, Functor.id_obj,
-      Pseudofunctor.StrongTrans.comp_app]
-      using evaluation_left_unitor_core f Z
+    -- PARKED (v4.33).  `evaluation_left_unitor_core` is proved and correct; the two sides
+    -- differ in exactly two places and neither yields to the simp set:
+    --   * the goal has `((λ_ (f.2.app a.1)).hom ▷ b.2.map (𝟙 a.1 ≫ f.1)).toNatTrans.app Z`
+    --     where the core lemma has `(b.2.map (𝟙 a.1 ≫ f.1)).toFunctor.map (𝟙 _)`;
+    --   * the goal leaves `((𝟙 a.2).app a.1).toFunctor.obj Z` un-reduced where the core has `Z`.
+    -- Tried: `Pseudofunctor.StrongTrans.categoryStruct_id_app` (the `@[simps!]`-generated name --
+    -- `StrongTrans.id_app` does not exist), `Cat.leftUnitor_hom_app`, the whiskering component
+    -- lemmas, and a plain `simpa`.  None reduce either place.
+    sorry
   map₂_right_unitor {a b} f := by
     apply Cat.Hom₂.ext_app
     intro Z
@@ -181,12 +182,9 @@ def evaluationPseudo : C × (C ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v} where
       Bicategory.prod_id_fst, Bicategory.prod_id_snd,
       Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_toFunctor, Functor.id_obj,
       Pseudofunctor.StrongTrans.comp_app]
-    simpa only [Cat.Hom.comp_toFunctor, Functor.comp_obj, Functor.comp_map, Functor.map_id,
-      Functor.map_comp, Category.id_comp, Category.comp_id, Category.assoc,
-      Bicategory.prod_id_fst, Bicategory.prod_id_snd,
-      Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_toFunctor, Functor.id_obj,
-      Pseudofunctor.StrongTrans.comp_app]
-      using evaluation_right_unitor_core f Z
+    -- PARKED (v4.33).  Mirror image of `map₂_left_unitor` above -- same two gaps, same
+    -- failed attempts.  Whatever fixes one fixes this.
+    sorry
 
 /-!
 ## Component API for `evaluationPseudo`
@@ -250,6 +248,9 @@ lemma evaluationPseudo_mapComp_hom_app {a b c : C × (C ⥤ᵖ Cat.{w, v})} (f :
     Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
     Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
     Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id]
+  -- the `simp only` set above no longer reaches the `≪≫` chain on its own; a full `simp`
+  -- does, and the residual is then definitional
+  simp
   rfl
 
 /-- Inverse form of `evaluationPseudo_mapComp_hom_app`. -/
@@ -266,6 +267,7 @@ lemma evaluationPseudo_mapComp_inv_app {a b c : C × (C ⥤ᵖ Cat.{w, v})} (f :
     Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
     Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
     Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id]
+  simp
   rfl
 
 end API
