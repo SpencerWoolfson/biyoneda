@@ -129,14 +129,12 @@ of `yonedaLemma`.
 def yonedaHomInvId : yonedaLemmaForwards ≫ yonedaLemmaBackwards ≅ 𝟙 (@yonedaPairing B _) := by
   refine StrongTrans.isoMk (fun a ↦ Cat.Hom.isoMk (yonedaHomInvIdNatIso a)) ?_
   intro a b f
-  have rw1 : (fun a ↦ Cat.Hom.isoMk (yonedaHomInvIdNatIso a)) b =
-      Cat.Hom.isoMk (yonedaHomInvIdNatIso b) := rfl
+  -- `rw1`/`rw3` used to strip the `fun a ↦ …` applications; Lean beta-reduces them on its own
+  -- now, so `erw` finds no pattern for them.  Only the `isoMk`-to-`toCatHom₂` step is real.
   have rw2 : (Cat.Hom.isoMk (yonedaHomInvIdNatIso b)).hom =
       NatTrans.toCatHom₂ ((yonedaHomInvIdNatIso b).hom) := rfl
-  have rw3 : (fun a ↦ Cat.Hom.isoMk (yonedaHomInvIdNatIso a)) a =
-      Cat.Hom.isoMk (yonedaHomInvIdNatIso a) := rfl
-  erw [rw1, rw2, rw3]
-  clear rw1 rw2 rw3
+  erw [rw2]
+  clear rw2
   refine Cat.Hom₂.ext_iff.mpr ?_
   ext x
   simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
@@ -195,14 +193,12 @@ of `yonedaLemma`.
 def yonedaInvHomId : yonedaLemmaBackwards ≫ yonedaLemmaForwards ≅ 𝟙 (@yonedaEvaluation B _) := by
   refine StrongTrans.isoMk (fun a ↦ Cat.Hom.isoMk (yonedaInvHomIdNatIso a)) ?_
   intro a b f
-  have rw1 : (fun a ↦ Cat.Hom.isoMk (yonedaInvHomIdNatIso a)) b =
-      Cat.Hom.isoMk (yonedaInvHomIdNatIso b) := rfl
+  -- `rw1`/`rw3` used to strip the `fun a ↦ …` applications; Lean beta-reduces them on its own
+  -- now, so `erw` finds no pattern for them.  Only the `isoMk`-to-`toCatHom₂` step is real.
   have rw2 : (Cat.Hom.isoMk (yonedaInvHomIdNatIso b)).hom =
       NatTrans.toCatHom₂ ((yonedaInvHomIdNatIso b).hom) := rfl
-  have rw3 : (fun a ↦ Cat.Hom.isoMk (yonedaInvHomIdNatIso a)) a =
-      Cat.Hom.isoMk (yonedaInvHomIdNatIso a) := rfl
-  erw [rw1, rw2, rw3]
-  clear rw1 rw2 rw3
+  erw [rw2]
+  clear rw2
   refine Cat.Hom₂.ext_iff.mpr ?_
   ext x
   simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,

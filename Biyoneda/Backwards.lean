@@ -114,9 +114,11 @@ lemma backwards_naturality_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat
     apply (Iso.eq_inv_comp ((Cat.Hom.toNatIso
       (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ))).app x)).mpr
     exact hmod.symm
-  erw [reassoc_of% hMCinv, reassoc_of% hmod_inv]
-  erw [Category.assoc, ← hη2, ← Category.assoc]
-  rfl
+  -- PARKED (v4.33).  All the cancellation data above (`hMCinv`, `hmod_inv`, `hmod`, `hη2`)
+  -- still elaborates and is still correct; the ordered `erw` chain that assembles it no longer
+  -- finds its pattern.  Same family as BackwardsNaturality's two parked squares.
+  -- Prior version: `git show comp-core:Biyoneda/Backwards.lean`.
+  sorry
 
 set_option linter.flexible false in
 /-- The data for `yonedaLemmaBackwards`, stated against the *unlifted* `yonedaEvaluation'`.
@@ -128,32 +130,12 @@ def yonedaLemmaBackwardsData :
   naturality {a b} f :=
     NatIso.ofComponents (fun X ↦ backwardsNaturalityIso f X)
       (fun {X Y} f₁ ↦ backwards_naturality_iso_natural f f₁)
-  naturality_naturality' {a b} {f g} η x := by
-    simp only [NatIso.ofComponents_hom_app]
-    apply homCategory.ext
-    intro γ
-    erw [homCategory_comp_as_app, homCategory_comp_as_app]
-    apply Cat.Hom₂.ext_app
-    intro ZZ
-    dsimp only [backwardsNaturalityIso, backwardsNaturalityIsoApp]
-    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, isoMk_hom_as_app, Cat.Hom.isoMk_hom,
-      Cat.toCatHom₂_toNatTrans, NatIso.ofComponents_hom_app, Iso.trans_hom, Iso.symm_hom,
-      Iso.app_hom, Cat.Hom.toNatIso]
-    erw [backwards_map_comp]
-    simp only [yonedaPairing_map₂]
-    simp only [NatTrans.toCatHom₂_toNatTrans]
-    dsimp only [yonedaPairingMap₂, yonedaPairingMapFunctor, Functor.whiskerLeft,
-      Functor.whiskerRight, precomposing, postcomposing, precomposingCat, postcomposingCat,
-      postcomposing₂]
-    erw [homCategory_comp_as_app]
-    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerRight_toNatTrans,
-      whiskerRight_app, whiskerRight_as_app, Cat.toCatHom₂_toNatTrans]
-    simp only [precomp_map, postcomp₂, postcomposingCat, postcomp_obj,
-      Pseudofunctor.StrongTrans.comp_app, Functor.comp_map, Cat.Hom.comp_toFunctor]
-    dsimp only [yonedaLemmaBackwardsFunctor, backwardsTrans,
-      backwardsFibreFunctor, yonedaEvaluation']
-    simp only [Cat.whiskerLeft_toNatTrans, whiskerLeft_app, whiskerLeft_as_app]
-    exact backwards_naturality_naturality_core η x ZZ
+  -- PARKED (v4.33).  `backwards_naturality_naturality_core` (proved) is the content; the long
+  -- descent that reaches it now hits a `whnf` timeout at 200k heartbeats.  The descent unfolds
+  -- `yonedaPairing`'s composite chain, which since this branch runs through a sorried
+  -- `homPseudo` -- so re-measure this the moment Gadgets is restored before touching the
+  -- heartbeat budget.
+  naturality_naturality' {a b} {f g} η x := by sorry
   naturality_id' a x := by sorry
   naturality_comp' {a b c} f g x := by sorry
 

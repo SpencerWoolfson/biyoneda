@@ -67,6 +67,13 @@ lemma forwards_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f
   have h3 := (f.2.naturality f.1).hom.toNatTrans.naturality
     ((h.as.app a.1).toNatTrans.app (𝟙 (unop a.1)))
   dsimp at h1 h2 h3
+  -- The lemma's statement keeps `(λ_).hom` and `(ρ_).inv` as separate factors, but `h1` is
+  -- naturality at their composite.  `simp only [Functor.map_comp]` cannot bridge the two --
+  -- it reaches the outer `(f.2.app b.1).map` and reports no progress on the inner one, the
+  -- usual sign that the two spell the functor through different instance paths.  Supplying
+  -- `map_comp` as an explicitly-typed term sidesteps the instantiation.
+  rw [(X.app b.1).toFunctor.map_comp (λ_ f.1.unop).hom (ρ_ f.1.unop).inv,
+    (Y.app b.1).toFunctor.map_comp (λ_ f.1.unop).hom (ρ_ f.1.unop).inv] at h1
   have h1' := congrArg (fun m ↦ (f.2.app b.1).toFunctor.map m) h1
   have h2' := congrArg (fun m ↦ (f.2.app b.1).toFunctor.map m) h2
   simp only [Functor.map_comp] at h1' h2'
@@ -91,16 +98,18 @@ lemma forwards_naturality_naturality_unitor {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Ca
     ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) ≫
         (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
       (a.2.map₂ η.1).toNatTrans.app ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) := by
-  rw [Category.assoc]
-  have h3 := Z.naturality_naturality_app η.1 (𝟙 (unop a.1))
-  dsimp [yoneda₀, precomposing, precomposingCat] at h3
-  erw [← h3]
-  conv_lhs => rw [← Category.assoc, ← Functor.map_comp]
-  conv_rhs => rw [← Category.assoc, ← Functor.map_comp]
-  congr 2
-  simp only [Category.assoc]
-  erw [Iso.inv_hom_id_assoc, Bicategory.rightUnitor_inv_naturality]
-  rfl
+  -- PARKED (v4.33).  The statement is right -- it is `Z.naturality_naturality` at the point
+  -- `𝟙 (unop a.1)`, reconciled with right-unitor naturality -- but the proof cannot get started:
+  -- neither `rw [Category.assoc]` nor `simp only [Category.assoc]` will fire on the right-hand
+  -- side's `(_ ≫ _) ≫ _`, and Lean's note says the target is not type-correct at `implicit`
+  -- transparency.  That is an instance diamond in the statement's own elaboration, not damage
+  -- from a prior tactic: no tactic has run yet.
+  --
+  -- Next move: diagnose with `convert` (its `e_N✝` hypotheses name the mismatched instances),
+  -- or restate the lemma so both sides spell `≫` through the same path -- most likely by
+  -- phrasing it in `Cat.Hom₂` rather than in the fibre category.
+  -- Prior version: `git show comp-core:Biyoneda/Forwards.lean`.
+  sorry
 
 /--
 The component core of the `naturality_naturality` obligation of `yonedaLemmaForwards`, stated
@@ -141,16 +150,13 @@ lemma forwards_naturality_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.
   have h2 := g.2.naturality_naturality_app η.1
     ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))
   dsimp at h1 h2
-  simp only [Category.assoc]
-  erw [← reassoc_of% h1, ← h2]
-  erw [(η.2.as.app b.1).toNatTrans.naturality,
-    (η.2.as.app b.1).toNatTrans.naturality_assoc]
-  erw [Category.assoc]
-  refine congrArg (fun m ↦ (η.2.as.app b.1).toNatTrans.app _ ≫ m) ?_
-  erw [← Functor.map_comp_assoc]
-  erw [forwards_naturality_naturality_unitor η Z]
-  erw [Functor.map_comp_assoc]
-  rfl
+  -- PARKED (v4.33).  `simp only [Category.assoc]` reports no progress and Lean notes the target
+  -- is not type-correct at `implicit` transparency, naming the mismatch: `Z` is typed
+  -- `(yoneda₀ (unop a.1)).StrongTrans a.2` where the goal wants `↑(yonedaPairing.obj a)`.
+  -- Retyping `Z` past that coercion is the documented move for an *element*; tried, and the
+  -- `dsimp only` above still leaves the two spellings apart.  This lemma also calls
+  -- `forwards_naturality_naturality_unitor`, which is parked, so it is blocked regardless.
+  sorry
 
 set_option backward.isDefEq.respectTransparency false in
 set_option maxHeartbeats 1000000 in
@@ -171,18 +177,15 @@ lemma forwards_naturality_id_core (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}))
         (Z.naturality (𝟙 a.1)).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
       (yonedaEvaluation'.mapId a).hom.toNatTrans.app ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) =
     (((yonedaPairing.mapId a).hom.toNatTrans.app Z).as.app a.1).toNatTrans.app (𝟙 (unop a.1)) := by
-  -- `Z.naturality_id` is the whole mathematical input; the descent below just follows the
-  -- composite's `mapId` down to `homPseudo`'s unitor iso.
-  dsimp only [yonedaPairing, yonedaPairingComposite, Pseudofunctor.comp, homPseudo,
-    Pseudofunctor.prod, Pseudofunctor.op, prelax, yonedaEvaluation', evaluationPseudo]
-  simp only [Iso.trans_hom, Cat.Hom.isoMk_hom, NatIso.ofComponents_hom_app,
-    Cat.toCatHom₂_toNatTrans, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
-    PrelaxFunctor.map₂Iso_hom, Category.assoc]
-  have hZ := Cat.Hom₂.congr_app (Z.naturality_id a.1) (𝟙 (unop a.1))
-  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app] at hZ
-  rw [hZ]
-  cat_disch
+  -- PARKED (v4.33).  `Z.naturality_id` is the whole mathematical input; the descent just
+  -- follows the composite's `mapId` down to `homPseudo`'s unitor iso.  The `rw [hZ]` now hits a
+  -- `(deterministic) timeout at isDefEq` at 1e6 heartbeats.
+  --
+  -- Strongly suspected knock-on: the descent `dsimp only [...]` unfolds `homPseudo`, whose
+  -- coherence fields are sorried as of this branch, so the unfolded term now carries `sorryAx`
+  -- subterms with large types.  Re-check this the moment Gadgets is restored -- do NOT raise
+  -- maxHeartbeats to paper over it.
+  sorry
 
 /-- The head unit-coherence in `B`'s hom-categories underlying `naturality_comp`: `u_{f≫g}`
 composed with the yoneda `mapComp` equals the postcomp₂ reorganisation with `u_g`, `u_f`.  Both
@@ -202,7 +205,10 @@ lemma forwards_naturality_comp_head {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
     associatorNatIsoRightCat, associatorNatIsoMiddleCat, associatorNatIsoLeftCat]
   simp only [Cat.Hom.isoMk_hom, Cat.Hom.isoMk_inv, Cat.toCatHom₂_toNatTrans, Iso.symm_hom,
     NatIso.ofComponents_hom_app, NatIso.ofComponents_inv_app, isoMk_inv_as_app]
-  bicategory
+  -- PARKED (v4.33).  Both sides are pure associator/unitor data and `bicategory` runs, but
+  -- leaves a residual -- the same shape as `homPseudo`'s two unitor coherence fields in
+  -- Gadgets.lean, and probably the same cause.  Fix those first.
+  sorry
 
 -- set_option maxHeartbeats 500000 in
 -- the long descent + `naturality_comp_hom_app` telescoping + three `u_f`-transport squares
@@ -262,17 +268,18 @@ def yonedaLemmaForwardsData :
         -- descends the composite pairing to its shape.  `convert` then absorbs both the
         -- `Cat`-instance mismatch (the two sides spell the fibre category differently, which is
         -- why `Functor.map_comp` will not fire here) and the residual regrouping.
+        -- PARKED (v4.33).  `forwards_naturality_core` above is proved and is exactly the
+        -- mathematical content; what fails is the reconciliation -- `convert ... using 2` no
+        -- longer closes the residual after the descent simp set.
         have key := forwards_naturality_core f h
         simp only [Category.assoc] at key
-        simp [yonedaPairing_map', yonedaPairingMapFunctor, postcomposing, precomposing,
-              postcomposingCat, postcomp₂, yonedaEvaluation', evaluationPseudo]
-        convert key using 2)
+        sorry)
   naturality_naturality' {a b} {f g} η Z := forwards_naturality_naturality_core η Z
   naturality_id' a Z := by
+    -- PARKED (v4.33), inherited: `forwards_naturality_id_core` is itself parked above, so this
+    -- field could only inherit that sorry even with a working reconciliation.
     have core := forwards_naturality_id_core a Z
-    simp at core ⊢
-    erw [Category.id_comp]
-    exact core
+    sorry
   naturality_comp' {a b c} f g Z := forwards_naturality_comp_core f g Z
 
 /--

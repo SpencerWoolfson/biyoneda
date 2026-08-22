@@ -94,7 +94,6 @@ lemma backwards_inner_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a
   erw [Category.assoc, s2]
   rw [← s3]
   erw [← Category.assoc]
-  rfl
 
 /-- Component (at `α`) of the naturality iso of `yonedaLemmaBackwards` at `f : a ⟶ b`. -/
 def backwardsNaturalityIsoApp {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
@@ -107,9 +106,16 @@ def backwardsNaturalityIsoApp {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f 
         ((f.2.app a.1).toFunctor.obj X) ≪≫
         (Cat.Hom.toNatIso (f.2.naturality (f.1 ≫ XX.op))).symm.app X)
     (fun {XX YY} h ↦ by
+      -- PARKED (v4.33).  `backwards_inner_core` (proved, just above) is the content.  The
+      -- `dsimp [yonedaEvaluation', Functor.comp]` unfolds far enough that the goal's left-hand
+      -- side arrives as `(b.2.map₂ (op2 h)).toNatTrans.app _` rather than in the
+      -- `map₂ (_ ◁ _)` shape `Pseudofunctor.map₂_whisker_left` needs, and the right-hand side
+      -- becomes a large un-normalised `postcomposingCat`/`yoneda.op.prod` blob.  Keeping
+      -- `yonedaEvaluation'` folded is the direction to try (it is what fixed the analogous
+      -- failures in TransIntoCats and Gadgets), but here the `dsimp` is load-bearing for the
+      -- `exact` that follows, so the two need reconciling together.
       dsimp [yonedaEvaluation', Functor.comp]
-      erw [Pseudofunctor.map₂_whisker_left]
-      exact backwards_inner_core f h X))
+      sorry))
 
 /-- The cancellation core of the backwards naturality square: all atoms in canonical
 spelling, `X` unlifted. -/
@@ -153,20 +159,12 @@ lemma backwards_square_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : 
   have c3 := Cat.Hom.hom_inv_id_toNatTrans_app (b.2.mapComp f.1 (Quiver.Hom.op ZZ))
     ((f.2.app a.1).toFunctor.obj X)
   have c4 := Cat.Hom.hom_inv_id_toNatTrans_app (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)) X
-  have hN := h1
-  rw [h2] at hN
-  simp only [Category.assoc] at hN
-  rw [← hN]
-  erw [reassoc_of% h1]
-  rw [reassoc_of% c1]
-  rw [reassoc_of% h2]
-  erw [reassoc_of% c2]
-  rw [← Functor.map_comp, ← Functor.map_comp]
-  erw [reassoc_of% c3]
-  erw [c4]
-  erw [Functor.map_id]
-  erw [Category.comp_id]
-  rfl
+  -- PARKED (v4.33).  The cancellation data above (`c1`-`c4`, `h1`, `h2`) is all still correct
+  -- and still elaborates; what breaks is `erw [reassoc_of% h1]`, whose pattern the target no
+  -- longer contains.  Same family as `backwards_square_composite` below: an ordered rewrite
+  -- chain over `mapComp`/`naturality` components whose assumed spelling has shifted.
+  -- Prior version: `git show comp-core:Biyoneda/BackwardsNaturality.lean`.
+  sorry
 
 /-- Point form of the naturality square, spelled through the composite strong
 transformation (defeq to `yonedaPairing.map`'s literal pasting).
@@ -191,28 +189,16 @@ lemma backwards_square_composite {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} 
             ((f.2.app a.1).toFunctor.obj X) ≫
           (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app X) := by
   simp only [categoryStruct_comp_naturality_hom]
-  iterate 4 erw [Cat.Hom₂.comp_app]
-  rw [Cat.associator_inv_app]
-  rw [Cat.whiskerRight_app]
-  rw [Cat.associator_hom_app]
-  rw [Cat.whiskerLeft_app]
-  iterate 4 erw [Cat.Hom₂.comp_app]
-  rw [Cat.associator_inv_app]
-  rw [Cat.whiskerRight_app]
-  rw [Cat.associator_hom_app]
-  rw [Cat.whiskerLeft_app]
-  erw [Cat.whiskerLeft_app]
-  iterate 3 erw [eqToHom_refl]
-  iterate 3 erw [Category.id_comp]
-  rw [Cat.associator_inv_app]
-  iterate 4 (first | erw [eqToHom_refl] | erw [Category.id_comp] | erw [Category.comp_id])
-  dsimp only [postcomp₂, postcomposingCat]
-  simp only [Category.assoc]
-  apply (Iso.inv_comp_eq ((Cat.Hom.toNatIso (b.2.mapComp f.1 (Quiver.Hom.op ZZ ≫ f₁))).app
-    ((f.2.app a.1).toFunctor.obj X))).mpr
-  apply (Iso.inv_comp_eq ((Cat.Hom.toNatIso (f.2.naturality
-    (f.1 ≫ Quiver.Hom.op ZZ ≫ f₁))).app X)).mpr
-  exact backwards_square_core f X f₁ ZZ
+  -- PARKED (v4.33).  The mathematical content is `backwards_square_core` (parked just above);
+  -- everything between is a 15-step *ordered* `rw`/`erw` chain -- associator/whisker component
+  -- lemmas applied in a fixed sequence -- and the order it assumes no longer holds.
+  --
+  -- Tried: collapsing the whole chain into one confluent `simp only` with exactly the same
+  -- lemmas.  That reports no progress, because several steps needed `erw`'s defeq matching and
+  -- `simp only` matches at reducible transparency only.  So the chain cannot simply be made
+  -- order-independent; the component lemmas have to be re-derived at the right spelling.
+  -- Prior version: `git show comp-core:Biyoneda/BackwardsNaturality.lean`.
+  sorry
 
 /-- The strong-transformation naturality square for `backwardsNaturalityIsoApp`. -/
 lemma backwards_naturality_square {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
@@ -224,8 +210,6 @@ lemma backwards_naturality_square {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})}
         f₁).hom ≫ (backwardsNaturalityIsoApp f X a₁).hom ▷ b.2.map f₁ := by
   apply Cat.Hom₂.ext_app
   intro ZZ
-  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app]
   exact backwards_square_composite f X f₁ ZZ
 
 /-- The naturality iso of `yonedaLemmaBackwards` at `f : a ⟶ b`, componentwise. -/
@@ -274,7 +258,6 @@ lemma backwards_naturality_iso_natural {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w,
   intro ZZ
   erw [homCategory_comp_as_app, homCategory_comp_as_app]
   dsimp only [backwardsNaturalityIso]
-  simp only [isoMk_hom_as_app]
   exact backwards_naturality_core f f₁ ZZ
 
 end Biyoneda
