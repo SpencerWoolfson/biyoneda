@@ -8,6 +8,8 @@ import Biyoneda.Evaluation
 -- The bicategorical Yoneda development itself, in dependency order.
 import Biyoneda.Pairing
 import Biyoneda.Forwards
+import Biyoneda.BackwardsFunctor
+import Biyoneda.BackwardsNaturality
 import Biyoneda.Backwards
 import Biyoneda.Unit
 import Biyoneda.Yoneda
