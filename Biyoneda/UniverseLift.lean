@@ -221,6 +221,23 @@ lemma catLift_hom₂_ext {E : Cat} {D : Cat.{v₁, u₁}}
   intro X
   exact congrArg ULift.up (h X)
 
+/-- Codomain-side ext, stated through the **counit functor** instead of `ULift.down`.
+
+`catLift_hom₂_ext` above reduces a 2-cell equation to its `.down` components, which leaves a raw
+`ULift.down` at the head of the goal.  That head is fatal once the codomain is spelled
+`(G.comp catPseudoULift).obj a` rather than `catPseudoULift.obj (G.obj a)`: the two differ only
+by unfolding, so the goal stops being type-correct at `implicit` transparency and every
+functor-level stripping lemma below silently declines to fire — `simp` reports no progress and
+`rw` reports the pattern as absent, neither of which names the real cause.  Going through
+`catLiftCounit` keeps the goal inside the gadget's own API, where those lemmas apply. -/
+lemma catLift_hom₂_counit_ext {E : Cat} {D : Cat.{v₁, u₁}}
+    {H K : E ⟶ catPseudoULift.{v₁, v₂, u₁, u₂}.obj D} {η θ : H ⟶ K}
+    (h : ∀ X : E, (catLiftCounit D).map (η.toNatTrans.app X)
+        = (catLiftCounit D).map (θ.toNatTrans.app X)) : η = θ := by
+  apply Cat.Hom₂.ext_app
+  intro X
+  exact congrArg ULift.up (h X)
+
 /-- Two 2-cells out of a universe-lifted category are equal as soon as they agree on the image
 of `catLiftUnit`, which hits every object.  The domain-side counterpart of `catLift_hom₂_ext`;
 stated through the unit functor rather than `ULift.down` so it composes with the functor-level

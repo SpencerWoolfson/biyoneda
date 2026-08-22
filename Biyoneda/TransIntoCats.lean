@@ -95,6 +95,36 @@ variable {A : Type u} [Bicategory A]
 variable {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}} {G : Pseudofunctor A Cat.{v₁, u₁}}
   (data : StrongTransIntoCats F G)
 
+/-- Counit-stripping for the **composite** `G ⋙ catPseudoULift`.
+
+`catLiftCounit_map_catPseudoULift_map₂'` already strips a bare `catPseudoULift.map₂`, but the
+composite spells its `map₂` as `(G.comp catPseudoULift).map₂`, which `simp` treats as an opaque
+head even though the two are definitionally equal.  Every field of `lift` lands on this shape,
+so bridging it once here is what lets the default simp set finish those goals. -/
+@[simp] lemma catLiftCounit_map_comp_map₂ {a b : A} {f g : a ⟶ b} (η : f ⟶ g)
+    (x : ↑(catPseudoULift.{v₁, v₂, u₁, u₂}.obj (G.obj a))) :
+    (catLiftCounit.{v₁, v₂, u₁, u₂} (G.obj b)).map
+        (((G.toPrelaxFunctor.comp
+          catPseudoULift.{v₁, v₂, u₁, u₂}.toPrelaxFunctor).map₂ η).toNatTrans.app x)
+      = (G.map₂ η).toNatTrans.app ((catLiftCounit.{v₁, v₂, u₁, u₂} (G.obj a)).obj x) := rfl
+
+/-- The object-level companion: a 1-cell of the composite, applied to a lifted object and brought
+back down. -/
+@[simp] lemma catLiftCounit_obj_comp_map_obj {a b : A} (f : a ⟶ b)
+    (x : ↑(catPseudoULift.{v₁, v₂, u₁, u₂}.obj (G.obj a))) :
+    (catLiftCounit.{v₁, v₂, u₁, u₂} (G.obj b)).obj
+        (((G.toPrelaxFunctor.comp
+          catPseudoULift.{v₁, v₂, u₁, u₂}.toPrelaxFunctor).map f).toFunctor.obj x)
+      = (G.map f).toFunctor.obj ((catLiftCounit.{v₁, v₂, u₁, u₂} (G.obj a)).obj x) := rfl
+
+/-- ...and on morphisms. -/
+@[simp] lemma catLiftCounit_map_comp_map_map {a b : A} (f : a ⟶ b)
+    {x y : ↑(catPseudoULift.{v₁, v₂, u₁, u₂}.obj (G.obj a))} (m : x ⟶ y) :
+    (catLiftCounit.{v₁, v₂, u₁, u₂} (G.obj b)).map
+        (((G.toPrelaxFunctor.comp
+          catPseudoULift.{v₁, v₂, u₁, u₂}.toPrelaxFunctor).map f).toFunctor.map m)
+      = (G.map f).toFunctor.map ((catLiftCounit.{v₁, v₂, u₁, u₂} (G.obj a)).map m) := rfl
+
 /-- Whiskered form of `naturality_naturality'`, in the shape `StrongTrans` asks for. -/
 lemma StrongTransIntoCats.naturality_naturality {a b : A} {f g : a ⟶ b} (η : f ⟶ g) :
     Functor.whiskerRight (F.map₂ η).toNatTrans (data.app b) ≫ (data.naturality g).hom =
@@ -132,28 +162,17 @@ def StrongTransIntoCats.lift : StrongTrans F (G.comp catPseudoULift) where
     Cat.Hom.isoMk (Functor.isoWhiskerRight (data.naturality f) (catLiftUnit (G.obj b)) ≪≫
       Iso.refl ((data.app a ⋙ (G.map f).toFunctor) ⋙ catLiftUnit (G.obj b)))
   naturality_naturality {a b f g} η := by
-    apply catLift_hom₂_ext; intro X
-    dsimp [catLiftUnit]
-    simpa only [Category.comp_id] using NatTrans.congr_app (data.naturality_naturality η) X
+    apply catLift_hom₂_counit_ext; intro X
+    dsimp only [Pseudofunctor.comp, Functor.comp_map]
+    simpa using NatTrans.congr_app (data.naturality_naturality η) X
   naturality_id a := by
-    apply catLift_hom₂_ext; intro X
-    dsimp [catLiftUnit, catPseudoULift, catLift, ULiftHom.up]
+    apply catLift_hom₂_counit_ext; intro X
+    dsimp only [Pseudofunctor.comp, Functor.comp_map]
     simpa using NatTrans.congr_app (data.naturality_id a) X
   naturality_comp {a b c} f g := by
-    apply catLift_hom₂_ext; intro X
-    have h := NatTrans.congr_app (data.naturality_comp f g) X
-    simp at h
-    -- reduce the Cat-level structure and unfold the composite pseudofunctor's projections,
-    -- but keep `catLiftUnit` folded so the stripping lemmas above can fire
+    apply catLift_hom₂_counit_ext; intro X
     dsimp only [Pseudofunctor.comp, Functor.comp_map]
-    -- every factor becomes `catLiftUnit.map _`; combine through the functor and apply `h`
-    simpa [Cat.Hom.isoMk_hom, Iso.trans_hom, isoWhiskerRight_hom,
-      Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
-      Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans, whiskerLeft_app,
-      whiskerRight_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
-      catPseudoULift_map_catLiftUnit_map, catPseudoULift_map₂_app_catLiftUnit,
-      catPseudoULift_mapComp_hom_app, Category.comp_id]
-      using congrArg (catLiftUnit.{v₁, u₁, v₂, u₂} (G.obj c)).map h
+    simpa using NatTrans.congr_app (data.naturality_comp f g) X
 
 end CatLiftCodomain
 
@@ -208,9 +227,6 @@ def StrongTransIntoCats.liftDom {A : Type u} [Bicategory A]
       Cat.associator_hom_toNatTrans, Cat.associator_inv_toNatTrans, associator_hom_app,
       associator_inv_app, Functor.whiskerLeft_app, catPseudoULift_mapComp_hom_app,
       Category.comp_id]
-    -- the residual `𝟙` sits at a different spelling of the fibre category, so `id_comp` needs
-    -- to match up to unfolding
-    erw [Category.id_comp]
     exact data.naturality_comp' f g x
 
 /-- Precompose the data with the counit, turning a transformation out of `F` into one out of
