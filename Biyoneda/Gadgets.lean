@@ -240,6 +240,17 @@ once, by `rfl`, gives the coherence proofs something to rewrite with. -/
     ((prelax B).map₂ η).toNatTrans.app x
       = η.1.unop2 ▷ (x ≫ f.2) ≫ g.1.unop ◁ (x ◁ η.2) := rfl
 
+/-! `unopFunctor` is strictly (contra)functorial.  Naming that as `rfl` bridges matters for the
+same reason `catLift_map_comp` does in UniverseLift: without them the coherence goals below
+carry the same 1-cell spelled two ways -- `(unopFunctor a c).obj (f ≫ g)` on one side,
+`g.unop ≫ f.unop` on the other -- and nothing can match across the two. -/
+
+@[simp] lemma unopFunctor_obj_comp {a b c : Bᵒᵖ} (f : a ⟶ b) (g : b ⟶ c) :
+    (unopFunctor a c).obj (f ≫ g) = g.unop ≫ f.unop := rfl
+
+@[simp] lemma unopFunctor_obj_id {a : Bᵒᵖ} :
+    (unopFunctor a a).obj (𝟙 a) = 𝟙 (unop a) := rfl
+
 /-- In `Bᵒᵖ` the two unitors swap: unopping a left unitor gives a right one.  `bicategory`
 treats `(λ_ f).hom.unop2` as an opaque atom without this. -/
 @[simp] lemma unop2_leftUnitor_hom {a b : Bᵒᵖ} (f : a ⟶ b) :
@@ -297,7 +308,6 @@ def homPseudo : Bᵒᵖ × B ⥤ᵖ Cat.{w₁, v₁} where
       change (unop a ⟶ b) at h h'
       bicategory
   mapComp {a b c} fg hi := by
-    dsimp [prelax]
     refine CategoryTheory.Cat.Hom.isoMk ?_
     dsimp [postcomp,precomp,Functor.comp]
     refine NatIso.ofComponents ?_ ?_
@@ -307,17 +317,27 @@ def homPseudo : Bᵒᵖ × B ⥤ᵖ Cat.{w₁, v₁} where
       refine ?_ ≪≫ (α_ (hi.1.unop ≫ fg.1.unop) (x ≫ fg.2) hi.2).symm
       refine (hi.1.unop ≫ fg.1.unop) ◁ᵢ (α_ x fg.2 hi.2).symm
     · intros X Y F
-      -- same shape as `mapId` above: `precomposingCat`/`postcomposingCat` are left applied, and
-      -- `bicategory` additionally needs the points retyped past the `Cat.of` coercion
-      -- PARKED (v4.33).  As for `mapId` above, `precomposingCat`/`postcomposingCat` are left
-      -- applied and the points need retyping past `Cat.of` -- but unlike `mapId`, doing both is
-      -- not enough.  `bicategory` reports "not implemented, try dsimp first" on the reduced
-      -- goal, and the original `simp only` set leaves a residual.
+      -- PARKED (v4.33), but much closer than it was, and the diagnosis is now exact.
       --
-      -- The real obstacle is the `dsimp [prelax]` on this field's first line: it unfolds the
-      -- gadget to a raw `PrelaxFunctor.mkOfHomFunctors` blob, so `prelax_map₂_app` can never
-      -- match and the right-hand side stays un-normalised.  Fixing this probably means building
-      -- `mapComp` without unfolding `prelax` at all -- see the note on `hom_coherence`.
+      -- `dsimp [prelax]` used to sit on `mapComp`'s first line and unfolded the gadget to a raw
+      -- `PrelaxFunctor.mkOfHomFunctors` blob.  It turns out to be removable -- `Cat.Hom.isoMk`
+      -- elaborates fine without it -- and removing it is what lets the two `unopFunctor_obj_*`
+      -- bridges above normalise the left-hand side completely.  After the `dsimp` below the LHS
+      -- is clean structural data:
+      --     (hi.1.unop ≫ fg.1.unop) ◁ F ▷ (fg.2 ≫ hi.2) ≫ <associators>
+      -- and so is the first half of the RHS.  The ONLY thing left un-normalised is a single
+      -- `PrelaxFunctor.mkOfHomFunctors` blob at the tail of the RHS, which `prelax_map₂_app`
+      -- would match if it were still folded.  That blob is the whole remaining obstruction.
+      --
+      -- CORRECTION to the older note here: it claimed the three whisker/associator coherence
+      -- fields below would close under `hom_coherence` "immediately, with no other change" once
+      -- this naturality was restored.  That is now tested and false -- the dependency is
+      -- *mutual*.  Restoring those three changes this goal enough that `bicategory` stops
+      -- applying ("not implemented, try dsimp first"), and restoring this one does not by itself
+      -- make them close.  They have to be fixed together, which is another argument for the
+      -- recorded plan: pull `mapId`/`mapComp` out as named module-level defs with `rfl`
+      -- component lemmas, so neither depends on the other's elaboration.
+      dsimp [precomposingCat, postcomposingCat, precomp, postcomp]
       sorry
   -- PARKED (v4.33) -- but read this before counting five sorries of debt here.
   --
