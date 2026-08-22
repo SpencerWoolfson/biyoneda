@@ -326,9 +326,15 @@ def StrongTransIntoCats.comp {A : Type u} [Bicategory A]
       rw [<- Category.assoc, <- (d2.app b).map_comp,(d1.naturality_naturality' η  x)]
       simp [d2.naturality_naturality']
     naturality_id' a x := by
-      simp
-      sorry
-    naturality_comp' := sorry
+      dsimp
+      rw [Category.assoc, d2.naturality_id' a ((d1.app a).obj x), ← (d2.app a).map_comp,
+        d1.naturality_id' a x]
+    naturality_comp' {a b c} f g x := by
+      dsimp
+      rw [Category.assoc, d2.naturality_comp' f g ((d1.app a).obj x), ← Category.assoc,
+        ← (d2.app c).map_comp, d1.naturality_comp' f g x]
+      simp only [Functor.map_comp, Category.assoc]
+      rw [reassoc_of% ((d2.naturality g).hom.naturality ((d1.naturality f).hom.app x))]
 
 def StrongTransIntoCats.Id {A : Type u} [Bicategory A]
     {F : Pseudofunctor A Cat.{v₁, u₁}} : StrongTransIntoCats F F where
@@ -339,18 +345,63 @@ def StrongTransIntoCats.Id {A : Type u} [Bicategory A]
       
 
 def ModificationIntoCats.lift {A : Type u} [Bicategory A]
-    {F : Pseudofunctor A Cat.{v₁, u₁}} {G : Pseudofunctor A Cat.{v₂, u₂}}
+    {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}} {G : Pseudofunctor A Cat.{v₁, u₁}}
     {η θ : StrongTransIntoCats F G} (d : ModificationIntoCats η θ) :
-    Modification (η.toStrongTransMax ) (θ.toStrongTransMax ) where
-  app a := by
-    fconstructor
-    dsimp [StrongTransIntoCats.toStrongTransMax,StrongTransIntoCats.precomposeCounit]
-    refine Functor.whiskerRight ?_ (catLiftUnit (G.obj a))
-    refine Functor.whiskerLeft (catLiftCounit (F.obj a)) ?_
-    exact (d.app a)
+    η.lift.Modification θ.lift where
+  app a := NatTrans.toCatHom₂ (Functor.whiskerRight (d.app a) (catLiftUnit (G.obj a)))
   naturality {a b} f := by
-    let data := d.naturality f
+    apply catLift_hom₂_counit_ext; intro x
+    -- WIP.  Retargeted from `toStrongTransMax` (which lifts *both* sides, hence needed two
+    -- whiskerings) to `lift` (codomain only, one whiskering).  After the counit ext the goal is
+    --   (catLiftCounit _).map ((F.map f ◁ ⟨whiskerRight (d.app b) (catLiftUnit _)⟩ ≫
+    --      (θ.lift.naturality f).hom).toNatTrans.app x) = ... symmetric ...
+    -- which is `d.naturality' f x` once the `catLiftUnit`/`catLiftCounit` pair cancels.  Tried:
+    -- `exact`, `simpa using`, and the same after
+    -- `dsimp only [Pseudofunctor.comp, Functor.comp_map]`; none land yet.  The counit stripping
+    -- lemmas in UniverseLift are stated for `catPseudoULift.map₂`, not for a `Cat`-level `◁`/`▷`
+    -- of a whiskered component -- that gap is probably what to close.
     sorry
+
+/-! ### Bridging `comp` to the composite of the two lifts
+
+This is what lets a unit/counit be built in the `IntoCats` world and then crossed over: the
+`app` components of `lift d1 ≫ liftDom d2` and `d1.comp d2` agree by `rfl` (the
+`catLiftUnit`/`catLiftCounit` round trip cancels definitionally), and the lemma below says the
+naturality isomorphisms agree too.
+
+Note the shape of the proof.  `≫` of strong transformations expands to a five-factor
+associator sandwich, which is exactly the obstacle the `yonedaHomInvId` sorry has been fighting
+-- but here it is fought once, with `d1` and `d2` abstract.  `Cat` is strict, so
+`Strict.associator_eqToIso` turns the three associators into identities; after that everything
+is `erw`, because the two spellings of `Cat`'s hom-category composition differ by an instance
+path that `rw`/`simp` will not cross at reducible transparency. -/
+lemma StrongTransIntoCats.lift_comp_liftDom_naturality_app {A : Type u} [Bicategory A]
+    {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}} {G : Pseudofunctor A Cat.{v₁, u₁}}
+    (d1 : StrongTransIntoCats F G) (d2 : StrongTransIntoCats G F)
+    {a b : A} (f : a ⟶ b) (x : F.obj a) :
+    ((show F ⟶ F from d1.lift ≫ d2.liftDom).naturality f).hom.toNatTrans.app x
+      = ((d1.comp d2).naturality f).hom.app x := by
+  simp only [Pseudofunctor.StrongTrans.categoryStruct_comp_naturality_hom,
+    Bicategory.Strict.associator_eqToIso, eqToIso_refl, Iso.refl_hom, Iso.refl_inv,
+    Category.id_comp, Category.comp_id]
+  repeat erw [Cat.Hom.toNatTrans_comp]
+  repeat erw [Cat.Hom.toNatTrans_id]
+  simp only [NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
+    Functor.whiskerLeft_app, Functor.whiskerRight_app, Category.id_comp, Category.comp_id]
+  simp [StrongTransIntoCats.comp, StrongTransIntoCats.lift, StrongTransIntoCats.liftDom,
+    Functor.comp_map, Iso.trans_hom, Iso.refl_hom, isoWhiskerRight_hom, isoWhiskerLeft_hom,
+    Functor.whiskerRight_app, Functor.whiskerLeft_app, Cat.Hom.isoMk_hom,
+    NatTrans.toCatHom₂_toNatTrans, Category.comp_id]
+  erw [Iso.trans_hom, Category.comp_id]
+  erw [Cat.Hom.isoMk_hom, NatTrans.toCatHom₂_toNatTrans]
+  simp
+  rfl
+
+/-- The `app` half of the same bridge: it is definitional. -/
+lemma StrongTransIntoCats.lift_comp_liftDom_app {A : Type u} [Bicategory A]
+    {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}} {G : Pseudofunctor A Cat.{v₁, u₁}}
+    (d1 : StrongTransIntoCats F G) (d2 : StrongTransIntoCats G F) (a : A) :
+    ((show F ⟶ F from d1.lift ≫ d2.liftDom).app a).toFunctor = (d1.comp d2).app a := rfl
 
 /-! ### Crossing to `StrongTrans` when no lifting is needed
 
