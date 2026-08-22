@@ -232,17 +232,43 @@ def prelax : PrelaxFunctor (Bᵒᵖ × B) Cat.{w₁, v₁} :=
           (postcomposing (Cat.of (unop a.1 ⟶ a.2)) (Cat.of (unop a.1 ⟶ b.2))
             (Cat.of (unop b.1 ⟶ b.2))))
 
-/-- All five of `homPseudo`'s coherence fields close identically: descend to a point via
-`Cat.Hom₂.ext_app`, retype it past the `Cat.of` coercion so `bicategory` sees a genuine morphism
-(see the module docstring's "unblocking `bicategory`" note), then call `bicategory`. Factored
-into one local tactic so the five fields below don't repeat the same six lines verbatim. -/
+/-- The point-level action of `prelax`'s `map₂`.
+
+`PrelaxFunctor.mkOfHomFunctors` exposes `mapFunctor` but not `map₂`, and `dsimp` will not unfold
+through it — which is what leaves `bicategory` unable to build a context.  Stating the component
+once, by `rfl`, gives the coherence proofs something to rewrite with. -/
+@[simp] lemma prelax_map₂_app {a b : Bᵒᵖ × B} {f g : a ⟶ b} (η : f ⟶ g)
+    (x : unop a.1 ⟶ a.2) :
+    ((prelax B).map₂ η).toNatTrans.app x
+      = η.1.unop2 ▷ (x ≫ f.2) ≫ g.1.unop ◁ (x ◁ η.2) := rfl
+
+/-- In `Bᵒᵖ` the two unitors swap: unopping a left unitor gives a right one.  `bicategory`
+treats `(λ_ f).hom.unop2` as an opaque atom without this. -/
+@[simp] lemma unop2_leftUnitor_hom {a b : Bᵒᵖ} (f : a ⟶ b) :
+    (λ_ f).hom.unop2 = (ρ_ f.unop).hom := rfl
+
+@[simp] lemma unop2_rightUnitor_hom {a b : Bᵒᵖ} (f : a ⟶ b) :
+    (ρ_ f).hom.unop2 = (λ_ f.unop).hom := rfl
+
+/-- The shared shape of `homPseudo`'s five coherence fields: descend to a point via
+`Cat.Hom₂.ext_app`, retype it past the `Cat.of` coercion, rewrite `prelax`'s `map₂` with
+`prelax_map₂_app`, then call `bicategory`.
+
+Note there is deliberately no `dsimp [prelax]` here.  Unfolding `prelax` destroys the very
+term `prelax_map₂_app` matches on, and without that rewrite `bicategory` cannot build a
+context at all — "failed to construct a monoidal category or bicategory context".  Keep the
+gadget folded so its API can fire.
+
+This closes `map₂_whisker_left`, `map₂_whisker_right` and `map₂_associator`.  The two unitor
+fields still fail: `bicategory` runs but leaves a residual, even with the `unop2_*Unitor_hom`
+bridges above in place. -/
 local macro "hom_coherence" a:term : tactic =>
   `(tactic| (
-    dsimp [prelax]
     apply Cat.Hom₂.ext_app
     intro x
     dsimp
     change (unop ($a).1 ⟶ ($a).2) at x
+    simp only [prelax_map₂_app]
     bicategory))
 
 set_option backward.isDefEq.respectTransparency false in
