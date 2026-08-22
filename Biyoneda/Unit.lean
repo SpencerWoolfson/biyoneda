@@ -119,6 +119,18 @@ def yonedaHomInvIdNatIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
   -- Pending: goal shape changed with the composite pairing.
   sorry
 
+/-- The unit, built in the `StrongTransIntoCats` world.
+
+This is the whole mathematical content of `yonedaHomInvId`, and it is stated where the
+obligation is tractable: `ModificationIntoCats.isoMk` takes the natural isomorphisms we already
+have, one per object, and asks for the modification square **at a point** -- no `Cat` 2-cells,
+no associators, and only the forward direction (the inverse comes for free). -/
+def yonedaHomInvIdIso :
+    (yonedaLemmaForwardsData.comp yonedaLemmaBackwardsData) ≅
+      (StrongTransIntoCats.Id (F := @yonedaPairing B _)) :=
+  ModificationIntoCats.isoMk (fun a ↦ yonedaHomInvIdNatIso a) (fun {a b} f x ↦ by
+    sorry)
+
 /--
 The *unit isomorphism* `yonedaLemmaForwards ≫ yonedaLemmaBackwards ≅ 𝟙 yonedaPairing`.
 
@@ -140,25 +152,13 @@ def yonedaHomInvId : yonedaLemmaForwards ≫ yonedaLemmaBackwards ≅ 𝟙 (@yon
   simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
     Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
     Cat.Hom.isoMk_hom, NatTrans.toCatHom₂_toNatTrans]
-  -- Parked (2026-07-29): reduced to a clean modification-naturality goal, not yet closed.
-  -- After the descent above, the goal is
-  --   (yonedaHomInvIdNatIso b).hom.app ((yonedaPairing.map f).obj x) ≫
-  --     (ρ_ (yonedaPairing.map f) ≪≫ (λ_ (yonedaPairing.map f)).symm).hom.app x
-  --   = (RHS naturality iso of yonedaLemmaForwards ≫ yonedaLemmaBackwards, via
-  --      StrongTrans.vcomp: a 5-factor composite of associators sandwiching
-  --      yonedaLemmaForwards.naturality f and yonedaLemmaBackwards.naturality f).hom.app x
-  --     ≫ (yonedaPairing.map f).map ((yonedaHomInvIdNatIso a).hom.app x)
-  -- Same shape as the (now-proven) yonedaHomInvIdObjIso naturality square (Cat.Hom₂.congr_app
-  -- on a naturality_comp-style coherence, then cancel the invertible associator/naturality
-  -- factors via the rw [← NatTrans.comp_app, ← Cat.Hom.toNatTrans_comp, iso.inv_hom_id, ...]
-  -- recipe), but roughly twice the size (two StrongTrans naturalities instead of one) and each
-  -- dsimp/build cycle here runs ~5 min instead of ~20s, so this was parked rather than ground
-  -- out in-session. Next step if resumed: `dsimp only [CategoryStruct.id, CategoryStruct.comp,
-  -- StrongTrans.categoryStruct, StrongTrans.id, StrongTrans.vcomp, StrongTrans.mkOfOplax,
-  -- Oplax.StrongTrans.mkOfOplax, Oplax.StrongTrans.vcomp]` to reach the state above, then apply
-  -- the ingredient-square recipe to both `yonedaLemmaForwards.naturality f` and
-  -- `yonedaLemmaBackwards.naturality f` in turn.
-  sorry
+  -- The two bridges turn `(forwards ≫ backwards).naturality` -- a five-factor associator
+  -- sandwich -- into `comp`'s naturality, and `(𝟙 _).naturality` into `Id`'s.  What is left is
+  -- exactly the modification square of `yonedaHomInvIdIso`, at a point.
+  dsimp only [yonedaLemmaForwards, yonedaLemmaBackwards]
+  erw [StrongTransIntoCats.lift_comp_liftDom_naturality_app,
+    StrongTransIntoCats.Id_naturality_app]
+  exact yonedaHomInvIdIso.hom.naturality' f x
 
 /--
 At a fixed pair `a = (b₀, F)`, the natural isomorphism from the roundtrip functor

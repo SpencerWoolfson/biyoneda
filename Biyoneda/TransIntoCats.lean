@@ -436,6 +436,14 @@ def ModificationIntoCats.toModification {A : Type u} [Bicategory A]
     apply Cat.Hom₂.ext_app; intro x
     exact d.naturality' f x
 
+/-- The identity half of the bridge: `Id` crosses over to the identity strong transformation. -/
+lemma StrongTransIntoCats.Id_naturality_app {A : Type u} [Bicategory A]
+    {F : Pseudofunctor A Cat.{v₁, u₁}} {a b : A} (f : a ⟶ b) (x : F.obj a) :
+    ((show F ⟶ F from 𝟙 F).naturality f).hom.toNatTrans.app x
+      = ((StrongTransIntoCats.Id (F := F)).naturality f).hom.app x := by
+  simp [StrongTransIntoCats.Id, StrongTrans.id]
+  rfl
+
 /-! ### Composing modifications
 
 With `app` spelled as an arrow, the components compose with plain `≫` and `𝟙`, and the
@@ -475,5 +483,34 @@ instance ModificationIntoCats.category {A : Type u} [Bicategory A]
   id_comp _ := by ext a; exact Category.id_comp _
   comp_id _ := by ext a; exact Category.comp_id _
   assoc _ _ _ := by ext a; exact Category.assoc _ _ _
+
+/-- Build an **isomorphism** of `StrongTransIntoCats` from componentwise natural isomorphisms.
+
+The point of taking `NatIso`s rather than a pair of modifications: you hand it an iso you
+already have (`yonedaHomInvIdNatIso`, say) and prove the naturality square once, instead of
+constructing the forward and backward modifications separately and then proving they cancel. -/
+def ModificationIntoCats.isoMk {A : Type u} [Bicategory A]
+    {F G : Pseudofunctor A Cat.{v₁, u₁}} {η θ : StrongTransIntoCats F G}
+    (app : ∀ a, η.app a ≅ θ.app a)
+    (naturality' : ∀ {a b : A} (f : a ⟶ b) (x : F.obj a),
+      (app b).hom.app ((F.map f).toFunctor.obj x) ≫ (θ.naturality f).hom.app x =
+        (η.naturality f).hom.app x ≫ (G.map f).toFunctor.map ((app a).hom.app x) := by cat_disch) :
+    η ≅ θ where
+  hom := { app := fun a => (app a).hom, naturality' := naturality' }
+  inv :=
+    { app := fun a => (app a).inv
+      naturality' := fun {a b} f x => by
+        -- same trick as Mathlib's `Modification.isoMk`: whisker the forward square by the
+        -- inverses on both sides and let the hom/inv cancellations do the rest
+        simpa [← Functor.map_comp] using (congrArg
+          (fun m => (app b).inv.app ((F.map f).toFunctor.obj x) ≫ m ≫
+            (G.map f).toFunctor.map ((app a).inv.app x)) (naturality' f x)).symm }
+  hom_inv_id := by
+    apply ModificationIntoCats.ext; intro a
+    exact (app a).hom_inv_id
+  inv_hom_id := by
+    apply ModificationIntoCats.ext; intro a
+    exact (app a).inv_hom_id
+
 
 end CategoryTheory.Bicategory
