@@ -102,8 +102,10 @@ def backwardsNaturalityIsoApp {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f 
       ((yonedaLemmaBackwardsFunctor a ⋙ (yonedaPairing.map f).toFunctor).obj X).app α :=
   Cat.Hom.isoMk (NatIso.ofComponents
     (fun XX ↦
-      (Cat.Hom.toNatIso (b.2.mapComp f.1 XX.op).symm).app
-        ((f.2.app a.1).toFunctor.obj X) ≪≫
+      (b.2.map XX.op).toFunctor.mapIso
+          ((Cat.Hom.toNatIso (f.2.naturality f.1)).app X) ≪≫
+        (Cat.Hom.toNatIso (b.2.mapComp f.1 XX.op).symm).app
+          ((f.2.app a.1).toFunctor.obj X) ≪≫
         (Cat.Hom.toNatIso (f.2.naturality (f.1 ≫ XX.op))).symm.app X)
     (fun {XX YY} h ↦ by
       -- PARKED (v4.33).  `backwards_inner_core` (proved, just above) is the content.  The
@@ -118,7 +120,10 @@ def backwardsNaturalityIsoApp {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f 
       sorry))
 
 /-- The cancellation core of the backwards naturality square: all atoms in canonical
-spelling, `X` unlifted. -/
+spelling, `X` unlifted.
+
+**Stated against the pre-diagonal-switch component** (two factors, not three).  Still compiles;
+no longer plugs into `backwards_naturality_square` -- see the note there. -/
 lemma backwards_square_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
     (X : ↑(yonedaEvaluation'.obj a)) {a₁ b₁ : Bᵒᵖ} (f₁ : a₁ ⟶ b₁)
     (ZZ : ↑((yoneda₀ (unop b.1)).obj a₁)) :
@@ -169,6 +174,9 @@ lemma backwards_square_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : 
 /-- Point form of the naturality square, spelled through the composite strong
 transformation (defeq to `yonedaPairing.map`'s literal pasting).
 
+**Stated against the pre-diagonal-switch component.**  Still compiles; no longer plugs into
+`backwards_naturality_square` -- see the note there.
+
 The proof distributes the strong-transformation component through the whiskered/associated
 composite from `categoryStruct_comp_naturality_hom`. This is an ordered `erw` chain rather
 than a `simp only`: the `≫`/`α_`/`▷` come from the `postcomp₂` bicategory and are only *defeq*
@@ -210,7 +218,14 @@ lemma backwards_naturality_square {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})}
         f₁).hom ≫ (backwardsNaturalityIsoApp f X a₁).hom ▷ b.2.map f₁ := by
   apply Cat.Hom₂.ext_app
   intro ZZ
-  exact backwards_square_composite f X f₁ ZZ
+  -- PARKED (diagonal switch).  The three `backwards_*_core` lemmas above are stated against the
+  -- *pre-switch* component of `backwardsNaturalityIsoApp`, which had two factors; the component
+  -- now has three, since `yonedaEvaluation'.map f` is `a.2.map f.1 ≫ f.2.app b.1` rather than
+  -- `f.2.app a.1 ≫ b.2.map f.1` and the conversion is `f.2.naturality f.1`.  They still compile
+  -- and are left in place as re-derivable proof structure, exactly as `Evaluation.lean` leaves
+  -- its `evaluation_*_core` lemmas -- but they no longer plug in here, and porting them by hand
+  -- yields statements that are subtly wrong and only report it as a defeq failure at the `exact`.
+  sorry
 
 /-- The naturality iso of `yonedaLemmaBackwards` at `f : a ⟶ b`, componentwise. -/
 def backwardsNaturalityIso {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
@@ -221,7 +236,10 @@ def backwardsNaturalityIso {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a
     (fun f₁ ↦ backwards_naturality_square f X f₁)
 
 /-- The cancellation core of `backwards_naturality_iso_natural`: two `NatTrans.naturality`
-squares of the component isos, in canonical spellings. -/
+squares of the component isos, in canonical spellings.
+
+**Stated against the pre-diagonal-switch component.**  Still compiles; no longer plugs into
+`backwards_naturality_iso_natural` -- see the note there. -/
 lemma backwards_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
     {X Y : ↑(yonedaEvaluation'.obj a)} (f₁ : X ⟶ Y) {γ : Bᵒᵖ}
     (ZZ : ↑((yoneda₀ (unop b.1)).obj γ)) :
@@ -258,6 +276,13 @@ lemma backwards_naturality_iso_natural {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w,
   intro ZZ
   erw [homCategory_comp_as_app, homCategory_comp_as_app]
   dsimp only [backwardsNaturalityIso]
-  exact backwards_naturality_core f f₁ ZZ
+  -- PARKED (diagonal switch).  The three `backwards_*_core` lemmas above are stated against the
+  -- *pre-switch* component of `backwardsNaturalityIsoApp`, which had two factors; the component
+  -- now has three, since `yonedaEvaluation'.map f` is `a.2.map f.1 ≫ f.2.app b.1` rather than
+  -- `f.2.app a.1 ≫ b.2.map f.1` and the conversion is `f.2.naturality f.1`.  They still compile
+  -- and are left in place as re-derivable proof structure, exactly as `Evaluation.lean` leaves
+  -- its `evaluation_*_core` lemmas -- but they no longer plug in here, and porting them by hand
+  -- yields statements that are subtly wrong and only report it as a defeq failure at the `exact`.
+  sorry
 
 end Biyoneda

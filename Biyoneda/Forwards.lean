@@ -123,16 +123,12 @@ and the evaluation point is handled by `forwards_naturality_naturality_unitor`.
 lemma forwards_naturality_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} {f g : a ⟶ b}
     (η : f ⟶ g) (Z : Pseudofunctor.StrongTrans (yoneda₀ (unop a.1)) a.2) :
     (((yonedaPairing.map₂ η).toNatTrans.app Z).as.app b.1).toNatTrans.app (𝟙 (unop b.1)) ≫
-        ((g.2.app b.1).toFunctor.map
-            ((Z.app b.1).toFunctor.map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ≫
-              ((Cat.Hom.toNatIso (Z.naturality g.1)).app (𝟙 (unop a.1))).hom) ≫
-          ((Cat.Hom.toNatIso (g.2.naturality g.1)).app
-              ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))).hom) =
-    ((f.2.app b.1).toFunctor.map
-            ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) ≫
-              ((Cat.Hom.toNatIso (Z.naturality f.1)).app (𝟙 (unop a.1))).hom) ≫
-          ((Cat.Hom.toNatIso (f.2.naturality f.1)).app
-              ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))).hom) ≫
+        (g.2.app b.1).toFunctor.map
+          ((Z.app b.1).toFunctor.map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ≫
+            ((Cat.Hom.toNatIso (Z.naturality g.1)).app (𝟙 (unop a.1))).hom) =
+    (f.2.app b.1).toFunctor.map
+          ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) ≫
+            ((Cat.Hom.toNatIso (Z.naturality f.1)).app (𝟙 (unop a.1))).hom) ≫
       (yonedaEvaluation'.map₂ η).toNatTrans.app ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) := by
   simp only [yonedaPairing_map₂]
   dsimp only [Cat.toCatHom₂_toNatTrans, yonedaPairingMap₂, yonedaEvaluation',
@@ -216,29 +212,23 @@ lemma forwards_naturality_comp_head {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
 /-- Core of `naturality_comp` for `yonedaLemmaForwards` (unlifted fibre form). -/
 lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
     (Z : Pseudofunctor.StrongTrans (yoneda₀ (unop a.1)) a.2) :
-    (((f.2 ≫ g.2).app c.1).toFunctor.map
+    ((f.2 ≫ g.2).app c.1).toFunctor.map
           ((Z.app c.1).toFunctor.map
               ((λ_ (f.1 ≫ g.1).unop).hom ≫ (ρ_ (f.1 ≫ g.1).unop).inv) ≫
             (Z.naturality (f.1 ≫ g.1)).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
-        ((f.2 ≫ g.2).naturality (f.1 ≫ g.1)).hom.toNatTrans.app
-          ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))) ≫
       (yonedaEvaluation'.mapComp f g).hom.toNatTrans.app
         ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) =
     (((yonedaPairing.mapComp f g).hom.toNatTrans.app Z).as.app c.1).toNatTrans.app
         (𝟙 (unop c.1)) ≫
-      ((g.2.app c.1).toFunctor.map
+      (g.2.app c.1).toFunctor.map
             ((((yonedaPairing.map f).toFunctor.obj Z).app c.1).toFunctor.map
                 ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ≫
               (((yonedaPairing.map f).toFunctor.obj Z).naturality g.1).hom.toNatTrans.app
                 (𝟙 (unop b.1))) ≫
-          (g.2.naturality g.1).hom.toNatTrans.app
-            ((((yonedaPairing.map f).toFunctor.obj Z).app b.1).toFunctor.obj (𝟙 (unop b.1)))) ≫
         (yonedaEvaluation'.map g).toFunctor.map
           ((f.2.app b.1).toFunctor.map
               ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) ≫
-                (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
-            (f.2.naturality f.1).hom.toNatTrans.app
-              ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))) := by
+                (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1)))) := by
   -- Pending: the statement mentions `yonedaPairing.mapComp`, which the composite defines
   -- differently (not defeq), so this needs a genuine re-proof rather than a re-spelling.
   sorry
@@ -259,9 +249,7 @@ def yonedaLemmaForwardsData :
       (fun X =>
         (f.2.app b.1).toFunctor.mapIso
             ((X.app b.1).toFunctor.mapIso (λ_ f.1.unop ≪≫ (ρ_ f.1.unop).symm) ≪≫
-              (Cat.Hom.toNatIso (X.naturality f.1)).app (𝟙 (unop a.1))) ≪≫
-          (Cat.Hom.toNatIso (f.2.naturality f.1)).app
-            ((X.app a.1).toFunctor.obj (𝟙 (unop a.1))))
+              (Cat.Hom.toNatIso (X.naturality f.1)).app (𝟙 (unop a.1))))
       (by
         intro X Y h
         -- The mathematical content is exactly `forwards_naturality_core`; the simp set
