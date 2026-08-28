@@ -12,26 +12,41 @@ For a bicategory `C`, this file constructs the **evaluation pseudofunctor**
 
   `evaluationPseudo : C × (C ⥤ᵖ Cat) ⥤ᵖ Cat`,   `(c, F) ↦ F.obj c`,
 
-together with the five point-level coherence lemmas its structure fields need.
-
-Nothing here is specific to the Yoneda lemma: `C` is an arbitrary bicategory.  The
-bicategorical Yoneda development uses the instance `C := Bᵒᵖ` (see `Biyoneda.Basic`), but the
-construction is the bicategorical analogue of Mathlib's `CategoryTheory.evaluation` for
-1-categories, which is currently missing from the `Bicategory` library.
+the bicategorical analogue of Mathlib's `CategoryTheory.evaluationUncurried`, which is currently
+missing from the `Bicategory` library.  Nothing here is specific to the Yoneda lemma: `C` is an
+arbitrary bicategory.  The bicategorical Yoneda development uses the instance `C := Bᵒᵖ`.
 
 ## Implementation notes
 
+### Which diagonal
+
+The action on 1-morphisms fills a square in one of two ways.  This file uses **Mathlib's**
+choice, matching `evaluationUncurried`:
+
+```
+map f = x.2.map f.1 ≫ f.2.app y.1
+```
+
+The other diagonal, `f.2.app x.1 ≫ y.2.map f.1`, is what this file used before 2026-08-28.  The
+two are isomorphic but not equal: for a strong transformation `f.2` they are related by
+`f.2.naturality f.1`, which is an iso and not an identity.  They agree in a 1-category, where
+naturality is an equation, which is why Mathlib's choice looks arbitrary there and is not here.
+
+The switch was made for alignment with Mathlib and for eventual upstreaming.  It is **not** a
+simplification: the coherence budget is symmetric.  Measured on `mapComp`, both diagonals need
+exactly one `mapComp` of a component pseudofunctor and one strong-transformation `naturality`
+slide.  The only asymmetries found are cosmetic and are recorded at the two component lemmas at
+the end of this file.
+
+### Why the target is `Cat` and not a general `D`
+
 The target bicategory is fixed to `Cat` rather than an arbitrary bicategory `D`.  This is not
 incidental: the `mapId` field is `x.2.mapId x.1`, which typechecks only because `Cat` is a
-`Bicategory.Strict` and so the left unitor `𝟙 ≫ F.map (𝟙 _)` reduces definitionally.  Over a
-general `D` the field needs an explicit `λ_`, which changes the term and is a separate
-(non-definitional) construction.
+`Bicategory.Strict` and so a unitor reduces definitionally.  Over a general `D` the field needs
+an explicit unitor, which changes the term and is a separate (non-definitional) construction.
 
-The `*_core` lemmas are the cancellation cores of the corresponding coherence fields, stated
-at a point `Z` of the fibre.  They are separated out because the fields' goals are large
-pastings whose content, once descended into a fibre, is a short chain of `mapComp` naturality,
-`Modification` naturality (`modification_naturality_app`), and strong-transformation
-`naturality_naturality`.
+Note the diagonal switch moves which unitor is being leaned on.  The old diagonal needed
+`𝟙 ≫ f`; this one needs `f ≫ 𝟙`.  See the comment at `mapId`.
 -/
 
 namespace CategoryTheory.Bicategory
@@ -44,146 +59,74 @@ universe u v w
 variable {C : Type u} [Bicategory.{w, v} C]
 
 
-set_option linter.unusedTactic false in
-set_option linter.unreachableTactic false in
--- the `skip` alternatives in the erosion loops are structural: `iterate` aborts at the
--- first wholly-failing round without them, and are unreachable on the successful path
--- the coherence fields close by `exact`-plugs of core lemmas whose defeq checks
--- bridge composite/nested point spellings at default transparency
 /--
 The *evaluation pseudofunctor* `C × (C ⥤ᵖ Cat) ⥤ᵖ Cat.{w, v}`.
 
 This is the right-hand side of the Yoneda equivalence (before universe promotion):
 
 * **On objects**: `(b, F) ↦ F.obj b` — evaluate the pseudofunctor `F` at the object `b`.
-* **On 1-morphisms**: `(f : b' ⟶ b, α : F ⟶ G) ↦ α.app b' ≫ G.map f`, i.e., apply the
-  component of the natural transformation `α` at `b'`, then map along `f` using `G`.
-* **On 2-morphisms**: `(σ, τ) ↦ (σ.as.app b' ▷ G.map f) ≫ (_ ◁ G.map₂ τ)`.
+* **On 1-morphisms**: `(f : b' ⟶ b, α : F ⟶ G) ↦ F.map f ≫ α.app b`, i.e., map along `f` using
+  `F`, then apply the component of `α` at `b`.  This is Mathlib's diagonal; see the module
+  docstring.
+* **On 2-morphisms**: `(σ, τ) ↦ (F.map₂ σ ▷ α.app b) ≫ (F.map g ◁ τ.as.app b)`.
 * **Coherence iso `mapId`**: `F.mapId b`, the identity coherence of `F`.
-* **Coherence iso `mapComp`**: built from the associator and `G.mapComp` and `G.naturality`.
+* **Coherence iso `mapComp`**: built from the associator, `F.mapComp`, and `α.naturality`.
 
 Note: this pseudofunctor lands in the smaller universe `Cat.{w, v}`.  Use `yonedaEvaluation`
 (which post-composes with `catPseudoULift`) for the universe-matched version.
 -/
 def evaluationPseudo : C × (C ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v} where
   obj x := x.snd.obj x.fst
-  map {x y} f := f.2.app x.1 ≫ (y.2.map f.1)
-  map₂ {x y f g} η := (η.2.as.app x.1 ▷ y.2.map f.1) ≫ (_ ◁ y.2.map₂ η.1)
+  map {x y} f := x.2.map f.1 ≫ f.2.app y.1
+  map₂ {x y f g} η := (x.2.map₂ η.1 ▷ f.2.app y.1) ≫ (x.2.map g.1 ◁ η.2.as.app y.1)
+  -- The other filling of the square, `(x.2.map f.1 ◁ η.2.as.app y.1) ≫ (x.2.map₂ η.1 ▷ …)`, is
+  -- equal by `whisker_exchange`, so the choice is free.  Picked to keep the `map₂` factor
+  -- leftmost, mirroring the pre-2026-08-28 field.
   mapId x := x.2.mapId x.1
+  -- Typechecks only if `map (𝟙 x) = x.2.map (𝟙 x.1) ≫ 𝟙` reduces definitionally, i.e. if
+  -- `f ≫ 𝟙` is defeq to `f` in `Cat`.  The previous diagonal needed `𝟙 ≫ f` here instead, and
+  -- that one was known to reduce (notes/level2_refactor.md, Finding 3).  The right-hand case is
+  -- the first thing this file establishes at build time.  If it fails, insert an explicit
+  -- `ρ_` — but note that the result is then no longer `rfl`-equal to the bare form, which is the
+  -- same trap Finding 3 documents for the target-generalisation attempt.
   mapComp {a b c} f g := by
-    refine (f.2.app a.1 ≫ g.2.app a.1) ◁ᵢ (c.2.mapComp f.1 g.1) ≪≫ ?_
-    refine (α_ (f.2.app a.1) (g.2.app a.1) (c.2.map f.1 ≫ c.2.map g.1)) ≪≫ ?_
-    refine (f.2.app a.1) ◁ᵢ ?_ ≪≫
-      (α_ (f.2.app a.1) (b.2.map f.1) (g.2.app b.1 ≫ c.2.map g.1)).symm
-    refine (α_ (g.2.app a.1) (c.2.map f.1) (c.2.map g.1)).symm ≪≫
-      ((g.2.naturality f.1).symm ▷ᵢ (c.2.map g.1)) ≪≫
-      (α_ (b.2.map f.1) (g.2.app b.1) (c.2.map g.1))
+    -- goal:  a.2.map (f.1 ≫ g.1) ≫ (f.2.app c.1 ≫ g.2.app c.1)
+    --          ≅ (a.2.map f.1 ≫ f.2.app b.1) ≫ (b.2.map g.1 ≫ g.2.app c.1)
+    --
+    -- One `mapComp` and one `naturality`, the same budget as the other diagonal.  Note the
+    -- orientation: this needs `f.2.naturality g.1` in the *hom* direction, where the previous
+    -- diagonal needed `(g.2.naturality f.1).symm`.
+    refine (a.2.mapComp f.1 g.1) ▷ᵢ (f.2.app c.1 ≫ g.2.app c.1) ≪≫ ?_
+    refine (α_ (a.2.map f.1) (a.2.map g.1) (f.2.app c.1 ≫ g.2.app c.1)) ≪≫ ?_
+    refine (a.2.map f.1) ◁ᵢ ?_ ≪≫
+      (α_ (a.2.map f.1) (f.2.app b.1) (b.2.map g.1 ≫ g.2.app c.1)).symm
+    refine (α_ (a.2.map g.1) (f.2.app c.1) (g.2.app c.1)).symm ≪≫
+      ((f.2.naturality g.1) ▷ᵢ (g.2.app c.1)) ≪≫
+      (α_ (f.2.app b.1) (b.2.map g.1) (g.2.app c.1))
   map₂_whisker_left {a b c} f {g h} {η} := by
-    apply Cat.Hom₂.ext_app
-    intro Z
-    simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv, whiskerLeftIso_hom,
-      whiskerLeftIso_inv, whiskerRightIso_hom, whiskerRightIso_inv, Cat.Hom.toNatTrans_comp,
-      NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
-      whiskerLeft_app, whiskerRight_app,
-      Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
-      Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id]
-    simp only [prod_whiskerLeft_fst, prod_whiskerLeft_snd, whiskerLeft_as_app]
-    rw [Cat.whiskerLeft_app]
-    have hw := c.2.map₂_whisker_left_app f.1 η.1
-      (((f ≫ h).2.app a.1).toFunctor.obj Z)
-    rw [hw]
-    have h1 : (c.2.map (f ≫ g).1).toFunctor.map
-          ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
-        (c.2.mapComp f.1 g.1).hom.toNatTrans.app
-          ((h.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) =
-        (c.2.mapComp f.1 g.1).hom.toNatTrans.app
-          ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
-        (c.2.map g.1).toFunctor.map ((c.2.map f.1).toFunctor.map
-          ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))) :=
-      (c.2.mapComp f.1 g.1).hom.toNatTrans.naturality
-        ((η.2.as.app a.1).toNatTrans.app ((f.2.app a.1).toFunctor.obj Z))
-    erw [reassoc_of% h1]
-    simpa using evaluation_whisker_left_core f η ((f.2.app a.1).toFunctor.obj Z)
+    -- PARKED (diagonal switch, 2026-08-28).  The five coherence fields below were proved against
+    -- the *other* diagonal via the `evaluation_*_core` lemmas in `EvaluationCore.lean` and
+    -- `EvaluationAssociator.lean`.  Those cores are stated in raw expanded terms whose every
+    -- point spelling changes under the flip, so they no longer apply and are left in place only
+    -- as a source of re-derivable proof structure.
+    --
+    -- Sequence for picking these up, in order, one build each:
+    --   1. `cat_disch` / `bicategory` on each field.  Cheap, and the honest prior is that it
+    --      fails, but the answer decides whether the cores need to exist at all.
+    --   2. If it fails: re-derive each core from the ACTUAL goal state using the two-layer
+    --      template in notes/evaluation_coherence_wip.md.  Do not hand-edit the old cores into
+    --      the new spellings; a subtly wrong statement only reports itself as a defeq failure at
+    --      the `exact` plug, which is the most expensive way to find out.
+    sorry
   map₂_whisker_right {a b c f g h} η := by
-    apply Cat.Hom₂.ext_app
-    intro Z
-    simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv, whiskerLeftIso_hom,
-      whiskerLeftIso_inv, whiskerRightIso_hom, whiskerRightIso_inv, Cat.Hom.toNatTrans_comp,
-      NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
-      whiskerLeft_app, whiskerRight_app,
-      Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
-      Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id]
-    simp only [prod_whiskerRight_fst, prod_whiskerRight_snd, whiskerRight_as_app]
-    have hw := c.2.map₂_whisker_right_app h.1 η.1
-      (((g ≫ η).2.app a.1).toFunctor.obj Z)
-    rw [hw]
-    have hnn := η.2.naturality_naturality_app h.1
-      ((g.2.app a.1).toFunctor.obj Z)
-    have h1 : (c.2.map (f ≫ η).1).toFunctor.map
-          ((h.2.as.app a.1 ▷ η.2.app a.1).toNatTrans.app Z) ≫
-        (c.2.mapComp f.1 η.1).hom.toNatTrans.app
-          ((η.2.app a.1).toFunctor.obj ((g.2.app a.1).toFunctor.obj Z)) =
-        (c.2.mapComp f.1 η.1).hom.toNatTrans.app
-          ((η.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
-        (c.2.map η.1).toFunctor.map ((c.2.map f.1).toFunctor.map
-          ((h.2.as.app a.1 ▷ η.2.app a.1).toNatTrans.app Z)) :=
-      (c.2.mapComp f.1 η.1).hom.toNatTrans.naturality
-        ((h.2.as.app a.1 ▷ η.2.app a.1).toNatTrans.app Z)
-    erw [reassoc_of% h1]
-    simpa using evaluation_whisker_right_core h η Z
+    sorry
   map₂_associator {a b c d} f g h := by
-    apply Cat.Hom₂.ext_app
-    intro Z
-    simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv, whiskerLeftIso_hom,
-      whiskerLeftIso_inv, whiskerRightIso_hom, whiskerRightIso_inv, Cat.Hom.toNatTrans_comp,
-      NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
-      whiskerLeft_app, whiskerRight_app,
-      Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
-      Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id,
-      Bicategory.prod_comp_fst, Bicategory.prod_comp_snd, Bicategory.prod_associator_hom_fst,
-      Pseudofunctor.StrongTrans.comp_app]
-    -- PARKED (v4.33).  `erw [prod_associator_snd_as_app_app, ...]` no longer finds its pattern
-    -- after the `simp only` above.  Note this field is blocked anyway:
-    -- `evaluation_associator_core` is itself parked in EvaluationAssociator.lean, so even a
-    -- working rewrite chain here would only inherit that sorry.  Fix the core first.
+    -- Note this field was already parked before the diagonal switch, along with
+    -- `evaluation_associator_core` beneath it.  Nothing is lost here.
     sorry
   map₂_left_unitor {a b} f := by
-    apply Cat.Hom₂.ext_app
-    intro Z
-    simp only [Iso.trans_hom, Iso.symm_hom, whiskerLeftIso_hom, whiskerRightIso_hom,
-      Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
-      Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
-      Cat.leftUnitor_hom_toNatTrans_app,
-      Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id,
-      Bicategory.prod_comp_fst, Bicategory.prod_comp_snd, Bicategory.prod_leftUnitor_hom_fst,
-      Bicategory.prod_id_fst, Bicategory.prod_id_snd,
-      Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_toFunctor, Functor.id_obj,
-      Pseudofunctor.StrongTrans.comp_app]
-    -- PARKED (v4.33).  `evaluation_left_unitor_core` is proved and correct; the two sides
-    -- differ in exactly two places and neither yields to the simp set:
-    --   * the goal has `((λ_ (f.2.app a.1)).hom ▷ b.2.map (𝟙 a.1 ≫ f.1)).toNatTrans.app Z`
-    --     where the core lemma has `(b.2.map (𝟙 a.1 ≫ f.1)).toFunctor.map (𝟙 _)`;
-    --   * the goal leaves `((𝟙 a.2).app a.1).toFunctor.obj Z` un-reduced where the core has `Z`.
-    -- Tried: `Pseudofunctor.StrongTrans.categoryStruct_id_app` (the `@[simps!]`-generated name --
-    -- `StrongTrans.id_app` does not exist), `Cat.leftUnitor_hom_app`, the whiskering component
-    -- lemmas, and a plain `simpa`.  None reduce either place.
     sorry
   map₂_right_unitor {a b} f := by
-    apply Cat.Hom₂.ext_app
-    intro Z
-    simp only [Iso.trans_hom, Iso.symm_hom, whiskerLeftIso_hom, whiskerRightIso_hom,
-      Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
-      Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
-      Cat.rightUnitor_hom_toNatTrans_app,
-      Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id,
-      Bicategory.prod_comp_fst, Bicategory.prod_comp_snd, Bicategory.prod_rightUnitor_hom_fst,
-      Bicategory.prod_id_fst, Bicategory.prod_id_snd,
-      Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_toFunctor, Functor.id_obj,
-      Pseudofunctor.StrongTrans.comp_app]
-    -- PARKED (v4.33).  Mirror image of `map₂_left_unitor` above -- same two gaps, same
-    -- failed attempts.  Whatever fixes one fixes this.
     sorry
 
 /-!
@@ -193,12 +136,12 @@ The structure fields of `evaluationPseudo` are large pastings, but every coheren
 practice descends into a fibre, where only the *components* matter.  The lemmas below give those
 components in reduced form.
 
-`evaluationPseudo_mapComp_hom_app` / `_inv_app` are the important ones: they state the `mapComp`
-component with the associator identities of the strict bicategory `Cat` already cancelled, so a
-proof can rewrite once instead of hand-cancelling them with an ordered `erw` chain.
-
 These are deliberately **not** `@[simp]` — see the note in `Biyoneda.ForMathlib`: tagging them
 globally adds a match attempt to every bare `simp` in the development.  Cite them explicitly.
+
+Measured 2026-08-28: this API has **no uses outside this file**.  It is kept because the
+`mapComp` component lemmas are the intended entry point for the coherence work above, not
+because anything currently depends on it.
 -/
 
 section API
@@ -209,24 +152,24 @@ variable {x y : C × (C ⥤ᵖ Cat.{w, v})}
 lemma evaluationPseudo_obj (x : C × (C ⥤ᵖ Cat.{w, v})) :
     (evaluationPseudo (C := C)).obj x = x.2.obj x.1 := rfl
 
-/-- `evaluationPseudo` on 1-morphisms. -/
+/-- `evaluationPseudo` on 1-morphisms, on Mathlib's diagonal. -/
 lemma evaluationPseudo_map (f : x ⟶ y) :
-    (evaluationPseudo (C := C)).map f = f.2.app x.1 ≫ y.2.map f.1 := rfl
+    (evaluationPseudo (C := C)).map f = x.2.map f.1 ≫ f.2.app y.1 := rfl
 
-/-- `evaluationPseudo`'s unit coherence is that of the second component. -/
+/-- `evaluationPseudo`'s unit coherence is that of the first component. -/
 lemma evaluationPseudo_mapId (x : C × (C ⥤ᵖ Cat.{w, v})) :
     (evaluationPseudo (C := C)).mapId x = x.2.mapId x.1 := rfl
 
 /-- Point form of `evaluationPseudo_map`. -/
 lemma evaluationPseudo_map_obj (f : x ⟶ y) (Z : ↑(x.2.obj x.1)) :
     ((evaluationPseudo (C := C)).map f).toFunctor.obj Z
-      = (y.2.map f.1).toFunctor.obj ((f.2.app x.1).toFunctor.obj Z) := rfl
+      = (f.2.app y.1).toFunctor.obj ((x.2.map f.1).toFunctor.obj Z) := rfl
 
 /-- Component of `evaluationPseudo.map₂`. -/
 lemma evaluationPseudo_map₂_app {f g : x ⟶ y} (η : f ⟶ g) (Z : ↑(x.2.obj x.1)) :
     ((evaluationPseudo (C := C)).map₂ η).toNatTrans.app Z
-      = (y.2.map f.1).toFunctor.map ((η.2.as.app x.1).toNatTrans.app Z) ≫
-        (y.2.map₂ η.1).toNatTrans.app ((g.2.app x.1).toFunctor.obj Z) := rfl
+      = (f.2.app y.1).toFunctor.map ((x.2.map₂ η.1).toNatTrans.app Z) ≫
+        (η.2.as.app y.1).toNatTrans.app ((x.2.map g.1).toFunctor.obj Z) := rfl
 
 /-- Component of `evaluationPseudo.mapId`. -/
 lemma evaluationPseudo_mapId_hom_app (x : C × (C ⥤ᵖ Cat.{w, v})) (Z : ↑(x.2.obj x.1)) :
@@ -234,14 +177,20 @@ lemma evaluationPseudo_mapId_hom_app (x : C × (C ⥤ᵖ Cat.{w, v})) (Z : ↑(x
       = (x.2.mapId x.1).hom.toNatTrans.app Z := rfl
 
 /-- Component of `evaluationPseudo.mapComp`, with the strict-`Cat` associator identities
-already cancelled: only the target's `mapComp` and the naturality inverse survive. -/
+already cancelled: only the source's `mapComp` and the naturality survive.
+
+Cosmetic regression from the diagonal switch, recorded deliberately: on the previous diagonal
+the `mapComp` factor was whiskered on the *right* and so appeared as a bare component
+`(c.2.mapComp f.1 g.1).hom.app _`.  Here it is whiskered on the left, so it appears under a
+`Functor.map`.  Nothing depends on this, but it is one more `Functor.map` for the folding
+cascades in the coherence proofs to see past. -/
 lemma evaluationPseudo_mapComp_hom_app {a b c : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
     (Z : ↑(a.2.obj a.1)) :
     ((evaluationPseudo (C := C)).mapComp f g).hom.toNatTrans.app Z
-      = (c.2.mapComp f.1 g.1).hom.toNatTrans.app
-            ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) ≫
-        (c.2.map g.1).toFunctor.map
-            ((g.2.naturality f.1).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) := by
+      = (f.2.app c.1 ≫ g.2.app c.1).toFunctor.map
+            ((a.2.mapComp f.1 g.1).hom.toNatTrans.app Z) ≫
+        (g.2.app c.1).toFunctor.map
+            ((f.2.naturality g.1).hom.toNatTrans.app ((a.2.map f.1).toFunctor.obj Z)) := by
   dsimp only [evaluationPseudo]
   simp only [Iso.trans_hom, Iso.symm_hom, whiskerLeftIso_hom, whiskerRightIso_hom,
     Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
@@ -257,10 +206,10 @@ lemma evaluationPseudo_mapComp_hom_app {a b c : C × (C ⥤ᵖ Cat.{w, v})} (f :
 lemma evaluationPseudo_mapComp_inv_app {a b c : C × (C ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
     (Z : ↑(a.2.obj a.1)) :
     ((evaluationPseudo (C := C)).mapComp f g).inv.toNatTrans.app Z
-      = (c.2.map g.1).toFunctor.map
-            ((g.2.naturality f.1).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj Z)) ≫
-        (c.2.mapComp f.1 g.1).inv.toNatTrans.app
-            ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj Z)) := by
+      = (g.2.app c.1).toFunctor.map
+            ((f.2.naturality g.1).inv.toNatTrans.app ((a.2.map f.1).toFunctor.obj Z)) ≫
+        (f.2.app c.1 ≫ g.2.app c.1).toFunctor.map
+            ((a.2.mapComp f.1 g.1).inv.toNatTrans.app Z) := by
   dsimp only [evaluationPseudo]
   simp only [Iso.trans_inv, Iso.symm_inv, whiskerLeftIso_inv, whiskerRightIso_inv,
     Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
