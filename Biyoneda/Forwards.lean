@@ -53,14 +53,11 @@ lemma forwards_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f
     (f.2.app b.1).toFunctor.map ((h.as.app b.1).toNatTrans.app (𝟙 (unop b.1) ≫ f.1.unop)) ≫
       (f.2.app b.1).toFunctor.map ((Y.app b.1).toFunctor.map (λ_ f.1.unop).hom) ≫
         (f.2.app b.1).toFunctor.map ((Y.app b.1).toFunctor.map (ρ_ f.1.unop).inv) ≫
-          (f.2.app b.1).toFunctor.map ((Y.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
-            (f.2.naturality f.1).hom.toNatTrans.app ((Y.app a.1).toFunctor.obj (𝟙 (unop a.1))) =
+          (f.2.app b.1).toFunctor.map ((Y.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) =
     ((f.2.app b.1).toFunctor.map ((X.app b.1).toFunctor.map (λ_ f.1.unop).hom) ≫
         (f.2.app b.1).toFunctor.map ((X.app b.1).toFunctor.map (ρ_ f.1.unop).inv) ≫
-          (f.2.app b.1).toFunctor.map ((X.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
-            (f.2.naturality f.1).hom.toNatTrans.app
-              ((X.app a.1).toFunctor.obj (𝟙 (unop a.1)))) ≫
-      (b.2.map f.1).toFunctor.map ((f.2.app a.1).toFunctor.map
+          (f.2.app b.1).toFunctor.map ((X.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1)))) ≫
+      (f.2.app b.1).toFunctor.map ((a.2.map f.1).toFunctor.map
         ((h.as.app a.1).toNatTrans.app (𝟙 (unop a.1)))) := by
   have h1 := (h.as.app b.1).toNatTrans.naturality ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)
   have h2 := modification_naturality_app h f.1 (𝟙 (unop a.1))
@@ -78,7 +75,9 @@ lemma forwards_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f
   have h2' := congrArg (fun m ↦ (f.2.app b.1).toFunctor.map m) h2
   simp only [Functor.map_comp] at h1' h2'
   rw [← reassoc_of% h1']
-  erw [reassoc_of% h2', h3]
+  -- with the diagonal slide gone from the statement, the goal ends exactly at `h2'`'s left-hand
+  -- side, so this is a plain rewrite rather than the `reassoc_of%` the old shape needed
+  erw [h2']
   simp only [Category.assoc]
   rfl
 
