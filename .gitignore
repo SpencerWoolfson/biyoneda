@@ -32,3 +32,6 @@
 
 # CI build log captured for the sorry/axiom gate
 /build.log
+
+# Scratch probe file used for fast single-module iteration; never part of the build.
+Biyoneda/Probe.lean
