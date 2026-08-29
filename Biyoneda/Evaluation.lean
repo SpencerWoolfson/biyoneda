@@ -163,6 +163,25 @@ lemma cat_leftUnitor_inv {X Y : Cat.{v, u}} (f : X ⟶ Y) : (λ_ f).inv = 𝟙 f
 lemma cat_rightUnitor_hom {X Y : Cat.{v, u}} (f : X ⟶ Y) : (ρ_ f).hom = 𝟙 f := rfl
 lemma cat_rightUnitor_inv {X Y : Cat.{v, u}} (f : X ⟶ Y) : (ρ_ f).inv = 𝟙 f := rfl
 
+lemma cat_id_comp {X Y : Cat.{v, u}} {f g : X ⟶ Y} (η : f ⟶ g) : 𝟙 f ≫ η = η := by simp
+lemma cat_comp_id {X Y : Cat.{v, u}} {f g : X ⟶ Y} (η : f ⟶ g) : η ≫ 𝟙 g = η := by simp
+lemma cat_id_whiskerRight {X Y Z : Cat.{v, u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    𝟙 f ▷ g = 𝟙 (f ≫ g) := by simp
+lemma cat_whiskerLeft_id {X Y Z : Cat.{v, u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    f ◁ 𝟙 g = 𝟙 (f ≫ g) := rfl
+
+lemma bicat_id_comp {B : Type*} [Bicategory B] {a b : B} {f g : a ⟶ b} (η : f ⟶ g) :
+    𝟙 f ≫ η = η := Category.id_comp η
+lemma bicat_comp_id {B : Type*} [Bicategory B] {a b : B} {f g : a ⟶ b} (η : f ⟶ g) :
+    η ≫ 𝟙 g = η := Category.comp_id η
+lemma bicat_id_whiskerRight {B : Type*} [Bicategory B] {a b c : B} (f : a ⟶ b) (g : b ⟶ c) :
+    𝟙 f ▷ g = 𝟙 (f ≫ g) := Bicategory.id_whiskerRight f g
+lemma bicat_whiskerLeft_id {B : Type*} [Bicategory B] {a b c : B} (f : a ⟶ b) (g : b ⟶ c) :
+    f ◁ 𝟙 g = 𝟙 (f ≫ g) := Bicategory.whiskerLeft_id f g
+
+lemma cat_unitor_block {X Y Z : Cat.{v, u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    ((ρ_ f).hom ≫ (λ_ f).inv) ▷ g = 𝟙 (f ≫ g) := by aesop_cat
+
 /-! ### Spelling bridges
 
 The obstruction described above is that `(𝟙 F).app a` will not reduce.  The reason it resisted
@@ -236,6 +255,20 @@ lemma evalMap₂_eq_exchange {u u' : x ⟶ y} {α α' : F ⟶ G} (σ : u ⟶ u')
   simp [whisker_exchange]
 
 
+/-- The identity strong transformation's naturality, whiskered, is the identity 2-cell.
+The RHS spelling is pinned to the normalised form; without that pin the `𝟙 _` elaborates at the
+un-normalised type and nothing matches. -/
+lemma strongTrans_id_naturality_whiskerRight (u : x ⟶ y) (α : F ⟶ G) :
+    ((StrongTrans.naturality (𝟙 F) u) ▷ᵢ α.app y).hom = 𝟙 (F.map u ≫ α.app y) := by
+  simp only [whiskerRightIso_hom, strongTrans_id_naturality_hom]
+  exact cat_unitor_block (F.map u) (α.app y)
+
+lemma cat_whiskerLeft_leftUnitor {X Y Z : Cat.{v, u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    f ◁ (λ_ g).hom = 𝟙 (f ≫ g) := by aesop_cat
+
+lemma strongTrans_id_app_toFunctor_map (F : C ⥤ᵖ Cat.{w, v}) (a : C)
+    {p q : ↑(F.obj a)} (h : p ⟶ q) : ((StrongTrans.app (𝟙 F) a)).toFunctor.map h = h := rfl
+
 /-! ### Shape lemmas specialised at an identity
 
 `evalMapComp_hom` above is stated for general arguments, so rewriting with it at `𝟙 F`
@@ -275,6 +308,16 @@ lemma evalMap₂_rightUnitor (u : x ⟶ y) (α : F ⟶ G) :
       = F.map₂ (ρ_ u).hom ▷ (α.app y ≫ 𝟙 (G.obj y)) ≫
         F.map u ◁ (ρ_ (α.app y)).hom := rfl
 
+/-- Component form of `strongTrans_id_naturality_whiskerRight`. -/
+lemma strongTrans_id_naturality_whiskerRight_app (u : x ⟶ y) (α : F ⟶ G) (W : ↑(F.obj x)) :
+    ((StrongTrans.naturality (𝟙 F) u) ▷ᵢ α.app y).hom.toNatTrans.app W = 𝟙 _ := by
+  rw [strongTrans_id_naturality_whiskerRight]; aesop_cat
+
+/-- Component form of `cat_whiskerLeft_leftUnitor`. -/
+lemma cat_whiskerLeft_leftUnitor_app {X' Y' Z' : Cat.{v, u}} (f : X' ⟶ Y') (g : Y' ⟶ Z')
+    (W : ↑X') : (f ◁ (λ_ g).hom).toNatTrans.app W = 𝟙 _ := by
+  rw [cat_whiskerLeft_leftUnitor]; aesop_cat
+
 /-! ### The five coherence laws
 
 OPEN.  Each is stated exactly as the corresponding `Pseudofunctor` field, instantiated at an
@@ -287,28 +330,35 @@ lemma eval_left_unitor (u : x ⟶ y) (α : F ⟶ G) :
     evalMap₂ (λ_ u).hom (λ_ α).hom
       = (evalMapComp (𝟙 x) (𝟙 F) u α).hom ≫
         (F.mapId x).hom ▷ evalMap u α ≫ (λ_ (evalMap u α)).hom := by
-  rw [evalMap₂_leftUnitor, evalMapComp_id_left_hom, F.map₂_left_unitor]
-  dsimp only [evalMap]
-  bicategory_nf
-  simp
-  -- All CONTENT is discharged; what is left is pure structural coherence.  Both sides share
-  -- their prefix (`F.map (𝟙 x ≫ u) ◁ (λ_ _).hom ≫ (F.mapComp (𝟙 x) u).hom ▷ _`) and their
-  -- suffix (`(F.mapId x).hom ▷ _ ▷ _ ≫ α_ ≫ (λ_ _).hom`); the RHS carries one extra block,
-  --     (ρ_ (F.map (𝟙 x))).inv ▷ F.map u ▷ α.app y ≫ α_ ≫ α_⁻¹
-  -- which ought to cancel by the triangle identity.
+  -- The route that gets furthest, recorded 2026-08-29.  Descend to components first: at the
+  -- 2-cell level every rewrite poisons the goal (see below), but componentwise both sides are
+  -- short and share their head.
+  dsimp only [strongTrans_id_app, evalMap₂, evalMapComp, evalMap]
+  simp only [Iso.trans_hom, Iso.symm_hom, whiskerLeftIso_hom, whiskerRightIso_hom,
+    cat_associator_hom, cat_associator_inv, cat_leftUnitor_hom, cat_leftUnitor_inv,
+    cat_rightUnitor_hom, cat_rightUnitor_inv]
+  apply Cat.Hom₂.ext_app
+  intro Z
+  simp [strongTrans_id_naturality_whiskerRight_app, cat_whiskerLeft_leftUnitor_app,
+    strongTrans_id_app_toFunctor_map]
+  -- Residual, both sides sharing their first factor:
+  --   LHS  … ≫ (α.app y).map ((F.map u).map (mapId.app Z)) ≫ (F.map u ◁ (λ_ _).hom).app Z
+  --   RHS  … ≫ ((𝟙 F).naturality u ▷ᵢ α.app y).hom.app _ ≫ (α.app y).map ((F.map u).map …)
   --
-  -- `bicategory` FINDS this path but emits a term the KERNEL REJECTS:
-  -- "(kernel) application type mismatch" inside `Mathlib.Tactic.Bicategory.naturality_comp`.
-  -- Not fixed by `backward.isDefEq.respectTransparency false`,
-  -- `...respectTransparency.types false`, `backward.defeqAttrib.useBackward true`, or a
-  -- maxHeartbeats bump.  `bicategory` is sound on the same shapes in isolation (five probes
-  -- over `Cat`, including one with `mapId` as an opaque atom), so this is specific to the goal.
-  -- `bicategory_nf` is safe; it is only the final coherence step that produces the bad term.
+  -- BOTH leftover factors are the identity, and BOTH are proved above as
+  -- `strongTrans_id_naturality_whiskerRight_app` and `cat_whiskerLeft_leftUnitor_app` --
+  -- stated in exactly the shape the goal prints.  Neither `simp` nor `rw` will apply them
+  -- here: `rw` reports "did not find an occurrence of the pattern".  The goal's terms and the
+  -- lemmas' left-hand sides print identically but are not the same term.
   --
-  -- Also measured to fail here: `simp [triangle_assoc]`, `rw [triangle_assoc]`, `congr 1`,
-  -- `simp [rightUnitor_inv_naturality, whisker_assoc]`, `slice_rhs 3 4 => rw [triangle_assoc]`.
+  -- ROOT CAUSE, established this session.  `(ρ_ f).hom = 𝟙 f` is true by `rfl` in `Cat`, but
+  -- its two sides have types `f ≫ 𝟙 ⟶ f` and `f ⟶ f`, which are defeq and NOT syntactically
+  -- equal.  So it is unusable as a rewrite: `rw` reports "motive is not type correct", while
+  -- `simp only` *does* fire and thereby leaves the goal internally inconsistent at reducible
+  -- transparency.  After that, ordinary lemmas -- `Category.id_comp`, `Bicategory.id_whiskerRight`
+  -- -- silently stop matching, and `bicategory` builds terms the kernel rejects.  Every wall hit
+  -- in this file traces back to that one fact.
   sorry
-
 /-- Right-unitor coherence for `evaluationPseudo`.  Its content is `α.naturality (𝟙 y)` against
 the two `mapId`s. -/
 lemma eval_right_unitor (u : x ⟶ y) (α : F ⟶ G) :
