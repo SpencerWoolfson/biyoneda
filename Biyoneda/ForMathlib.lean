@@ -43,7 +43,7 @@ makes each golf a guaranteed *localized* net improvement. Flip them to `@[simp]`
 
 open CategoryTheory Bicategory Pseudofunctor StrongTrans Functor
 
-universe w v u₁ v₁ w₁
+universe w v u₁ v₁ w₁ u₂ v₂ w₂
 
 namespace CategoryTheory.Cat
 
@@ -125,5 +125,20 @@ lemma Pseudofunctor.StrongTrans.naturality_naturality_app {B : Type u₁} [Bicat
   simpa only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
     Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app]
     using Cat.Hom₂.congr_app (α.naturality_naturality η) X
+
+
+/-- Taking the component at `b` is a functor from the hom-category of pseudofunctors `B ⥤ᵖ C`
+(strong transformations and modifications) to the hom-category `F.obj b ⟶ G.obj b`.
+
+This is the `Pseudofunctor` analogue of `CategoryTheory.evaluation`, and it is *strictly*
+functorial: vertical composition of strong transformations and of modifications is both
+computed componentwise, so both functor laws are `rfl`.  It is the second factor of
+`Bicategory.evalHom`. -/
+@[simps]
+def Pseudofunctor.StrongTrans.appFunctor {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {C : Type u₂} [Bicategory.{w₂, v₂} C] (F G : B ⥤ᵖ C) (b : B) :
+    (F ⟶ G) ⥤ (F.obj b ⟶ G.obj b) where
+  obj η := η.app b
+  map Γ := Γ.as.app b
 
 end CategoryTheory

@@ -1,11 +1,9 @@
 -- General, Yoneda-independent material (all upstream candidates).
--- NOTE: no longer sorry-free. `catPseudoULift` (UniverseLift) and the evaluation coherence
--- cores carry parked coherence fields as of the Mathlib v4.33 bump; see README "Status".
+-- NOTE: no longer sorry-free. `evaluationPseudo` carries five parked coherence fields as of
+-- the Mathlib v4.33 bump and the diagonal switch; see README "Status".
 import Biyoneda.ForMathlib
 import Biyoneda.UniverseLift
 import Biyoneda.BiEquiv
-import Biyoneda.EvaluationCore
-import Biyoneda.EvaluationAssociator
 import Biyoneda.Evaluation
 -- The bicategorical Yoneda development itself, in dependency order.
 import Biyoneda.Pairing

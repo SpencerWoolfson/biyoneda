@@ -36,6 +36,9 @@ BASELINE_FILE="$ROOT/.github/sorry-baseline"
 CLEAN_DECLS=(
   "CategoryTheory.Bicategory.StrongTransIntoCats.lift"
   "CategoryTheory.Bicategory.StrongTransIntoCats.liftDom"
+  "CategoryTheory.Pseudofunctor.StrongTrans.appFunctor"
+  "CategoryTheory.Bicategory.evalHom"
+  "CategoryTheory.Bicategory.evalAt"
 )
 
 CONTAMINATED_DECLS=(

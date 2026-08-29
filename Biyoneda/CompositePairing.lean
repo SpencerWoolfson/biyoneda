@@ -23,7 +23,7 @@ The same argument now covers `StrongTransIntoCats.lift` and `.liftDom`: both dir
 Yoneda equivalence are assembled through them, so a `sorry` reaching either would be inherited
 by everything downstream while each individual definition still looked clean.
 
-`scripts/verify-build.sh` gates on these four; keep the two lists in step.
+`scripts/verify-build.sh` gates on all of these; keep the two lists in step.
 -/
 
 open CategoryTheory Bicategory Biyoneda
@@ -32,8 +32,19 @@ universe u v w
 
 variable {B : Type u} [Bicategory.{w, v} B]
 
--- All four must report `[propext, Classical.choice, Quot.sound]` with no `sorryAx`.
+-- Two lists, matching `CLEAN_DECLS` / `CONTAMINATED_DECLS` in `scripts/verify-build.sh`.
+--
+-- Known-contaminated: these still ride on `homPseudo`'s parked coherence fields.
 #print axioms CategoryTheory.Bicategory.yonedaPairingComposite
 #print axioms yonedaPairing
+
+-- Must be `sorryAx`-free.  `lift`/`liftDom` came clean when `catPseudoULift` was finished;
+-- `appFunctor`, `evalHom` and `evalAt` are the sorry-free half of the evaluation rebuild
+-- (2026-08-29).  Note `evaluationPseudo` itself is deliberately NOT here: its five coherence
+-- fields are still parked, so it -- and every `rfl` bridge stated about it -- is contaminated
+-- by construction until Phase 2 lands.
 #print axioms StrongTransIntoCats.lift
 #print axioms StrongTransIntoCats.liftDom
+#print axioms CategoryTheory.Pseudofunctor.StrongTrans.appFunctor
+#print axioms CategoryTheory.Bicategory.evalHom
+#print axioms CategoryTheory.Bicategory.evalAt
