@@ -48,3 +48,6 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms CategoryTheory.Pseudofunctor.StrongTrans.appFunctor
 #print axioms CategoryTheory.Bicategory.evalHom
 #print axioms CategoryTheory.Bicategory.evalAt
+#print axioms CategoryTheory.Bicategory.strongTrans_id_app
+#print axioms CategoryTheory.Bicategory.evalMapComp_hom
+#print axioms CategoryTheory.Bicategory.evalMapComp_inv

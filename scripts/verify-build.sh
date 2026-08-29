@@ -44,6 +44,9 @@ CLEAN_DECLS=(
   "CategoryTheory.Pseudofunctor.StrongTrans.appFunctor"
   "CategoryTheory.Bicategory.evalHom"
   "CategoryTheory.Bicategory.evalAt"
+  "CategoryTheory.Bicategory.strongTrans_id_app"
+  "CategoryTheory.Bicategory.evalMapComp_hom"
+  "CategoryTheory.Bicategory.evalMapComp_inv"
 )
 
 CONTAMINATED_DECLS=(

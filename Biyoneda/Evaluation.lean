@@ -142,6 +142,91 @@ def evalMapComp (u : x ⟶ y) (α : F ⟶ G) (v : y ⟶ z) (β : G ⟶ H) :
     (α_ (α.app y) (G.map v) (β.app z))) ≪≫
   (α_ (F.map u) (α.app y) (G.map v ≫ β.app z)).symm
 
+/-! ### Spelling bridges
+
+The obstruction described above is that `(𝟙 F).app a` will not reduce.  The reason it resisted
+every tactic is narrower than it looked: **the dot notation `(𝟙 F).app a` does not elaborate at
+all** — `𝟙 F` presents as `CategoryStruct.toQuiver.1 F F`, which the elaborator will not treat as
+a `StrongTrans`, so the bridge could not even be stated.  Written with *explicit application*,
+`StrongTrans.app (𝟙 F) a`, it elaborates and is `rfl`.
+
+Being `rfl` is what matters: these are 1-morphisms sitting in the *types* of the surrounding
+2-cells, so `simp` can never rewrite them (its motive is not type-correct), but `dsimp` can,
+because it preserves definitional equality.  Use them with `dsimp only`, via `eval_norm` below.
+
+They are deliberately **not** `@[simp]`: as rewrite rules in the wrong phase they destabilise
+the ambient simp set.  Mathlib has `StrongTrans.categoryStruct_id_app` and friends, but stated
+in the dot-notation form, which is exactly the form that does not fire here. -/
+
+/-- `StrongTrans.categoryStruct_id_app` in the spelling that elaborates. -/
+lemma strongTrans_id_app (F : C ⥤ᵖ Cat.{w, v}) (a : C) :
+    StrongTrans.app (𝟙 F) a = 𝟙 (F.obj a) := rfl
+
+/-- `StrongTrans.comp_app` in the spelling that elaborates. -/
+lemma strongTrans_comp_app (η : F ⟶ G) (θ : G ⟶ H) (a : C) :
+    StrongTrans.app (η ≫ θ) a = StrongTrans.app η a ≫ StrongTrans.app θ a := rfl
+
+/-- The left unitor of the pseudofunctor bicategory, componentwise. -/
+lemma strongTrans_leftUnitor_app (α : F ⟶ G) (a : C) :
+    ((λ_ α).hom).as.app a = (λ_ (StrongTrans.app α a)).hom := rfl
+
+/-- The right unitor of the pseudofunctor bicategory, componentwise. -/
+lemma strongTrans_rightUnitor_app (α : F ⟶ G) (a : C) :
+    ((ρ_ α).hom).as.app a = (ρ_ (StrongTrans.app α a)).hom := rfl
+
+/-- The naturality constraint of the identity strong transformation. -/
+lemma strongTrans_id_naturality_hom (F : C ⥤ᵖ Cat.{w, v}) (u : x ⟶ y) :
+    (StrongTrans.naturality (𝟙 F) u).hom = (ρ_ (F.map u)).hom ≫ (λ_ (F.map u)).inv := rfl
+
+/-- Evaluation of an identity 1-morphism of the product: the second factor contributes nothing. -/
+lemma evalMap_id_id (x : C) (F : C ⥤ᵖ Cat.{w, v}) : evalMap (𝟙 x) (𝟙 F) = F.map (𝟙 x) := rfl
+
+/-- Normalise the identity and unitor spellings that block the coherence proofs.  This is the
+first line of all five cores below; after it, every identity in the goal is a literal `𝟙`.
+
+Wrapped in `try`, so it is a harmless no-op on the two whisker cores, whose statements mention
+no identities.  It is a normalisation prefix, never a closing step — every use below is followed
+by an explicit `sorry`, so it cannot mask anything. -/
+syntax "eval_norm" : tactic
+macro_rules
+  | `(tactic| eval_norm) =>
+    `(tactic| try dsimp only [strongTrans_id_app, strongTrans_comp_app,
+        strongTrans_leftUnitor_app, strongTrans_rightUnitor_app, strongTrans_id_naturality_hom,
+        evalMap_id_id])
+
+/-! ### Shape lemmas for `evalMapComp`
+
+A nested `≪≫` does not distribute on its own, so the constraint iso is opaque to rewriting until
+its `hom` and `inv` are named.  Both of these are needed before any of the five cores can be
+attacked componentwise. -/
+
+/-- `evalMapComp`'s forward direction, with the `≪≫` chain distributed. -/
+lemma evalMapComp_hom (u : x ⟶ y) (α : F ⟶ G) (v : y ⟶ z) (β : G ⟶ H) :
+    (evalMapComp u α v β).hom
+      = (F.mapComp u v).hom ▷ (α.app z ≫ β.app z) ≫
+        (α_ (F.map u) (F.map v) (α.app z ≫ β.app z)).hom ≫
+        F.map u ◁ ((α_ (F.map v) (α.app z) (β.app z)).inv ≫
+          (α.naturality v).hom ▷ β.app z ≫
+          (α_ (α.app y) (G.map v) (β.app z)).hom) ≫
+        (α_ (F.map u) (α.app y) (G.map v ≫ β.app z)).inv := rfl
+
+/-- `evalMapComp`'s inverse direction, with the `≪≫` chain distributed. -/
+lemma evalMapComp_inv (u : x ⟶ y) (α : F ⟶ G) (v : y ⟶ z) (β : G ⟶ H) :
+    (evalMapComp u α v β).inv
+      = (α_ (F.map u) (α.app y) (G.map v ≫ β.app z)).hom ≫
+        F.map u ◁ ((α_ (α.app y) (G.map v) (β.app z)).inv ≫
+          (α.naturality v).inv ▷ β.app z ≫
+          (α_ (F.map v) (α.app z) (β.app z)).hom) ≫
+        (α_ (F.map u) (F.map v) (α.app z ≫ β.app z)).inv ≫
+        (F.mapComp u v).inv ▷ (α.app z ≫ β.app z) := by
+  simp [evalMapComp]
+
+/-- The other filling of the `map₂` square, by interchange.  Sometimes the more convenient
+orientation: it puts the modification component leftmost. -/
+lemma evalMap₂_eq_exchange {u u' : x ⟶ y} {α α' : F ⟶ G} (σ : u ⟶ u') (Γ : α ⟶ α') :
+    evalMap₂ σ Γ = (F.map u ◁ Γ.as.app y) ≫ (F.map₂ σ ▷ α'.app y) := by
+  simp [whisker_exchange]
+
 /-! ### The five coherence laws
 
 OPEN.  Each is stated exactly as the corresponding `Pseudofunctor` field, instantiated at an
@@ -154,6 +239,7 @@ lemma eval_left_unitor (u : x ⟶ y) (α : F ⟶ G) :
     evalMap₂ (λ_ u).hom (λ_ α).hom
       = (evalMapComp (𝟙 x) (𝟙 F) u α).hom ≫
         (F.mapId x).hom ▷ evalMap u α ≫ (λ_ (evalMap u α)).hom := by
+  eval_norm
   sorry
 
 /-- Right-unitor coherence for `evaluationPseudo`.  Its content is `α.naturality (𝟙 y)` against
@@ -162,6 +248,7 @@ lemma eval_right_unitor (u : x ⟶ y) (α : F ⟶ G) :
     evalMap₂ (ρ_ u).hom (ρ_ α).hom
       = (evalMapComp u α (𝟙 y) (𝟙 G)).hom ≫
         evalMap u α ◁ (G.mapId y).hom ≫ (ρ_ (evalMap u α)).hom := by
+  eval_norm
   sorry
 
 /-- Left-whiskering coherence for `evaluationPseudo`. -/
@@ -170,6 +257,7 @@ lemma eval_whisker_left (u : x ⟶ y) (α : F ⟶ G) {v v' : y ⟶ z} {β β' : 
     evalMap₂ (u ◁ σ) (α ◁ Γ)
       = (evalMapComp u α v β).hom ≫ evalMap u α ◁ evalMap₂ σ Γ ≫
         (evalMapComp u α v' β').inv := by
+  eval_norm
   sorry
 
 /-- Right-whiskering coherence for `evaluationPseudo`. -/
@@ -178,7 +266,16 @@ lemma eval_whisker_right {u u' : x ⟶ y} {α α' : F ⟶ G} (σ : u ⟶ u') (Γ
     evalMap₂ (σ ▷ v) (Γ ▷ β)
       = (evalMapComp u α v β).hom ≫ evalMap₂ σ Γ ▷ evalMap v β ≫
         (evalMapComp u' α' v β).inv := by
+  eval_norm
   sorry
+
+/-- The author's `evalMap₂Dist`: identical in statement to `eval_whisker_right`, kept as an
+alias so either name resolves.  Note it is not an independent obligation. -/
+lemma evalMap₂Dist {u u' : x ⟶ y} {α α' : F ⟶ G} (σ : u ⟶ u') (Γ : α ⟶ α')
+    (v : y ⟶ z) (β : G ⟶ H) :
+    evalMap₂ (σ ▷ v) (Γ ▷ β) = (evalMapComp u α v β).hom ≫ (evalMap₂ σ Γ ▷ evalMap v β) ≫
+      (evalMapComp u' α' v β).inv :=
+  eval_whisker_right σ Γ v β
 
 /-- Associator coherence for `evaluationPseudo`.  The largest of the five: three `mapComp`s and
 two `naturality` slides to align, with `F.map₂_associator` as its input. -/
@@ -190,6 +287,7 @@ lemma eval_associator (s : x ⟶ y) (δ : F ⟶ G) (u : y ⟶ z) (α : G ⟶ H)
         (α_ (evalMap s δ) (evalMap u α) (evalMap v β)).hom ≫
         evalMap s δ ◁ (evalMapComp u α v β).inv ≫
         (evalMapComp s δ (u ≫ v) (α ≫ β)).inv := by
+  eval_norm
   sorry
 
 end Parts
