@@ -8,6 +8,11 @@
 # elsewhere (`sorry_if_sorry`) -- which looks identical to a real proof until
 # you check the axioms.
 #
+# Note on the baseline RISING: that is not always a regression. Splitting one declaration
+# whose sorried coherence fields were invisible into several named standalone lemmas raises
+# the count while making the debt explicit and independently attackable. The evaluation
+# coherence cores did exactly that; see the header of Biyoneda/Evaluation.lean.
+#
 # Usage: scripts/verify-build.sh [build.log]
 #   (produce the log with: lake build 2>&1 | tee build.log)
 set -uo pipefail

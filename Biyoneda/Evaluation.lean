@@ -101,6 +101,99 @@ def evalHom (x y : C × (C ⥤ᵖ Cat.{w, v})) : (x ⟶ y) ⥤ (x.2.obj x.1 ⟶ 
   ((x.2.mapFunctor x.1 y.1).prod (Pseudofunctor.StrongTrans.appFunctor x.2 y.2 y.1)) ⋙
     Functor.uncurry.obj (precomposing (x.2.obj x.1) (x.2.obj y.1) (y.2.obj y.1))
 
+
+/-!
+## The constraint data as named parts, and the five coherence laws
+
+The five pseudofunctor coherence laws cannot be proved *inside* the structure: there, every
+object is a projection of a product (`a.2`, `(𝟙 a).1`, ...), and the goal ends up carrying two
+spellings of the same identity 1-morphism — one from the field's own type, one introduced by
+`simp` rewriting `λ_`.  Because that is a 1-morphism sitting in the *types* of the surrounding
+2-cells, no rewrite can fix it: `simp`'s motive is not type-correct, `dsimp` declines, and the
+bridge `(𝟙 a).1 = 𝟙 a.1` does not even elaborate (`𝟙 a` presents as `CategoryStruct.toQuiver.1
+a a`, which the elaborator will not project).  See notes/evaluation_phase2_parked.md.
+
+The fix is the standalone-lemma pattern: name the constraint data, state the five laws about the
+names in clean variables where `𝟙 F` is unambiguous, and plug them in with `exact`.  Each plug
+below is definitionally the field it fills, so nothing downstream moves — `evaluationPseudo_map_eq`
+and `evaluationPseudo_map₂_eq` are still `rfl`.
+-/
+
+section Parts
+
+variable {x y z t : C} {E F G H : C ⥤ᵖ Cat.{w, v}}
+
+/-- The action of evaluation on 1-morphisms, in clean variables. -/
+abbrev evalMap (u : x ⟶ y) (α : F ⟶ G) : F.obj x ⟶ G.obj y := F.map u ≫ α.app y
+
+/-- The action of evaluation on 2-morphisms, in clean variables. -/
+abbrev evalMap₂ {u u' : x ⟶ y} {α α' : F ⟶ G} (σ : u ⟶ u') (Γ : α ⟶ α') :
+    evalMap u α ⟶ evalMap u' α' :=
+  (F.map₂ σ ▷ α.app y) ≫ (F.map u' ◁ Γ.as.app y)
+
+/-- The composition constraint of evaluation, in clean variables: one `mapComp` of the source
+pseudofunctor and one strong-transformation `naturality` slide, glued by associators. -/
+def evalMapComp (u : x ⟶ y) (α : F ⟶ G) (v : y ⟶ z) (β : G ⟶ H) :
+    F.map (u ≫ v) ≫ (α.app z ≫ β.app z) ≅ evalMap u α ≫ evalMap v β :=
+  (F.mapComp u v) ▷ᵢ (α.app z ≫ β.app z) ≪≫
+  (α_ (F.map u) (F.map v) (α.app z ≫ β.app z)) ≪≫
+  (F.map u) ◁ᵢ ((α_ (F.map v) (α.app z) (β.app z)).symm ≪≫
+    ((α.naturality v) ▷ᵢ (β.app z)) ≪≫
+    (α_ (α.app y) (G.map v) (β.app z))) ≪≫
+  (α_ (F.map u) (α.app y) (G.map v ≫ β.app z)).symm
+
+/-! ### The five coherence laws
+
+OPEN.  Each is stated exactly as the corresponding `Pseudofunctor` field, instantiated at an
+explicit pair, and each is verified to plug into that field by `exact`.  Measured to fail:
+`simp`, `cat_disch`, `bicategory`, `simp; bicategory`, `simp [categoryStruct_id_app,
+categoryStruct_id_naturality_hom]`, and `dsimp only [categoryStruct_id_app]; simp`. -/
+
+/-- Left-unitor coherence for `evaluationPseudo`. -/
+lemma eval_left_unitor (u : x ⟶ y) (α : F ⟶ G) :
+    evalMap₂ (λ_ u).hom (λ_ α).hom
+      = (evalMapComp (𝟙 x) (𝟙 F) u α).hom ≫
+        (F.mapId x).hom ▷ evalMap u α ≫ (λ_ (evalMap u α)).hom := by
+  sorry
+
+/-- Right-unitor coherence for `evaluationPseudo`.  Its content is `α.naturality (𝟙 y)` against
+the two `mapId`s. -/
+lemma eval_right_unitor (u : x ⟶ y) (α : F ⟶ G) :
+    evalMap₂ (ρ_ u).hom (ρ_ α).hom
+      = (evalMapComp u α (𝟙 y) (𝟙 G)).hom ≫
+        evalMap u α ◁ (G.mapId y).hom ≫ (ρ_ (evalMap u α)).hom := by
+  sorry
+
+/-- Left-whiskering coherence for `evaluationPseudo`. -/
+lemma eval_whisker_left (u : x ⟶ y) (α : F ⟶ G) {v v' : y ⟶ z} {β β' : G ⟶ H}
+    (σ : v ⟶ v') (Γ : β ⟶ β') :
+    evalMap₂ (u ◁ σ) (α ◁ Γ)
+      = (evalMapComp u α v β).hom ≫ evalMap u α ◁ evalMap₂ σ Γ ≫
+        (evalMapComp u α v' β').inv := by
+  sorry
+
+/-- Right-whiskering coherence for `evaluationPseudo`. -/
+lemma eval_whisker_right {u u' : x ⟶ y} {α α' : F ⟶ G} (σ : u ⟶ u') (Γ : α ⟶ α')
+    (v : y ⟶ z) (β : G ⟶ H) :
+    evalMap₂ (σ ▷ v) (Γ ▷ β)
+      = (evalMapComp u α v β).hom ≫ evalMap₂ σ Γ ▷ evalMap v β ≫
+        (evalMapComp u' α' v β).inv := by
+  sorry
+
+/-- Associator coherence for `evaluationPseudo`.  The largest of the five: three `mapComp`s and
+two `naturality` slides to align, with `F.map₂_associator` as its input. -/
+lemma eval_associator (s : x ⟶ y) (δ : F ⟶ G) (u : y ⟶ z) (α : G ⟶ H)
+    (v : z ⟶ t) (β : H ⟶ E) :
+    evalMap₂ (α_ s u v).hom (α_ δ α β).hom
+      = (evalMapComp (s ≫ u) (δ ≫ α) v β).hom ≫
+        (evalMapComp s δ u α).hom ▷ evalMap v β ≫
+        (α_ (evalMap s δ) (evalMap u α) (evalMap v β)).hom ≫
+        evalMap s δ ◁ (evalMapComp u α v β).inv ≫
+        (evalMapComp s δ (u ≫ v) (α ≫ β)).inv := by
+  sorry
+
+end Parts
+
 /--
 The *evaluation pseudofunctor* `C × (C ⥤ᵖ Cat) ⥤ᵖ Cat.{w, v}`.
 
@@ -118,59 +211,29 @@ Note: this pseudofunctor lands in the smaller universe `Cat.{w, v}`.  Use `yoned
 (which post-composes with `catPseudoULift`) for the universe-matched version.
 -/
 def evaluationPseudo : C × (C ⥤ᵖ Cat.{w, v}) ⥤ᵖ Cat.{w, v} where
-  obj x := x.snd.obj x.fst
-  map {x y} f := x.2.map f.1 ≫ f.2.app y.1
-  map₂ {x y f g} η := (x.2.map₂ η.1 ▷ f.2.app y.1) ≫ (x.2.map g.1 ◁ η.2.as.app y.1)
-  -- The other filling of the square, `(x.2.map f.1 ◁ η.2.as.app y.1) ≫ (x.2.map₂ η.1 ▷ …)`, is
-  -- equal by `whisker_exchange`, so the choice is free.  Picked to keep the `map₂` factor
-  -- leftmost, mirroring the pre-2026-08-28 field.
-  mapId x := x.2.mapId x.1
-  -- Typechecks only if `map (𝟙 x) = x.2.map (𝟙 x.1) ≫ 𝟙` reduces definitionally, i.e. if
-  -- `f ≫ 𝟙` is defeq to `f` in `Cat`.  The previous diagonal needed `𝟙 ≫ f` here instead, and
-  -- that one was known to reduce (notes/level2_refactor.md, Finding 3).  The right-hand case is
-  -- the first thing this file establishes at build time.  If it fails, insert an explicit
-  -- `ρ_` — but note that the result is then no longer `rfl`-equal to the bare form, which is the
-  -- same trap Finding 3 documents for the target-generalisation attempt.
-  mapComp {a b c} f g := by
-    -- goal:  a.2.map (f.1 ≫ g.1) ≫ (f.2.app c.1 ≫ g.2.app c.1)
-    --          ≅ (a.2.map f.1 ≫ f.2.app b.1) ≫ (b.2.map g.1 ≫ g.2.app c.1)
-    --
-    -- One `mapComp` and one `naturality`, the same budget as the other diagonal.  Note the
-    -- orientation: this needs `f.2.naturality g.1` in the *hom* direction, where the previous
-    -- diagonal needed `(g.2.naturality f.1).symm`.
-    refine (a.2.mapComp f.1 g.1) ▷ᵢ (f.2.app c.1 ≫ g.2.app c.1) ≪≫ ?_
-    refine (α_ (a.2.map f.1) (a.2.map g.1) (f.2.app c.1 ≫ g.2.app c.1)) ≪≫ ?_
-    refine (a.2.map f.1) ◁ᵢ ?_ ≪≫
-      (α_ (a.2.map f.1) (f.2.app b.1) (b.2.map g.1 ≫ g.2.app c.1)).symm
-    refine (α_ (a.2.map g.1) (f.2.app c.1) (g.2.app c.1)).symm ≪≫
-      ((f.2.naturality g.1) ▷ᵢ (g.2.app c.1)) ≪≫
-      (α_ (f.2.app b.1) (b.2.map g.1) (g.2.app c.1))
-  map₂_whisker_left {a b c} f {g h} {η} := by
-    -- PARKED.  The old `evaluation_*_core` lemmas were written against the pre-2026-08-28
-    -- diagonal and were deleted on 2026-08-29 (they had no live uses; 25 `erw` went with them).
-    --
-    -- The route, measured 2026-08-29 (notes/evaluation_mathlib_rebuild.md):
-    --   * `cat_disch` closes none of the five.  Do not re-probe it.
-    --   * ONE `simp` with `Bicategory.prod_*_{fst,snd}` and
-    --     `Pseudofunctor.StrongTrans.*_as_app` reduces every field to a pure 2-cell equation in
-    --     `Cat` whose only non-structural atoms are `mapComp`, `map₂` and `naturality` — no
-    --     components, no `NatTrans`, no `Cat.Hom₂` unwrapping.  That is the layer the old cores
-    --     reached by hand with `erw`; both simp families are new in v4.33.
-    --   * `bicategory` is NOT the finisher: measured, it explodes the reduced goal into
-    --     `Iso.refl` chains and leaves it open.  Finish with `StrongTrans.naturality_naturality`
-    --     (already `@[reassoc (attr := simp)]`, with whiskered variants upstream) and
-    --     `whisker_exchange`.
-    sorry
-  map₂_whisker_right {a b c f g h} η := by
-    sorry
-  map₂_associator {a b c d} f g h := by
-    -- The largest of the five, and the last to attempt: three `mapComp`s and two `naturality`
-    -- slides to align.  Its input is `C`'s own `map₂_associator`.
-    sorry
-  map₂_left_unitor {a b} f := by
-    sorry
-  map₂_right_unitor {a b} f := by
-    sorry
+  obj p := p.2.obj p.1
+  map {p q} f := evalMap f.1 f.2
+  map₂ {p q f g} η := evalMap₂ η.1 η.2
+  mapId p := p.2.mapId p.1
+  -- Typechecks only because `Cat` is `Bicategory.Strict`, so `f ≫ 𝟙` reduces definitionally.
+  -- The pre-2026-08-28 diagonal needed `𝟙 ≫ f` here instead.
+  mapComp {p q r} f g := evalMapComp f.1 f.2 g.1 g.2
+  -- Each of the five destructures the product objects, then is exactly one of the cores above.
+  map₂_whisker_left := by
+    rintro ⟨x, F⟩ ⟨y, G⟩ ⟨z, H⟩ ⟨u, α⟩ ⟨v, β⟩ ⟨v', β'⟩ ⟨σ, Γ⟩
+    exact eval_whisker_left u α σ Γ
+  map₂_whisker_right := by
+    rintro ⟨x, F⟩ ⟨y, G⟩ ⟨z, H⟩ ⟨u, α⟩ ⟨u', α'⟩ ⟨σ, Γ⟩ ⟨v, β⟩
+    exact eval_whisker_right σ Γ v β
+  map₂_associator := by
+    rintro ⟨w, E⟩ ⟨x, F⟩ ⟨y, G⟩ ⟨z, H⟩ ⟨s, δ⟩ ⟨u, α⟩ ⟨v, β⟩
+    exact eval_associator s δ u α v β
+  map₂_left_unitor := by
+    rintro ⟨x, F⟩ ⟨y, G⟩ ⟨u, α⟩
+    exact eval_left_unitor u α
+  map₂_right_unitor := by
+    rintro ⟨x, F⟩ ⟨y, G⟩ ⟨u, α⟩
+    exact eval_right_unitor u α
 
 /-!
 ## The assembly bridges
@@ -267,7 +330,7 @@ lemma evaluationPseudo_mapComp_hom_app {a b c : C × (C ⥤ᵖ Cat.{w, v})} (f :
             ((a.2.mapComp f.1 g.1).hom.toNatTrans.app Z) ≫
         (g.2.app c.1).toFunctor.map
             ((f.2.naturality g.1).hom.toNatTrans.app ((a.2.map f.1).toFunctor.obj Z)) := by
-  dsimp only [evaluationPseudo]
+  dsimp only [evaluationPseudo, evalMapComp]
   simp only [Iso.trans_hom, Iso.symm_hom, whiskerLeftIso_hom, whiskerRightIso_hom,
     Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
     Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
@@ -286,7 +349,7 @@ lemma evaluationPseudo_mapComp_inv_app {a b c : C × (C ⥤ᵖ Cat.{w, v})} (f :
             ((f.2.naturality g.1).inv.toNatTrans.app ((a.2.map f.1).toFunctor.obj Z)) ≫
         (f.2.app c.1 ≫ g.2.app c.1).toFunctor.map
             ((a.2.mapComp f.1 g.1).inv.toNatTrans.app Z) := by
-  dsimp only [evaluationPseudo]
+  dsimp only [evaluationPseudo, evalMapComp]
   simp only [Iso.trans_inv, Iso.symm_inv, whiskerLeftIso_inv, whiskerRightIso_inv,
     Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
     Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
