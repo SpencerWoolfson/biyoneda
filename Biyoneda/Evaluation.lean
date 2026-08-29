@@ -142,6 +142,27 @@ def evalMapComp (u : x ⟶ y) (α : F ⟶ G) (v : y ⟶ z) (β : G ⟶ H) :
     (α_ (α.app y) (G.map v) (β.app z))) ≪≫
   (α_ (F.map u) (α.app y) (G.map v ≫ β.app z)).symm
 
+/-! ### `Cat` is strict, definitionally
+
+Every associator and unitor of the bicategory `Cat` is the *identity* 2-cell, by `rfl`.  That is
+what makes the coherence residuals collapse: they are built entirely from `α_`, `λ_`, `ρ_`, and
+in `Cat` those are not merely invertible but definitionally trivial.  `simp only` with these six
+turns any structural block into identities.  Mathlib records `Cat`'s strictness as a `Strict`
+instance, whose `associator_eqToIso` and friends go through `eqToIso` -- a strictly weaker
+statement than these.
+
+Deliberately **not** `@[simp]`: measured 2026-08-29, tagging them globally changes the simp
+normal form enough to break `BackwardsFunctor.lean:69`.  Cite them explicitly. -/
+
+lemma cat_associator_hom {X Y Z W : Cat.{v, u}} (f : X ⟶ Y) (g : Y ⟶ Z) (h : Z ⟶ W) :
+    (α_ f g h).hom = 𝟙 _ := rfl
+lemma cat_associator_inv {X Y Z W : Cat.{v, u}} (f : X ⟶ Y) (g : Y ⟶ Z) (h : Z ⟶ W) :
+    (α_ f g h).inv = 𝟙 _ := rfl
+lemma cat_leftUnitor_hom {X Y : Cat.{v, u}} (f : X ⟶ Y) : (λ_ f).hom = 𝟙 f := rfl
+lemma cat_leftUnitor_inv {X Y : Cat.{v, u}} (f : X ⟶ Y) : (λ_ f).inv = 𝟙 f := rfl
+lemma cat_rightUnitor_hom {X Y : Cat.{v, u}} (f : X ⟶ Y) : (ρ_ f).hom = 𝟙 f := rfl
+lemma cat_rightUnitor_inv {X Y : Cat.{v, u}} (f : X ⟶ Y) : (ρ_ f).inv = 𝟙 f := rfl
+
 /-! ### Spelling bridges
 
 The obstruction described above is that `(𝟙 F).app a` will not reduce.  The reason it resisted
