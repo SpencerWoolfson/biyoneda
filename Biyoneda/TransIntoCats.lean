@@ -347,6 +347,46 @@ def StrongTransIntoCats.Id {A : Type u} [Bicategory A]
       simp [Functor.comp_id, Functor.id_comp]
       
 
+/-! ### Lifting a modification
+
+The counit-stripping lemmas above are stated for `catPseudoULift.map₂`; the modification's
+naturality square is instead a `Cat`-level `◁`/`▷` of a *whiskered component*, which no
+existing lemma reaches.  The two bridges below close that gap by naming the reduced spelling
+outright.  Both hold by `rfl`, because `catLiftUnit`/`catLiftCounit` cancel definitionally.
+
+Note the `≫ 𝟙 _` on each right-hand side.  `lift`'s naturality iso ends in an `Iso.refl`, and
+in a functor category `α ≫ 𝟙` is *not* reducibly `α` — its components are `α.app x ≫ 𝟙`, which
+needs `Category.comp_id`.  Writing the residual into the statement is what makes these `rfl`
+rather than a fight; `lift` then discharges it with two `Category.comp_id` rewrites. -/
+
+/-- Left half of the bridge for `ModificationIntoCats.lift`: the counit of the lifted
+modification's naturality source, reduced to unlifted data. -/
+lemma lift_modification_lhs {A : Type u} [Bicategory A]
+    {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}} {G : Pseudofunctor A Cat.{v₁, u₁}}
+    {η θ : StrongTransIntoCats F G} (d : ModificationIntoCats η θ) {a b : A} (f : a ⟶ b)
+    (x : F.obj a) :
+    (catLiftCounit (G.obj b)).map
+        ((F.map f ◁ NatTrans.toCatHom₂ (Functor.whiskerRight (d.app b) (catLiftUnit (G.obj b))) ≫
+          (θ.lift.naturality f).hom).toNatTrans.app x)
+      = (d.app b).app ((F.map f).toFunctor.obj x) ≫ (θ.naturality f).hom.app x ≫ 𝟙 _ := rfl
+
+/-- Right half of the bridge for `ModificationIntoCats.lift`. -/
+lemma lift_modification_rhs {A : Type u} [Bicategory A]
+    {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}} {G : Pseudofunctor A Cat.{v₁, u₁}}
+    {η θ : StrongTransIntoCats F G} (d : ModificationIntoCats η θ) {a b : A} (f : a ⟶ b)
+    (x : F.obj a) :
+    (catLiftCounit (G.obj b)).map
+        (((η.lift.naturality f).hom ≫
+          NatTrans.toCatHom₂ (Functor.whiskerRight (d.app a) (catLiftUnit (G.obj a))) ▷
+            (G.comp catPseudoULift.{v₁, v₂, u₁, u₂}).map f).toNatTrans.app x)
+      = ((η.naturality f).hom.app x ≫ 𝟙 _) ≫ (G.map f).toFunctor.map ((d.app a).app x) := rfl
+
+/-- Lift a modification along `StrongTransIntoCats.lift`, giving a genuine `Modification`
+between the two lifted strong transformations.
+
+The whole content is `d.naturality'` at a point; the bridges above do the reconciling, and
+they are chained with `Eq.trans` rather than `rw` because the two spellings of `Cat`'s 2-cell
+composition differ by an instance path that `rw` will not cross at reducible transparency. -/
 def ModificationIntoCats.lift {A : Type u} [Bicategory A]
     {F : Pseudofunctor A Cat.{max v₁ v₂, max u₁ u₂}} {G : Pseudofunctor A Cat.{v₁, u₁}}
     {η θ : StrongTransIntoCats F G} (d : ModificationIntoCats η θ) :
@@ -354,16 +394,10 @@ def ModificationIntoCats.lift {A : Type u} [Bicategory A]
   app a := NatTrans.toCatHom₂ (Functor.whiskerRight (d.app a) (catLiftUnit (G.obj a)))
   naturality {a b} f := by
     apply catLift_hom₂_counit_ext; intro x
-    -- WIP.  Retargeted from `toStrongTransMax` (which lifts *both* sides, hence needed two
-    -- whiskerings) to `lift` (codomain only, one whiskering).  After the counit ext the goal is
-    --   (catLiftCounit _).map ((F.map f ◁ ⟨whiskerRight (d.app b) (catLiftUnit _)⟩ ≫
-    --      (θ.lift.naturality f).hom).toNatTrans.app x) = ... symmetric ...
-    -- which is `d.naturality' f x` once the `catLiftUnit`/`catLiftCounit` pair cancels.  Tried:
-    -- `exact`, `simpa using`, and the same after
-    -- `dsimp only [Pseudofunctor.comp, Functor.comp_map]`; none land yet.  The counit stripping
-    -- lemmas in UniverseLift are stated for `catPseudoULift.map₂`, not for a `Cat`-level `◁`/`▷`
-    -- of a whiskered component -- that gap is probably what to close.
-    sorry
+    refine (lift_modification_lhs d f x).trans
+      (Eq.trans ?_ (lift_modification_rhs d f x).symm)
+    simp only [Category.comp_id]
+    exact d.naturality' f x
 
 /-! ### Bridging `comp` to the composite of the two lifts
 

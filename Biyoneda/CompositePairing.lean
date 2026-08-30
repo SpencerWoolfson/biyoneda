@@ -24,9 +24,10 @@ Yoneda equivalence are assembled through them, so a `sorry` reaching either woul
 by everything downstream while each individual definition still looked clean.
 
 It covers the rest of the `TransIntoCats` gadget too.  `comp`, `Id`, `toStrongTrans`,
-`toModification`, `isoMk` and the two bridge lemmas are all proved, and the backwards direction
-is now assembled out of them -- but none of them was gated, so any of them could have rotted
-silently.  They are asserted here as well.
+`toModification`, `isoMk` and the bridge lemmas are all proved, and the backwards direction is
+now assembled out of them -- but none of them was gated, so any of them could have rotted
+silently.  They are asserted here as well.  As of 2026-08-30 the gadget has no sorry left at
+all, `ModificationIntoCats.lift` included.
 
 `scripts/verify-build.sh` gates on all of these; keep the two lists in step.
 -/
@@ -57,8 +58,7 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms CategoryTheory.Bicategory.evalMapComp_hom
 #print axioms CategoryTheory.Bicategory.evalMapComp_inv
 
--- The rest of the `TransIntoCats` gadget.  Every one of these is proved; `ModificationIntoCats.lift`
--- is deliberately absent, being the gadget's one remaining sorry.
+-- The rest of the `TransIntoCats` gadget.  Every declaration in it is now proved.
 #print axioms StrongTransIntoCats.comp
 #print axioms StrongTransIntoCats.Id
 #print axioms StrongTransIntoCats.toStrongTrans
@@ -68,6 +68,9 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms StrongTransIntoCats.Id_naturality_app
 #print axioms CategoryTheory.Bicategory.ModificationIntoCats.toModification
 #print axioms CategoryTheory.Bicategory.ModificationIntoCats.isoMk
+#print axioms CategoryTheory.Bicategory.ModificationIntoCats.lift
+#print axioms CategoryTheory.Bicategory.lift_modification_lhs
+#print axioms CategoryTheory.Bicategory.lift_modification_rhs
 
 -- The backwards component chain, decoupled from `yonedaEvaluation'` and rebuilt on the gadget
 -- (2026-08-30).  `backwardsTrans` is the Yoneda element itself, so its cleanliness is the
