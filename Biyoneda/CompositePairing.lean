@@ -71,6 +71,11 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms CategoryTheory.Bicategory.ModificationIntoCats.lift
 #print axioms CategoryTheory.Bicategory.lift_modification_lhs
 #print axioms CategoryTheory.Bicategory.lift_modification_rhs
+#print axioms StrongTransIntoCats.ofStrongTrans
+#print axioms CategoryTheory.Bicategory.strongTrans_naturality_id_lhs_app
+#print axioms CategoryTheory.Bicategory.strongTrans_naturality_id_rhs_app
+#print axioms CategoryTheory.Bicategory.strongTrans_naturality_comp_lhs_app
+#print axioms CategoryTheory.Bicategory.strongTrans_naturality_comp_rhs_app
 
 -- The backwards component chain, decoupled from `yonedaEvaluation'` and rebuilt on the gadget
 -- (2026-08-30).  `backwardsTrans` is the Yoneda element itself, so its cleanliness is the

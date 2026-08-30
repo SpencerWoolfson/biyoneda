@@ -444,7 +444,7 @@ lemma StrongTransIntoCats.lift_comp_liftDom_app {A : Type u} [Bicategory A]
 
 `lift`, `liftDom` and `toStrongTransMax` all exist to reconcile *different* universes.  When
 `F` and `G` already land in the same one there is nothing to reconcile, and the translation is
-definitional -- each field below is a bare `exact`.  Prefer these over `toStrongTransMax`
+definitional -- each field of `toStrongTrans` is a bare `exact`.  Prefer these over `toStrongTransMax`
 whenever the universes already agree: `toStrongTransMax` lands on `F.comp catPseudoULift`,
 a *different* pseudofunctor, which forces a counit at every downstream `.app`.
 -/
@@ -463,6 +463,95 @@ def StrongTransIntoCats.toStrongTrans {A : Type u} [Bicategory A]
   naturality_comp {a b c} f g := by
     apply Cat.Hom₂.ext_app; intro x
     exact NatTrans.congr_app (d.naturality_comp f g) x
+
+/-! #### The converse: reading a `StrongTrans` back as data
+
+`toStrongTrans` crosses one way; `ofStrongTrans` crosses back, which is what lets a Mathlib
+`StrongTrans` appearing in a composite (`postcomp₂ f ≫ (Z ≫ g)`, say) be fed to `comp` and
+`ModificationIntoCats.isoMk`.
+
+Only `naturality_naturality'` is immediate.  The other two fields are the *unpadded* pointwise
+forms of obligations Mathlib states in whiskered form, where a unitor or two associators stand
+between the factors.  In `Cat` those are definitionally identities, but `simp` will not
+recognise them as such -- it fires the `rfl` lemma and leaves a goal that is internally
+inconsistent at reducible transparency, which is the wall the `bicategory` tactic hits too.
+
+The way through is to write the residual identities **into the statement**.  Each of the four
+bridges below is then `rfl`, and `Category.comp_id` strips the padding afterwards on a goal
+that is already in the fibre.  (Same move as `lift_modification_lhs`/`_rhs` above; there the
+residual came from an `Iso.refl`, here from `Cat`'s unitors and associators.)
+-/
+
+/-- Componentwise left-hand side of `StrongTrans.naturality_id`, distributed. -/
+lemma strongTrans_naturality_id_lhs_app {A : Type u} [Bicategory A]
+    {F G : Pseudofunctor A Cat.{v₁, u₁}} (η : Pseudofunctor.StrongTrans F G) (a : A)
+    (x : F.obj a) :
+    ((η.naturality (𝟙 a)).hom ≫ η.app a ◁ (G.mapId a).hom).toNatTrans.app x
+      = (Cat.Hom.toNatIso (η.naturality (𝟙 a))).hom.app x ≫
+        (G.mapId a).hom.toNatTrans.app ((η.app a).toFunctor.obj x) := rfl
+
+/-- Componentwise right-hand side of `StrongTrans.naturality_id`, distributed, with `Cat`'s two
+unitors left in place as the identities they definitionally are. -/
+lemma strongTrans_naturality_id_rhs_app {A : Type u} [Bicategory A]
+    {F G : Pseudofunctor A Cat.{v₁, u₁}} (η : Pseudofunctor.StrongTrans F G) (a : A)
+    (x : F.obj a) :
+    ((F.mapId a).hom ▷ η.app a ≫ (λ_ (η.app a)).hom ≫ (ρ_ (η.app a)).inv).toNatTrans.app x
+      = (η.app a).toFunctor.map ((F.mapId a).hom.toNatTrans.app x) ≫ 𝟙 _ ≫ 𝟙 _ := rfl
+
+/-- Componentwise left-hand side of `StrongTrans.naturality_comp`, distributed. -/
+lemma strongTrans_naturality_comp_lhs_app {A : Type u} [Bicategory A]
+    {F G : Pseudofunctor A Cat.{v₁, u₁}} (η : Pseudofunctor.StrongTrans F G) {a b c : A}
+    (f : a ⟶ b) (g : b ⟶ c) (x : F.obj a) :
+    ((η.naturality (f ≫ g)).hom ≫ η.app a ◁ (G.mapComp f g).hom).toNatTrans.app x
+      = (Cat.Hom.toNatIso (η.naturality (f ≫ g))).hom.app x ≫
+        (G.mapComp f g).hom.toNatTrans.app ((η.app a).toFunctor.obj x) := rfl
+
+/-- Componentwise right-hand side of `StrongTrans.naturality_comp`, distributed, with `Cat`'s
+three associators left in place as the identities they definitionally are. -/
+lemma strongTrans_naturality_comp_rhs_app {A : Type u} [Bicategory A]
+    {F G : Pseudofunctor A Cat.{v₁, u₁}} (η : Pseudofunctor.StrongTrans F G) {a b c : A}
+    (f : a ⟶ b) (g : b ⟶ c) (x : F.obj a) :
+    ((F.mapComp f g).hom ▷ η.app c ≫
+      (α_ (F.map f) (F.map g) (η.app c)).hom ≫
+        F.map f ◁ (η.naturality g).hom ≫
+          (α_ (F.map f) (η.app b) (G.map g)).inv ≫
+            (η.naturality f).hom ▷ G.map g ≫
+              (α_ (η.app a) (G.map f) (G.map g)).hom).toNatTrans.app x
+      = (η.app c).toFunctor.map ((F.mapComp f g).hom.toNatTrans.app x) ≫ 𝟙 _ ≫
+          (η.naturality g).hom.toNatTrans.app ((F.map f).toFunctor.obj x) ≫ 𝟙 _ ≫
+            (G.map g).toFunctor.map ((η.naturality f).hom.toNatTrans.app x) ≫ 𝟙 _ := rfl
+
+/-- Same-universe case, the other way: a `StrongTrans` already **is** `StrongTransIntoCats`
+data.  Note the argument is spelled `Pseudofunctor.StrongTrans F G` rather than `F ⟶ G`; the
+arrow form needs a `Bicategory` instance on `Pseudofunctor A Cat` that is not in scope here. -/
+def StrongTransIntoCats.ofStrongTrans {A : Type u} [Bicategory A]
+    {F G : Pseudofunctor A Cat.{v₁, u₁}} (η : Pseudofunctor.StrongTrans F G) :
+    StrongTransIntoCats F G where
+  app a := (η.app a).toFunctor
+  naturality {a b} f := Cat.Hom.toNatIso (η.naturality f)
+  naturality_naturality' {a b} {f g} σ x :=
+    Cat.Hom₂.congr_app (η.naturality_naturality σ) x
+  naturality_id' a x :=
+    (strongTrans_naturality_id_lhs_app η a x).symm.trans
+      ((Cat.Hom₂.congr_app (η.naturality_id a) x).trans
+        ((strongTrans_naturality_id_rhs_app η a x).trans (by simp)))
+  naturality_comp' {a b c} f g x :=
+    (strongTrans_naturality_comp_lhs_app η f g x).symm.trans
+      ((Cat.Hom₂.congr_app (η.naturality_comp f g) x).trans
+        ((strongTrans_naturality_comp_rhs_app η f g x).trans (by simp)))
+
+/-- The two crossings are mutually inverse on components -- definitionally, so this is the
+statement that `ofStrongTrans` really is the converse and not merely a construction of the
+right type. -/
+@[simp] lemma StrongTransIntoCats.ofStrongTrans_toStrongTrans_app {A : Type u} [Bicategory A]
+    {F G : Pseudofunctor A Cat.{v₁, u₁}} (d : StrongTransIntoCats F G) (a : A) :
+    (StrongTransIntoCats.ofStrongTrans d.toStrongTrans).app a = d.app a := rfl
+
+/-- ...and back the other way. -/
+@[simp] lemma StrongTransIntoCats.toStrongTrans_ofStrongTrans_app {A : Type u} [Bicategory A]
+    {F G : Pseudofunctor A Cat.{v₁, u₁}} (η : Pseudofunctor.StrongTrans F G) (a : A) :
+    ((StrongTransIntoCats.ofStrongTrans η).toStrongTrans.app a).toFunctor
+      = (η.app a).toFunctor := rfl
 
 /-- ...and a `ModificationIntoCats` already is a `Modification` between them. -/
 def ModificationIntoCats.toModification {A : Type u} [Bicategory A]
