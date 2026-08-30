@@ -423,24 +423,124 @@ lemma eval_right_unitor (u : x ⟶ y) (α : F ⟶ G) :
   refine Eq.trans ?_ (eval_right_unitor_rhs_app u α Z).symm
   simp [strongTrans_naturality_id_app]
 
-/-- Left-whiskering coherence for `evaluationPseudo`. -/
+/-! ### Shared machinery for the three remaining cores
+
+`evalMapComp`'s two directions, distributed at a point.  These are the general-argument
+companions of the identity-specialised shape lemmas above, and they are what `simp` cannot
+produce on its own: it reduces everything around them and then stops at
+`(evalMapComp _ _ _ _).hom.toNatTrans.app Z`.  Both carry `Cat`'s associators as the identities
+they definitionally are, per the recipe on `eval_left_unitor`. -/
+
+/-- `evalMapComp`'s forward direction at a point. -/
+lemma evalMapComp_hom_app (u : x ⟶ y) (α : F ⟶ G) (v : y ⟶ z) (β : G ⟶ H) (Z : ↑(F.obj x)) :
+    (evalMapComp u α v β).hom.toNatTrans.app Z
+      = (α.app z ≫ β.app z).toFunctor.map ((F.mapComp u v).hom.toNatTrans.app Z) ≫
+        (𝟙 _) ≫
+        ((𝟙 _) ≫ (β.app z).toFunctor.map
+            ((α.naturality v).hom.toNatTrans.app ((F.map u).toFunctor.obj Z)) ≫ (𝟙 _)) ≫
+        (𝟙 _) := rfl
+
+/-- `evalMapComp`'s inverse direction at a point.  Unlike the forward one this is not `rfl`
+from the definition -- `evalMapComp_inv` has to distribute the `≪≫` chain first -- so it is
+`congrArg` of that, then a `rfl` bridge. -/
+lemma evalMapComp_inv_app (u : x ⟶ y) (α : F ⟶ G) (v : y ⟶ z) (β : G ⟶ H) (Z : ↑(F.obj x)) :
+    (evalMapComp u α v β).inv.toNatTrans.app Z
+      = (𝟙 _) ≫
+        ((𝟙 _) ≫ (β.app z).toFunctor.map
+            ((α.naturality v).inv.toNatTrans.app ((F.map u).toFunctor.obj Z)) ≫ (𝟙 _)) ≫
+        (𝟙 _) ≫
+        (α.app z ≫ β.app z).toFunctor.map ((F.mapComp u v).inv.toNatTrans.app Z) := by
+  have hb : ((α_ (F.map u) (α.app y) (G.map v ≫ β.app z)).hom ≫
+        F.map u ◁ ((α_ (α.app y) (G.map v) (β.app z)).inv ≫
+          (α.naturality v).inv ▷ β.app z ≫
+          (α_ (F.map v) (α.app z) (β.app z)).hom) ≫
+        (α_ (F.map u) (F.map v) (α.app z ≫ β.app z)).inv ≫
+        (F.mapComp u v).inv ▷ (α.app z ≫ β.app z)).toNatTrans.app Z
+      = (𝟙 _) ≫
+        ((𝟙 _) ≫ (β.app z).toFunctor.map
+            ((α.naturality v).inv.toNatTrans.app ((F.map u).toFunctor.obj Z)) ≫ (𝟙 _)) ≫
+        (𝟙 _) ≫
+        (α.app z ≫ β.app z).toFunctor.map ((F.mapComp u v).inv.toNatTrans.app Z) := rfl
+  exact (congrArg (fun m ↦ m.toNatTrans.app Z) (evalMapComp_inv u α v β)).trans hb
+
+/-- `StrongTrans.naturality_naturality` solved for the bare `map₂` image: the conjugated form
+is what the whisker cores need, since there the `naturality` iso appears on both sides. -/
+lemma strongTrans_naturality_conj (α : F ⟶ G) {v v' : y ⟶ z} (σ : v ⟶ v') (W : ↑(F.obj y)) :
+    (α.app z).toFunctor.map ((F.map₂ σ).toNatTrans.app W)
+      = (α.naturality v).hom.toNatTrans.app W ≫
+        (G.map₂ σ).toNatTrans.app ((α.app y).toFunctor.obj W) ≫
+        (α.naturality v').inv.toNatTrans.app W := by
+  have h := α.naturality_naturality_app σ W
+  rw [← Category.assoc]
+  exact (Iso.eq_comp_inv ((Cat.Hom.toNatIso (α.naturality v')).app W)).mpr h
+
+/-- The same conjugation for a modification's naturality. -/
+lemma modification_naturality_conj {α α' : F ⟶ G} (Γ : α ⟶ α') {a b : C} (f : a ⟶ b)
+    (W : ↑(F.obj a)) :
+    (Γ.as.app b).toNatTrans.app ((F.map f).toFunctor.obj W)
+      = (α.naturality f).hom.toNatTrans.app W ≫
+        (G.map f).toFunctor.map ((Γ.as.app a).toNatTrans.app W) ≫
+        (α'.naturality f).inv.toNatTrans.app W := by
+  have h := modification_naturality_app Γ f W
+  rw [← Category.assoc]
+  exact (Iso.eq_comp_inv ((Cat.Hom.toNatIso (α'.naturality f)).app W)).mpr h
+
+/-- Left-whiskering coherence for `evaluationPseudo`.
+
+Follows the `eval_left_unitor` recipe with the general bridges above.  Note the `rw` rather
+than a `simp` argument for `strongTrans_naturality_conj`: as a simp lemma it also fires on the
+right-hand side's `β'` and the two sides diverge.  `rw` takes the first occurrence, which is
+the left-hand side's `F.map₂ σ`, and that is the only one that needs rewriting. -/
 lemma eval_whisker_left (u : x ⟶ y) (α : F ⟶ G) {v v' : y ⟶ z} {β β' : G ⟶ H}
     (σ : v ⟶ v') (Γ : β ⟶ β') :
     evalMap₂ (u ◁ σ) (α ◁ Γ)
       = (evalMapComp u α v β).hom ≫ evalMap u α ◁ evalMap₂ σ Γ ≫
         (evalMapComp u α v' β').inv := by
-  sorry
+  apply Cat.Hom₂.ext_app; intro Z
+  simp [evalMapComp_hom_app, evalMapComp_inv_app]
+  rw [strongTrans_naturality_conj]
+  simp
 
-/-- Right-whiskering coherence for `evaluationPseudo`. -/
+/-- Right-whiskering coherence for `evaluationPseudo`.
+
+PARKED (2026-08-30), with the prefix below reaching the residual described here.  The bridges
+strip both sides down to chains of `(β.app z).toFunctor.map` factors that agree except for
+three slides; two of them go through (`strongTrans_naturality_conj` and
+`modification_naturality_conj` both fire, and `naturality_comp_hom_app` splits
+`α.naturality (u' ≫ v)`).
+
+What blocks it is the *cancellation*.  The right-hand side ends up with the adjacent pair
+
+  (β.app z).map ((G.map v).map (α.naturality u').inv) ≫
+  (β.app z).map ((G.map v).map (α.naturality u').hom)
+
+which is an identity, but collapsing it needs `← Functor.map_comp` to fire through **two**
+nested `.map` layers.  It fires through the outer one (the analogous `F.mapComp u' v` pair on
+the left-hand side does cancel this way) and not the inner one -- the same reducible-transparency
+failure this file's `cat_*` note describes, one level down.
+
+Next move: a `rfl` bridge naming the doubly-nested fold, in the spirit of the bridges above --
+`(β.app z).map ((G.map v).map A) ≫ (β.app z).map ((G.map v).map B)` against
+`(β.app z).map ((G.map v).map (A ≫ B))` -- rather than another `simp only [← Functor.map_comp]`.
+Measured to fail: `simp only [← Category.assoc]; simp only [← Functor.map_comp]` iterated four
+times, with and without the `inv_hom_id` component lemmas interleaved. -/
 lemma eval_whisker_right {u u' : x ⟶ y} {α α' : F ⟶ G} (σ : u ⟶ u') (Γ : α ⟶ α')
     (v : y ⟶ z) (β : G ⟶ H) :
     evalMap₂ (σ ▷ v) (Γ ▷ β)
       = (evalMapComp u α v β).hom ≫ evalMap₂ σ Γ ▷ evalMap v β ≫
         (evalMapComp u' α' v β).inv := by
+  apply Cat.Hom₂.ext_app; intro Z
+  simp [evalMapComp_hom_app, evalMapComp_inv_app,
+    strongTrans_naturality_conj, modification_naturality_conj,
+    Pseudofunctor.StrongTrans.naturality_comp_hom_app]
   sorry
 
 /-- Associator coherence for `evaluationPseudo`.  The largest of the five: three `mapComp`s and
-two `naturality` slides to align, with `F.map₂_associator` as its input. -/
+two `naturality` slides to align, with `F.map₂_associator` as its input.
+
+PARKED (2026-08-30).  The bridges above apply and the descent runs, but the residual is
+substantially larger than `eval_whisker_right`'s and has not been analysed.  Close that one
+first -- the doubly-nested fold it needs is almost certainly needed here too. -/
 lemma eval_associator (s : x ⟶ y) (δ : F ⟶ G) (u : y ⟶ z) (α : G ⟶ H)
     (v : z ⟶ t) (β : H ⟶ E) :
     evalMap₂ (α_ s u v).hom (α_ δ α β).hom
