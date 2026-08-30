@@ -182,32 +182,6 @@ lemma forwards_naturality_id_core (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}))
   -- maxHeartbeats to paper over it.
   sorry
 
-/-- The head unit-coherence in `B`'s hom-categories underlying `naturality_comp`: `u_{f≫g}`
-composed with the yoneda `mapComp` equals the postcomp₂ reorganisation with `u_g`, `u_f`.  Both
-sides are pure associator/unitor data — `bicategory` after unfolding to `α_`/`λ_`/`ρ_`. -/
-lemma forwards_naturality_comp_head {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c) :
-    ((λ_ (f.1 ≫ g.1).unop).hom ≫ (ρ_ (f.1 ≫ g.1).unop).inv) ≫
-        ((yoneda₀ (unop a.1)).mapComp f.1 g.1).hom.toNatTrans.app (𝟙 (unop a.1)) =
-    (((postcompComp₂ g.1.unop f.1.unop).hom.as.app c.1).toNatTrans.app (𝟙 (unop c.1)) ≫
-        ((postcomp₂ f.1.unop).app c.1).toFunctor.map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ≫
-        ((postcomp₂ f.1.unop).naturality g.1).hom.toNatTrans.app (𝟙 (unop b.1))) ≫
-      ((yoneda₀ (unop a.1)).map g.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) := by
-  erw [show ((yoneda₀ (unop a.1)).map g.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)
-        = g.1.unop ◁ ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) from rfl,
-     show ((postcomp₂ f.1.unop).app c.1).toFunctor.map ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv)
-        = ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ▷ f.1.unop from rfl]
-  dsimp only [postcompComp₂, yoneda, postcomp₂, yoneda₀,
-    associatorNatIsoRightCat, associatorNatIsoMiddleCat, associatorNatIsoLeftCat]
-  simp only [Cat.Hom.isoMk_hom, Cat.Hom.isoMk_inv, Cat.toCatHom₂_toNatTrans, Iso.symm_hom,
-    NatIso.ofComponents_hom_app, NatIso.ofComponents_inv_app, isoMk_inv_as_app]
-  -- PARKED (v4.33).  Both sides are pure associator/unitor data and `bicategory` runs, but
-  -- leaves a residual -- the same shape as `homPseudo`'s two unitor coherence fields in
-  -- Gadgets.lean, and probably the same cause.  Fix those first.
-  sorry
-
--- set_option maxHeartbeats 500000 in
--- the long descent + `naturality_comp_hom_app` telescoping + three `u_f`-transport squares
--- exceed the default budget (measured floor ≈ 350k, so ~1.4× margin); does not fit in 200k
 /-- Core of `naturality_comp` for `yonedaLemmaForwards` (unlifted fibre form). -/
 lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
     (Z : Pseudofunctor.StrongTrans (yoneda₀ (unop a.1)) a.2) :

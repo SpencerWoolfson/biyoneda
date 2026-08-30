@@ -13,8 +13,7 @@ Everything needed to build `backwardsNaturalityIso`, the naturality isomorphism 
 
 The chain is inside-out: `backwardsNaturalityIsoApp` is the component at one `α : Bᵒᵖ`,
 `backwardsNaturalityIso` assembles those, and `backwards_naturality_iso_natural` is its
-naturality.  The `_core` lemmas below each state a square's content at a fibre point;
-`backwards_square_composite` is the same square for the composite strong transformation.
+naturality.  `backwards_inner_core` states the innermost square's content at a fibre point.
 -/
 
 namespace Biyoneda
@@ -119,95 +118,6 @@ def backwardsNaturalityIsoApp {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f 
       dsimp [yonedaEvaluation', Functor.comp]
       sorry))
 
-/-- The cancellation core of the backwards naturality square: all atoms in canonical
-spelling, `X` unlifted.
-
-**Stated against the pre-diagonal-switch component** (two factors, not three).  Still compiles;
-no longer plugs into `backwards_naturality_square` -- see the note there. -/
-lemma backwards_square_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
-    (X : ↑(yonedaEvaluation'.obj a)) {a₁ b₁ : Bᵒᵖ} (f₁ : a₁ ⟶ b₁)
-    (ZZ : ↑((yoneda₀ (unop b.1)).obj a₁)) :
-    (f.2.app b₁).toFunctor.map
-        ((a.2.map₂ (α_ f.1 (Quiver.Hom.op ZZ) f₁).inv).toNatTrans.app X) ≫
-      (f.2.app b₁).toFunctor.map
-        ((a.2.mapComp (f.1 ≫ Quiver.Hom.op ZZ) f₁).hom.toNatTrans.app X) ≫
-      (f.2.naturality f₁).hom.toNatTrans.app
-        ((a.2.map (f.1 ≫ Quiver.Hom.op ZZ)).toFunctor.obj X) =
-    (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ ≫ f₁)).hom.toNatTrans.app X ≫
-      (b.2.mapComp f.1 (Quiver.Hom.op ZZ ≫ f₁)).hom.toNatTrans.app
-        ((f.2.app a.1).toFunctor.obj X) ≫
-      (b.2.mapComp (Quiver.Hom.op ZZ) f₁).hom.toNatTrans.app
-        ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj X)) ≫
-      (b.2.map f₁).toFunctor.map
-        ((b.2.mapComp f.1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
-            ((f.2.app a.1).toFunctor.obj X) ≫
-          (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app X) := by
-  have h3 := Pseudofunctor.mapComp_assoc_right_hom_app b.2 f.1 (Quiver.Hom.op ZZ) f₁
-    ((f.2.app a.1).toFunctor.obj X)
-  rw [Pseudofunctor.StrongTrans.naturality_naturality_hom_app f.2
-      (α_ f.1 (Quiver.Hom.op ZZ) f₁) X,
-    Pseudofunctor.StrongTrans.naturality_comp_hom_app f.2 (f.1 ≫ Quiver.Hom.op ZZ) f₁ X]
-  simp only [Category.assoc]
-  erw [reassoc_of% h3]
-  have h1 := Pseudofunctor.StrongTrans.naturality_naturality_hom_app f.2
-    (α_ f.1 (Quiver.Hom.op ZZ) f₁) X
-  have h2 := Pseudofunctor.StrongTrans.naturality_comp_hom_app f.2
-    (f.1 ≫ Quiver.Hom.op ZZ) f₁ X
-  have c1 : (b.2.map₂ (α_ f.1 (Quiver.Hom.op ZZ) f₁).hom).toNatTrans.app
-        ((f.2.app a.1).toFunctor.obj X) ≫
-      (b.2.map₂ (α_ f.1 (Quiver.Hom.op ZZ) f₁).inv).toNatTrans.app
-        ((f.2.app a.1).toFunctor.obj X) = 𝟙 _ := by
-    rw [← Cat.Hom₂.comp_app, ← PrelaxFunctor.map₂_comp, Iso.hom_inv_id,
-      PrelaxFunctor.map₂_id, Cat.Hom₂.id_app]
-  have c2 := Cat.Hom.inv_hom_id_toNatTrans_app (b.2.mapComp (f.1 ≫ Quiver.Hom.op ZZ) f₁)
-    ((f.2.app a.1).toFunctor.obj X)
-  have c3 := Cat.Hom.hom_inv_id_toNatTrans_app (b.2.mapComp f.1 (Quiver.Hom.op ZZ))
-    ((f.2.app a.1).toFunctor.obj X)
-  have c4 := Cat.Hom.hom_inv_id_toNatTrans_app (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)) X
-  -- PARKED (v4.33).  The cancellation data above (`c1`-`c4`, `h1`, `h2`) is all still correct
-  -- and still elaborates; what breaks is `erw [reassoc_of% h1]`, whose pattern the target no
-  -- longer contains.  Same family as `backwards_square_composite` below: an ordered rewrite
-  -- chain over `mapComp`/`naturality` components whose assumed spelling has shifted.
-  -- Prior version: `git show comp-core:Biyoneda/BackwardsNaturality.lean`.
-  sorry
-
-/-- Point form of the naturality square, spelled through the composite strong
-transformation (defeq to `yonedaPairing.map`'s literal pasting).
-
-**Stated against the pre-diagonal-switch component.**  Still compiles; no longer plugs into
-`backwards_naturality_square` -- see the note there.
-
-The proof distributes the strong-transformation component through the whiskered/associated
-composite from `categoryStruct_comp_naturality_hom`. This is an ordered `erw` chain rather
-than a `simp only`: the `≫`/`α_`/`▷` come from the `postcomp₂` bicategory and are only *defeq*
-to `Cat`'s operations (an instance diamond), so the `Cat.*_app` distribution lemmas match at
-default transparency but not reducible. The order is fixed by the composite's shape. -/
-lemma backwards_square_composite {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
-    (X : ↑(yonedaEvaluation'.obj a)) {a₁ b₁ : Bᵒᵖ} (f₁ : a₁ ⟶ b₁)
-    (ZZ : ↑((yoneda₀ (unop b.1)).obj a₁)) :
-    ((b.2.mapComp f.1 (Quiver.Hom.op ZZ ≫ f₁)).inv.toNatTrans.app
-        ((f.2.app a.1).toFunctor.obj X) ≫
-      (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ ≫ f₁)).inv.toNatTrans.app X) ≫
-      ((postcomp₂ f.1.unop ≫ (backwardsTrans a X ≫ f.2)).naturality
-        f₁).hom.toNatTrans.app ZZ =
-    (b.2.mapComp (Quiver.Hom.op ZZ) f₁).hom.toNatTrans.app
-        ((b.2.map f.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj X)) ≫
-      (b.2.map f₁).toFunctor.map
-        ((b.2.mapComp f.1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
-            ((f.2.app a.1).toFunctor.obj X) ≫
-          (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app X) := by
-  simp only [categoryStruct_comp_naturality_hom]
-  -- PARKED (v4.33).  The mathematical content is `backwards_square_core` (parked just above);
-  -- everything between is a 15-step *ordered* `rw`/`erw` chain -- associator/whisker component
-  -- lemmas applied in a fixed sequence -- and the order it assumes no longer holds.
-  --
-  -- Tried: collapsing the whole chain into one confluent `simp only` with exactly the same
-  -- lemmas.  That reports no progress, because several steps needed `erw`'s defeq matching and
-  -- `simp only` matches at reducible transparency only.  So the chain cannot simply be made
-  -- order-independent; the component lemmas have to be re-derived at the right spelling.
-  -- Prior version: `git show comp-core:Biyoneda/BackwardsNaturality.lean`.
-  sorry
-
 /-- The strong-transformation naturality square for `backwardsNaturalityIsoApp`. -/
 lemma backwards_naturality_square {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
     (X : ↑(yonedaEvaluation'.obj a)) {a₁ b₁ : Bᵒᵖ} (f₁ : a₁ ⟶ b₁) :
@@ -218,13 +128,15 @@ lemma backwards_naturality_square {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})}
         f₁).hom ≫ (backwardsNaturalityIsoApp f X a₁).hom ▷ b.2.map f₁ := by
   apply Cat.Hom₂.ext_app
   intro ZZ
-  -- PARKED (diagonal switch).  The three `backwards_*_core` lemmas above are stated against the
-  -- *pre-switch* component of `backwardsNaturalityIsoApp`, which had two factors; the component
-  -- now has three, since `yonedaEvaluation'.map f` is `a.2.map f.1 ≫ f.2.app b.1` rather than
-  -- `f.2.app a.1 ≫ b.2.map f.1` and the conversion is `f.2.naturality f.1`.  They still compile
-  -- and are left in place as re-derivable proof structure, exactly as `Evaluation.lean` leaves
-  -- its `evaluation_*_core` lemmas -- but they no longer plug in here, and porting them by hand
-  -- yields statements that are subtly wrong and only report it as a defeq failure at the `exact`.
+  -- PARKED (diagonal switch).  The pre-switch `_core` lemmas that used to feed this were deleted
+  -- on 2026-08-30: the component of `backwardsNaturalityIsoApp` now has three factors, not two,
+  -- since `yonedaEvaluation'.map f` is `a.2.map f.1 ≫ f.2.app b.1` rather than
+  -- `f.2.app a.1 ≫ b.2.map f.1`, with `f.2.naturality f.1` as the conversion.  Porting them by
+  -- hand yields statements that are subtly wrong and only report it as a defeq failure.
+  --
+  -- The route in is `StrongTransIntoCats.ofStrongTrans` (not yet written) plus
+  -- `ModificationIntoCats.isoMk`, which states this square at a point.  See
+  -- `notes/intocats_audit_2026-08-30.md`.
   sorry
 
 /-- The naturality iso of `yonedaLemmaBackwards` at `f : a ⟶ b`, componentwise. -/
@@ -234,34 +146,6 @@ def backwardsNaturalityIso {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a
       (yonedaLemmaBackwardsFunctor a ⋙ (yonedaPairing.map f).toFunctor).obj X :=
   StrongTrans.isoMk (fun α ↦ backwardsNaturalityIsoApp f X α)
     (fun f₁ ↦ backwards_naturality_square f X f₁)
-
-/-- The cancellation core of `backwards_naturality_iso_natural`: two `NatTrans.naturality`
-squares of the component isos, in canonical spellings.
-
-**Stated against the pre-diagonal-switch component.**  Still compiles; no longer plugs into
-`backwards_naturality_iso_natural` -- see the note there. -/
-lemma backwards_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
-    {X Y : ↑(yonedaEvaluation'.obj a)} (f₁ : X ⟶ Y) {γ : Bᵒᵖ}
-    (ZZ : ↑((yoneda₀ (unop b.1)).obj γ)) :
-    (b.2.map f.1 ≫ b.2.map (Quiver.Hom.op ZZ)).toFunctor.map
-        ((f.2.app a.1).toFunctor.map f₁) ≫
-      (b.2.mapComp f.1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
-        ((f.2.app a.1).toFunctor.obj Y) ≫
-      (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app Y =
-    ((b.2.mapComp f.1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
-        ((f.2.app a.1).toFunctor.obj X) ≫
-      (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app X) ≫
-      (f.2.app γ).toFunctor.map ((a.2.map (f.1 ≫ Quiver.Hom.op ZZ)).toFunctor.map f₁) := by
-  have s1 := (b.2.mapComp f.1 (Quiver.Hom.op ZZ)).inv.toNatTrans.naturality
-    ((f.2.app a.1).toFunctor.map f₁)
-  have s2 : (b.2.map (f.1 ≫ Quiver.Hom.op ZZ)).toFunctor.map
-        ((f.2.app a.1).toFunctor.map f₁) ≫
-      (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app Y =
-      (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app X ≫
-      (f.2.app γ).toFunctor.map ((a.2.map (f.1 ≫ Quiver.Hom.op ZZ)).toFunctor.map f₁) :=
-    (f.2.naturality (f.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.naturality f₁
-  rw [reassoc_of% s1, s2]
-  exact (Category.assoc _ _ _).symm
 
 /-- Naturality (in `X`) of `backwardsNaturalityIso`. -/
 lemma backwards_naturality_iso_natural {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
@@ -276,13 +160,15 @@ lemma backwards_naturality_iso_natural {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w,
   intro ZZ
   erw [homCategory_comp_as_app, homCategory_comp_as_app]
   dsimp only [backwardsNaturalityIso]
-  -- PARKED (diagonal switch).  The three `backwards_*_core` lemmas above are stated against the
-  -- *pre-switch* component of `backwardsNaturalityIsoApp`, which had two factors; the component
-  -- now has three, since `yonedaEvaluation'.map f` is `a.2.map f.1 ≫ f.2.app b.1` rather than
-  -- `f.2.app a.1 ≫ b.2.map f.1` and the conversion is `f.2.naturality f.1`.  They still compile
-  -- and are left in place as re-derivable proof structure, exactly as `Evaluation.lean` leaves
-  -- its `evaluation_*_core` lemmas -- but they no longer plug in here, and porting them by hand
-  -- yields statements that are subtly wrong and only report it as a defeq failure at the `exact`.
+  -- PARKED (diagonal switch).  The pre-switch `_core` lemmas that used to feed this were deleted
+  -- on 2026-08-30: the component of `backwardsNaturalityIsoApp` now has three factors, not two,
+  -- since `yonedaEvaluation'.map f` is `a.2.map f.1 ≫ f.2.app b.1` rather than
+  -- `f.2.app a.1 ≫ b.2.map f.1`, with `f.2.naturality f.1` as the conversion.  Porting them by
+  -- hand yields statements that are subtly wrong and only report it as a defeq failure.
+  --
+  -- The route in is `StrongTransIntoCats.ofStrongTrans` (not yet written) plus
+  -- `ModificationIntoCats.isoMk`, which states this square at a point.  See
+  -- `notes/intocats_audit_2026-08-30.md`.
   sorry
 
 end Biyoneda
