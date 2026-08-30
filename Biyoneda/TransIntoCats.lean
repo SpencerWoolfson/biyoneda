@@ -252,9 +252,9 @@ def StrongTransIntoCats.liftDom {A : Type u} [Bicategory A]
 the *lifted* `F`.  `catLiftCounit`'s interaction with `catPseudoULift` is definitional, so each
 obligation is `d`'s own at the lowered point.
 
-`naturality_naturality'` closes outright.  The other two reduce to `d`'s field modulo a single
-residual `≫ 𝟙` that `Category.comp_id` will not collapse reducibly and `erw` does not bridge
-either -- see the note on `toStrongTransMax`. -/
+`naturality_naturality'` closes outright; the other two reduce to `d`'s field after `erw`
+bridges a residual `≫ 𝟙` that `Category.comp_id` will not collapse reducibly.  All three are
+proved. -/
 def StrongTransIntoCats.precomposeCounit {A : Type u} [Bicategory A]
     {F : Pseudofunctor A Cat.{v₁, u₁}} {G : Pseudofunctor A Cat.{v₂, u₂}}
     (d : StrongTransIntoCats F G) :
@@ -293,8 +293,7 @@ target universe and can be left alone -- which is what makes them land on `yoned
 The construction is modular rather than hand-rolled: lower the domain with `precomposeCounit`,
 then reuse the already-proven `lift`.  The universe arithmetic works because Lean's `max` is
 commutative, so `F.comp catPseudoULift.{v₁, v₂, u₁, u₂}` and
-`G.comp catPseudoULift.{v₂, v₁, u₂, u₁}` land in the same universe.  **That part typechecks**;
-what is open is two of `precomposeCounit`'s three coherence fields. -/
+`G.comp catPseudoULift.{v₂, v₁, u₂, u₁}` land in the same universe. -/
 def StrongTransIntoCats.toStrongTransMax {A : Type u} [Bicategory A]
     {F : Pseudofunctor A Cat.{v₁, u₁}} {G : Pseudofunctor A Cat.{v₂, u₂}}
     (d : StrongTransIntoCats F G) :

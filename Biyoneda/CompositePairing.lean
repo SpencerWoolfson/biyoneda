@@ -23,6 +23,11 @@ The same argument now covers `StrongTransIntoCats.lift` and `.liftDom`: both dir
 Yoneda equivalence are assembled through them, so a `sorry` reaching either would be inherited
 by everything downstream while each individual definition still looked clean.
 
+It covers the rest of the `TransIntoCats` gadget too.  `comp`, `Id`, `toStrongTrans`,
+`toModification`, `isoMk` and the two bridge lemmas are all proved, and the backwards direction
+is now assembled out of them -- but none of them was gated, so any of them could have rotted
+silently.  They are asserted here as well.
+
 `scripts/verify-build.sh` gates on all of these; keep the two lists in step.
 -/
 
@@ -51,3 +56,23 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms CategoryTheory.Bicategory.strongTrans_id_app
 #print axioms CategoryTheory.Bicategory.evalMapComp_hom
 #print axioms CategoryTheory.Bicategory.evalMapComp_inv
+
+-- The rest of the `TransIntoCats` gadget.  Every one of these is proved; `ModificationIntoCats.lift`
+-- is deliberately absent, being the gadget's one remaining sorry.
+#print axioms StrongTransIntoCats.comp
+#print axioms StrongTransIntoCats.Id
+#print axioms StrongTransIntoCats.toStrongTrans
+#print axioms StrongTransIntoCats.precomposeCounit
+#print axioms StrongTransIntoCats.toStrongTransMax
+#print axioms StrongTransIntoCats.lift_comp_liftDom_naturality_app
+#print axioms StrongTransIntoCats.Id_naturality_app
+#print axioms CategoryTheory.Bicategory.ModificationIntoCats.toModification
+#print axioms CategoryTheory.Bicategory.ModificationIntoCats.isoMk
+
+-- The backwards component chain, decoupled from `yonedaEvaluation'` and rebuilt on the gadget
+-- (2026-08-30).  `backwardsTrans` is the Yoneda element itself, so its cleanliness is the
+-- statement that the backward direction's *data* is real, independent of the parked coherence.
+#print axioms Biyoneda.backwardsFibreFunctor
+#print axioms Biyoneda.backwardsTransData
+#print axioms Biyoneda.backwardsTrans
+#print axioms Biyoneda.mapComp_assoc_app'

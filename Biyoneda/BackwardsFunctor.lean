@@ -12,7 +12,8 @@ At a fixed pair `x = (b₀, F)`, `yonedaLemmaBackwardsFunctor x` sends an object
 to the strong transformation `(a, f) ↦ (F.map f).obj s`.  It is built in three layers:
 
 * `backwardsFibreFunctor` — the component of that transformation at one `a : Bᵒᵖ`;
-* `backwardsTrans` — those components assembled into a strong transformation;
+* `backwardsTransData` — those components as pointwise `StrongTransIntoCats` data;
+* `backwardsTrans` — the strong transformation, via `StrongTransIntoCats.toStrongTrans`;
 * `yonedaLemmaBackwardsFunctor` — and that, functorially in `s`.
 
 `mapComp_id_app` and `mapComp_assoc_app` are general facts about any pseudofunctor evaluated at
@@ -47,10 +48,15 @@ In terms of `yoneda₀ b₀`, the source category at `a` is the hom-category `(u
   universe-level coercion introduced by `Cat.of`.
 
 This is the functor underlying the `a`-component of `backwardsTrans`.
+
+The evaluation point is typed `↑(x.2.obj x.1)` rather than `↑(yonedaEvaluation'.obj x)`.  The
+two are `rfl`-equal, but the latter spelling drags `evaluationPseudo`'s parked coherence fields
+into every declaration downstream *through the type*, contaminating the whole backwards chain
+with `sorryAx` for no mathematical reason.
 -/
 @[simp]
 def backwardsFibreFunctor (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat))
-    (eval : yonedaEvaluation'.obj x) (a : Bᵒᵖ) :
+    (eval : ↑(x.2.obj x.1)) (a : Bᵒᵖ) :
     ↑((yoneda₀ (unop x.1)).obj a) ⥤ ↑(x.2.obj a) where
   obj b := (x.2.map (Quiver.Hom.op b)).toFunctor.obj eval
   map {X Y} f := (x.2.map₂ (op2 f)).toNatTrans.app eval
@@ -88,6 +94,52 @@ lemma mapComp_assoc_app (F : Bᵒᵖ ⥤ᵖ Cat.{w, v}) {b₀ a b c : Bᵒᵖ}
   simpa using Cat.Hom₂.congr_app
     (F.mapComp_assoc_right_hom (Quiver.Hom.op X) f g) eval
 
+/-- Padding-free component form of `mapComp_assoc_right_hom`.
+
+`mapComp_assoc_app` above is stated in the shape `StrongTrans`'s whiskered `naturality_comp`
+obligation asks for, which pads the right-hand side with three identities.  The pointwise
+`StrongTransIntoCats` obligation has no padding, so it wants this form. -/
+lemma mapComp_assoc_app' (F : Bᵒᵖ ⥤ᵖ Cat.{w, v}) {b₀ : B} {a b c : Bᵒᵖ}
+    (f : a ⟶ b) (g : b ⟶ c) (X : unop a ⟶ b₀) (eval : ↑(F.obj (op b₀))) :
+    (F.mapComp (Quiver.Hom.op X) (f ≫ g)).hom.toNatTrans.app eval ≫
+      (F.mapComp f g).hom.toNatTrans.app ((F.map (Quiver.Hom.op X)).toFunctor.obj eval) =
+    (F.map₂ (op2 (α_ g.unop f.unop X).hom)).toNatTrans.app eval ≫
+      (F.mapComp (Quiver.Hom.op X ≫ f) g).hom.toNatTrans.app eval ≫
+        (F.map g).toFunctor.map
+          ((F.mapComp (Quiver.Hom.op X) f).hom.toNatTrans.app eval) := by
+  simpa using mapComp_assoc_app F f g X eval
+
+/--
+At a fixed pair `x = (b₀, F)` and an evaluation point `eval : F.obj b₀`, the Yoneda element
+`yoneda₀ b₀ ⟶ F` **as pointwise `StrongTransIntoCats` data**.
+
+Every obligation is stated in the fibre `↑(x.2.obj a)` -- a plain functor-category equation --
+rather than as a `Cat` 2-cell, which is what lets all four fields close in one line each:
+
+* `naturality`'s own square is `mapComp_naturality_left`;
+* `naturality_naturality'` is `mapComp_naturality_right`;
+* `naturality_id'` is `mapComp_id_app`, unpadded;
+* `naturality_comp'` is `mapComp_assoc_app'`.
+
+The hand-rolled `StrongTrans` this replaces had to descend through `Cat.Hom.isoMk` first, and
+its naturality square was parked on a `congr 1` that over-descended into `HEq` goals.
+-/
+def backwardsTransData (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) (eval : ↑(x.2.obj x.1)) :
+    StrongTransIntoCats (yoneda₀ (unop x.1)) x.2 where
+  app a := backwardsFibreFunctor x eval a
+  naturality {a b} f :=
+    NatIso.ofComponents
+      (fun X ↦ (Cat.Hom.toNatIso (x.2.mapComp (Quiver.Hom.op X) f)).app eval)
+      (fun {X Y} g ↦
+        Cat.Hom₂.congr_app (x.2.toOplax.mapComp_naturality_left (op2 g) f) eval)
+  naturality_naturality' {a b} {f g} η X :=
+    Cat.Hom₂.congr_app (x.2.toOplax.mapComp_naturality_right (Quiver.Hom.op X) η) eval
+  naturality_id' a X := by
+    have key := mapComp_id_app x.2 X eval
+    simp only [Category.id_comp, Category.comp_id] at key
+    exact key
+  naturality_comp' {a b c} f g X := mapComp_assoc_app' x.2 f g X eval
+
 /--
 At a fixed pair `x = (b₀, F)` and an evaluation point `eval : F.obj b₀`, the strong
 transformation `yoneda₀ b₀ ⟶ F` corresponding to `eval` under the Yoneda embedding.
@@ -95,49 +147,26 @@ transformation `yoneda₀ b₀ ⟶ F` corresponding to `eval` under the Yoneda e
 * **Component at `a`**: the functor `backwardsFibreFunctor x eval a`, which
   sends `f : unop a ⟶ b₀` to `(F.map f).obj eval`.
 * **Naturality at `f : a ⟶ b`**: an isomorphism built from the associativity coherence
-  `F.mapComp`, whose hom component at `X` is `(F.mapComp (op X) f).hom.app eval` and whose
-  inv component at `X` is `(F.mapComp (op X) f).inv.app eval`.  The inv-hom round-trip uses
-  `Cat.Hom₂.comp_app` to convert composition of 2-cells into composition in the fibre.
+  `F.mapComp`, whose hom component at `X` is `(F.mapComp (op X) f).hom.app eval`.
 
 This is the "Yoneda element" — the object in `yonedaPairing.obj x` that
 `yonedaLemmaBackwardsFunctor` sends `eval` to.
+
+`StrongTransIntoCats.toStrongTrans` supplies the crossing, so nothing here is hand-rolled: the
+result is `rfl`-equal to the previous hand-written structure and every field is proved.
 -/
 @[simp]
 def backwardsTrans (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat))
-    (eval : yonedaEvaluation'.obj x) : Pseudofunctor.StrongTrans (yoneda₀ (unop x.1)) x.2 where
-  app a := {toFunctor := backwardsFibreFunctor x eval a}
-  naturality {a b} f := by
-    refine Cat.Hom.isoMk (NatIso.ofComponents ?_ ?_)
-    · intro X
-      exact (Cat.Hom.toNatIso (x.2.mapComp (Quiver.Hom.op X) f)).app eval
-    · intro X Y g
-      simp only [yoneda₀_toPrelaxFunctor_toPrelaxFunctorStruct_toPrefunctor_obj_α,
-        backwardsFibreFunctor, op_unop, Cat.Hom.comp_toFunctor, comp_obj,
-        yoneda₀_toPrelaxFunctor_toPrelaxFunctorStruct_toPrefunctor_map_toFunctor_obj, op_comp,
-        Quiver.Hom.op_unop, Functor.comp_map,
-        yoneda₀_toPrelaxFunctor_toPrelaxFunctorStruct_toPrefunctor_map_toFunctor_map,
-        op2_whiskerLeft, map₂_whisker_right, Cat.Hom.toNatTrans_comp, Cat.whiskerRight_toNatTrans,
-        NatTrans.comp_app, whiskerRight_app,
-        Category.assoc]
-      -- PARKED (v4.33).  The `have` below is fixed -- it needed `rfl`, not `simp`, since `simp`
-      -- rewrites `(inv ≫ hom).toNatTrans` to `inv.toNatTrans ≫ hom.toNatTrans` and then cannot
-      -- close what is left.  What is broken is the descent: `congr 1` now over-descends, giving
-      -- an object equation (`e_4`) plus two `HEq` goals (`e_6`, `e_7`) where it used to give a
-      -- single 2-cell equation for `erw [this, inv_hom]` to discharge.  Dropping `congr 1`
-      -- entirely does not work either -- the `erw` then has nothing to match.
-      -- Next move: a controlled descent (an explicit `Cat.Hom₂.ext_app` / `NatTrans.ext`) rather
-      -- than `congr`, so the goal stays at the 2-cell level.
-      rcases x.2.mapComp (Quiver.Hom.op Y) f with ⟨hom, inv, _, inv_hom⟩
-      dsimp [yonedaEvaluation'] at eval
-      have : inv.toNatTrans.app eval ≫ hom.toNatTrans.app eval =
-          (inv ≫ hom).toNatTrans.app eval := rfl
-      sorry
-  naturality_naturality {a b c} f g := by
-    exact Cat.Hom₂.ext_app fun X ↦
-      Cat.Hom₂.congr_app (x.2.toOplax.mapComp_naturality_right (Quiver.Hom.op X) g) eval
-  naturality_id a := by exact Cat.Hom₂.ext_app fun X ↦ mapComp_id_app x.2 X eval
-  naturality_comp {a b c} f g := by
-    exact Cat.Hom₂.ext_app fun X ↦ mapComp_assoc_app x.2 f g X eval
+    (eval : ↑(x.2.obj x.1)) : Pseudofunctor.StrongTrans (yoneda₀ (unop x.1)) x.2 :=
+  (backwardsTransData x eval).toStrongTrans
+
+/-- The component of `backwardsTrans`, at the functor level.
+
+`backwardsTrans` is now a `StrongTransIntoCats.toStrongTrans`, so `simp [backwardsTrans]` no
+longer exposes `backwardsFibreFunctor`.  Reason through this instead of unfolding the def. -/
+@[simp] lemma backwardsTrans_app_toFunctor (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) (eval : ↑(x.2.obj x.1))
+    (a : Bᵒᵖ) :
+    ((backwardsTrans x eval).app a).toFunctor = backwardsFibreFunctor x eval a := rfl
 
 set_option backward.isDefEq.respectTransparency false in
 /--
@@ -162,15 +191,13 @@ def yonedaLemmaBackwardsFunctor (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
       refine { toNatTrans := { app := ?_, naturality := ?_ } }
       · exact fun X ↦ (x.2.map (Quiver.Hom.op X)).toFunctor.map f
       · intro X Y g
-        simp only [yoneda₀_toPrelaxFunctor_toPrelaxFunctorStruct_toPrefunctor_obj_α,
-          backwardsTrans, backwardsFibreFunctor, op_unop,
-          Cat.Hom.comp_toFunctor, NatTrans.naturality]
+        simp only [backwardsTrans_app_toFunctor, backwardsFibreFunctor, op_unop,
+          NatTrans.naturality]
     · intro t u g
       refine Cat.Hom₂.ext_iff.mpr ?_
       ext c
       rw [Cat.Hom.toNatTrans_comp, Cat.Hom.toNatTrans_comp]
-      simp only [yoneda₀_toPrelaxFunctor_toPrelaxFunctorStruct_toPrefunctor_obj_α,
-        backwardsTrans, backwardsFibreFunctor, op_unop,
+      simp only [backwardsTrans_app_toFunctor, backwardsFibreFunctor, op_unop,
         Cat.Hom.comp_toFunctor, comp_obj, Cat.whiskerLeft_toNatTrans,
         Cat.Hom.isoMk_hom, NatTrans.toCatHom₂_toNatTrans, Cat.whiskerRight_toNatTrans]
       exact (x.2.mapComp (Quiver.Hom.op c) g).hom.toNatTrans.naturality f

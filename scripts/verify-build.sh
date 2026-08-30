@@ -47,6 +47,19 @@ CLEAN_DECLS=(
   "CategoryTheory.Bicategory.strongTrans_id_app"
   "CategoryTheory.Bicategory.evalMapComp_hom"
   "CategoryTheory.Bicategory.evalMapComp_inv"
+  "CategoryTheory.Bicategory.StrongTransIntoCats.comp"
+  "CategoryTheory.Bicategory.StrongTransIntoCats.Id"
+  "CategoryTheory.Bicategory.StrongTransIntoCats.toStrongTrans"
+  "CategoryTheory.Bicategory.StrongTransIntoCats.precomposeCounit"
+  "CategoryTheory.Bicategory.StrongTransIntoCats.toStrongTransMax"
+  "CategoryTheory.Bicategory.StrongTransIntoCats.lift_comp_liftDom_naturality_app"
+  "CategoryTheory.Bicategory.StrongTransIntoCats.Id_naturality_app"
+  "CategoryTheory.Bicategory.ModificationIntoCats.toModification"
+  "CategoryTheory.Bicategory.ModificationIntoCats.isoMk"
+  "Biyoneda.backwardsFibreFunctor"
+  "Biyoneda.backwardsTransData"
+  "Biyoneda.backwardsTrans"
+  "Biyoneda.mapComp_assoc_app'"
 )
 
 CONTAMINATED_DECLS=(
