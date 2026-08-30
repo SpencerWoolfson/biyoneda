@@ -77,6 +77,14 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms CategoryTheory.Bicategory.strongTrans_naturality_comp_lhs_app
 #print axioms CategoryTheory.Bicategory.strongTrans_naturality_comp_rhs_app
 
+-- The two evaluation unitors, closed 2026-08-30 by writing `Cat`'s unitors and associators into
+-- the statement as the identities they definitionally are rather than normalising them away.
+#print axioms CategoryTheory.Bicategory.eval_left_unitor
+#print axioms CategoryTheory.Bicategory.eval_right_unitor
+#print axioms CategoryTheory.Bicategory.eval_left_unitor_rhs_app
+#print axioms CategoryTheory.Bicategory.eval_right_unitor_rhs_app
+#print axioms CategoryTheory.Bicategory.strongTrans_naturality_id_app
+
 -- The backwards component chain, decoupled from `yonedaEvaluation'` and rebuilt on the gadget
 -- (2026-08-30).  `backwardsTrans` is the Yoneda element itself, so its cleanliness is the
 -- statement that the backward direction's *data* is real, independent of the parked coherence.

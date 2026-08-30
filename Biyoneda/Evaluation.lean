@@ -320,56 +320,108 @@ lemma cat_whiskerLeft_leftUnitor_app {X' Y' Z' : Cat.{v, u}} (f : X' ⟶ Y') (g 
 
 /-! ### The five coherence laws
 
-OPEN.  Each is stated exactly as the corresponding `Pseudofunctor` field, instantiated at an
-explicit pair, and each is verified to plug into that field by `exact`.  Measured to fail:
-`simp`, `cat_disch`, `bicategory`, `simp; bicategory`, `simp [categoryStruct_id_app,
+The two unitors are **closed** (2026-08-30).  What broke them open was not a stronger tactic but
+a change of shape: stop normalising `Cat`'s unitors and associators away, and instead write them
+into the statement of a `rfl` bridge as the identities they definitionally are.  See
+`eval_left_unitor` for the four-step recipe.
+
+The three remaining -- `eval_whisker_left`, `eval_whisker_right`, `eval_associator` -- are still
+open, and the same recipe is the thing to try on them.  Historical note for those: measured to
+fail are `simp`, `cat_disch`, `bicategory`, `simp; bicategory`, `simp [categoryStruct_id_app,
 categoryStruct_id_naturality_hom]`, and `dsimp only [categoryStruct_id_app]; simp`. -/
 
-/-- Left-unitor coherence for `evaluationPseudo`. -/
+/-- The right-hand side of `eval_left_unitor`, distributed at a point, with every `Cat` unitor
+and associator left in place as the identity it definitionally is.
+
+This is the move that breaks the wall.  The `cat_*` lemmas above say `(λ_ f).hom = 𝟙 f`, and
+firing one leaves the goal internally inconsistent at reducible transparency (see the note on
+those lemmas).  Writing the identities into the *statement* instead means nothing has to fire:
+the bridge is `rfl`, and `simp` then finishes on a goal that is already in the fibre and no
+longer contains a unitor to stumble over. -/
+lemma eval_left_unitor_rhs_app (u : x ⟶ y) (α : F ⟶ G) (Z : ↑(F.obj x)) :
+    (((F.mapComp (𝟙 x) u).hom ▷ (𝟙 (F.obj y) ≫ α.app y) ≫
+        (α_ (F.map (𝟙 x)) (F.map u) (𝟙 (F.obj y) ≫ α.app y)).hom ≫
+        F.map (𝟙 x) ◁ ((α_ (F.map u) (𝟙 (F.obj y)) (α.app y)).inv ≫
+          ((ρ_ (F.map u)).hom ≫ (λ_ (F.map u)).inv) ▷ α.app y ≫
+          (α_ (𝟙 (F.obj x)) (F.map u) (α.app y)).hom) ≫
+        (α_ (F.map (𝟙 x)) (𝟙 (F.obj x)) (F.map u ≫ α.app y)).inv) ≫
+      (F.mapId x).hom ▷ evalMap u α ≫ (λ_ (evalMap u α)).hom).toNatTrans.app Z
+    = ((𝟙 (F.obj y) ≫ α.app y).toFunctor.map ((F.mapComp (𝟙 x) u).hom.toNatTrans.app Z) ≫
+        (𝟙 _) ≫
+        ((𝟙 _) ≫ (α.app y).toFunctor.map ((𝟙 _) ≫ (𝟙 _)) ≫ (𝟙 _)) ≫
+        (𝟙 _)) ≫
+      (evalMap u α).toFunctor.map ((F.mapId x).hom.toNatTrans.app Z) ≫ (𝟙 _) := rfl
+
+/-- Left-unitor coherence for `evaluationPseudo`.
+
+The whole mathematical content is `F.map₂_left_unitor`; everything else is `Cat` structure.
+The proof shape that works -- and that the other four cores should follow -- is:
+
+1. rewrite the three `rfl` shape lemmas, so both sides are fully explicit;
+2. descend to a fibre with `Cat.Hom₂.ext_app` **before** any `simp`;
+3. bridge the side `simp` cannot distribute, with the identities written into the statement;
+4. let `simp` finish, now that no unitor has to be rewritten.
+
+Step 3 is the one that matters.  Earlier attempts normalised the unitors away with
+`simp only [cat_leftUnitor_hom, ...]` first and were dead on arrival. -/
 lemma eval_left_unitor (u : x ⟶ y) (α : F ⟶ G) :
     evalMap₂ (λ_ u).hom (λ_ α).hom
       = (evalMapComp (𝟙 x) (𝟙 F) u α).hom ≫
         (F.mapId x).hom ▷ evalMap u α ≫ (λ_ (evalMap u α)).hom := by
-  -- The route that gets furthest, recorded 2026-08-29.  Descend to components first: at the
-  -- 2-cell level every rewrite poisons the goal (see below), but componentwise both sides are
-  -- short and share their head.
-  dsimp only [strongTrans_id_app, evalMap₂, evalMapComp, evalMap]
-  simp only [Iso.trans_hom, Iso.symm_hom, whiskerLeftIso_hom, whiskerRightIso_hom,
-    cat_associator_hom, cat_associator_inv, cat_leftUnitor_hom, cat_leftUnitor_inv,
-    cat_rightUnitor_hom, cat_rightUnitor_inv]
-  apply Cat.Hom₂.ext_app
-  intro Z
-  simp [strongTrans_id_naturality_whiskerRight_app, cat_whiskerLeft_leftUnitor_app,
-    strongTrans_id_app_toFunctor_map]
-  -- Residual, both sides sharing their first factor:
-  --   LHS  … ≫ (α.app y).map ((F.map u).map (mapId.app Z)) ≫ (F.map u ◁ (λ_ _).hom).app Z
-  --   RHS  … ≫ ((𝟙 F).naturality u ▷ᵢ α.app y).hom.app _ ≫ (α.app y).map ((F.map u).map …)
-  --
-  -- BOTH leftover factors are the identity, and BOTH are proved above as
-  -- `strongTrans_id_naturality_whiskerRight_app` and `cat_whiskerLeft_leftUnitor_app` --
-  -- stated in exactly the shape the goal prints.  Neither `simp` nor `rw` will apply them
-  -- here: `rw` reports "did not find an occurrence of the pattern".  The goal's terms and the
-  -- lemmas' left-hand sides print identically but are not the same term.
-  --
-  -- ROOT CAUSE, established this session.  `(ρ_ f).hom = 𝟙 f` is true by `rfl` in `Cat`, but
-  -- its two sides have types `f ≫ 𝟙 ⟶ f` and `f ⟶ f`, which are defeq and NOT syntactically
-  -- equal.  So it is unusable as a rewrite: `rw` reports "motive is not type correct", while
-  -- `simp only` *does* fire and thereby leaves the goal internally inconsistent at reducible
-  -- transparency.  After that, ordinary lemmas -- `Category.id_comp`, `Bicategory.id_whiskerRight`
-  -- -- silently stop matching, and `bicategory` builds terms the kernel rejects.  Every wall hit
-  -- in this file traces back to that one fact.
-  sorry
-/-- Right-unitor coherence for `evaluationPseudo`.  Its content is `α.naturality (𝟙 y)` against
-the two `mapId`s. -/
+  rw [evalMap₂_leftUnitor, evalMapComp_id_left_hom, F.map₂_left_unitor]
+  apply Cat.Hom₂.ext_app; intro Z
+  refine Eq.trans ?_ (eval_left_unitor_rhs_app u α Z).symm
+  simp
+
+/-- `StrongTrans.naturality_id` at a point, unpadded.
+
+Mathlib states it whiskered, with a left and a right unitor between the factors; in `Cat` both
+are identities.  Same treatment as everywhere else in this section: two `rfl` bridges carrying
+the residual `𝟙`s, then `simpa` to strip them. -/
+lemma strongTrans_naturality_id_app (α : F ⟶ G) (a : C) (W : ↑(F.obj a)) :
+    (α.app a).toFunctor.map ((F.mapId a).hom.toNatTrans.app W)
+      = (α.naturality (𝟙 a)).hom.toNatTrans.app W ≫
+        (G.mapId a).hom.toNatTrans.app ((α.app a).toFunctor.obj W) := by
+  have h := Cat.Hom₂.congr_app (α.naturality_id a) W
+  have hl : ((α.naturality (𝟙 a)).hom ≫ α.app a ◁ (G.mapId a).hom).toNatTrans.app W
+      = (α.naturality (𝟙 a)).hom.toNatTrans.app W ≫
+        (G.mapId a).hom.toNatTrans.app ((α.app a).toFunctor.obj W) := rfl
+  have hr : ((F.mapId a).hom ▷ α.app a ≫
+        (λ_ (α.app a)).hom ≫ (ρ_ (α.app a)).inv).toNatTrans.app W
+      = (α.app a).toFunctor.map ((F.mapId a).hom.toNatTrans.app W) ≫ (𝟙 _) ≫ (𝟙 _) := rfl
+  simpa using hr.symm.trans (h.symm.trans hl)
+
+/-- The right-hand side of `eval_right_unitor`, distributed at a point.  Companion of
+`eval_left_unitor_rhs_app`; see the note there for why the identities stay in the statement. -/
+lemma eval_right_unitor_rhs_app (u : x ⟶ y) (α : F ⟶ G) (Z : ↑(F.obj x)) :
+    (((F.mapComp u (𝟙 y)).hom ▷ (α.app y ≫ 𝟙 (G.obj y)) ≫
+        (α_ (F.map u) (F.map (𝟙 y)) (α.app y ≫ 𝟙 (G.obj y))).hom ≫
+        F.map u ◁ ((α_ (F.map (𝟙 y)) (α.app y) (𝟙 (G.obj y))).inv ≫
+          (α.naturality (𝟙 y)).hom ▷ 𝟙 (G.obj y) ≫
+          (α_ (α.app y) (G.map (𝟙 y)) (𝟙 (G.obj y))).hom) ≫
+        (α_ (F.map u) (α.app y) (G.map (𝟙 y) ≫ 𝟙 (G.obj y))).inv) ≫
+      evalMap u α ◁ (G.mapId y).hom ≫ (ρ_ (evalMap u α)).hom).toNatTrans.app Z
+    = ((α.app y ≫ 𝟙 (G.obj y)).toFunctor.map ((F.mapComp u (𝟙 y)).hom.toNatTrans.app Z) ≫
+        (𝟙 _) ≫
+        ((𝟙 _) ≫
+            (α.naturality (𝟙 y)).hom.toNatTrans.app ((F.map u).toFunctor.obj Z) ≫ (𝟙 _)) ≫
+        (𝟙 _)) ≫
+      (G.mapId y).hom.toNatTrans.app ((evalMap u α).toFunctor.obj Z) ≫ (𝟙 _) := rfl
+
+/-- Right-unitor coherence for `evaluationPseudo`.
+
+Same four-step shape as `eval_left_unitor`, with one extra ingredient: unlike the left unitor
+this one has genuine content beyond `F.map₂_right_unitor`, namely `α.naturality_id` -- which
+`simp` picks up from `strongTrans_naturality_id_app` once the bridge has cleared the unitors
+out of the way. -/
 lemma eval_right_unitor (u : x ⟶ y) (α : F ⟶ G) :
     evalMap₂ (ρ_ u).hom (ρ_ α).hom
       = (evalMapComp u α (𝟙 y) (𝟙 G)).hom ≫
         evalMap u α ◁ (G.mapId y).hom ≫ (ρ_ (evalMap u α)).hom := by
   rw [evalMap₂_rightUnitor, evalMapComp_id_right_hom, F.map₂_right_unitor]
-  dsimp only [evalMap]
-  -- Same position as `eval_left_unitor`: the remaining content is `α.naturality_id y` against
-  -- the two `mapId`s, and everything after that is structural.  See the note there.
-  sorry
+  apply Cat.Hom₂.ext_app; intro Z
+  refine Eq.trans ?_ (eval_right_unitor_rhs_app u α Z).symm
+  simp [strongTrans_naturality_id_app]
 
 /-- Left-whiskering coherence for `evaluationPseudo`. -/
 lemma eval_whisker_left (u : x ⟶ y) (α : F ⟶ G) {v v' : y ⟶ z} {β β' : G ⟶ H}
