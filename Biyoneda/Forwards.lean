@@ -154,9 +154,6 @@ lemma forwards_naturality_naturality_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.
   sorry
 
 set_option backward.isDefEq.respectTransparency false in
-set_option maxHeartbeats 1000000 in
--- the descent through the composite's `mapId` into `homPseudo`'s unitor iso, run with
--- transparency relaxed, does not fit the default budget; 1M is ~2x the measured floor
 /--
 The component core of the `naturality_id` obligation of `yonedaLemmaForwards`, stated in the
 unlifted fibre.
@@ -172,14 +169,52 @@ lemma forwards_naturality_id_core (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}))
         (Z.naturality (𝟙 a.1)).hom.toNatTrans.app (𝟙 (unop a.1))) ≫
       (yonedaEvaluation'.mapId a).hom.toNatTrans.app ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))) =
     (((yonedaPairing.mapId a).hom.toNatTrans.app Z).as.app a.1).toNatTrans.app (𝟙 (unop a.1)) := by
-  -- PARKED (v4.33).  `Z.naturality_id` is the whole mathematical input; the descent just
-  -- follows the composite's `mapId` down to `homPseudo`'s unitor iso.  The `rw [hZ]` now hits a
-  -- `(deterministic) timeout at isDefEq` at 1e6 heartbeats.
+  -- `Z.naturality_id` is the whole mathematical input; the descent below just follows the
+  -- composite's `mapId` down to `homPseudo`'s unitor iso, which is now the named `homMapId`.
+  dsimp only [yonedaPairing, yonedaPairingComposite, Pseudofunctor.comp, homPseudo,
+    homMapId, homMapIdApp,
+    Pseudofunctor.prod, Pseudofunctor.op, yonedaEvaluation', evaluationPseudo]
+  simp only [prelax_map₂_app, Iso.trans_hom, Cat.Hom.isoMk_hom, NatIso.ofComponents_hom_app,
+    Cat.toCatHom₂_toNatTrans, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+    PrelaxFunctor.map₂Iso_hom, Category.assoc]
+  have hZ := Cat.Hom₂.congr_app (Z.naturality_id a.1) (𝟙 (unop a.1))
+  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app] at hZ
+  rw [hZ]
+  simp
+  -- PARKED (2026-08-30), one step from done, and in a completely different place than before.
   --
-  -- Strongly suspected knock-on: the descent `dsimp only [...]` unfolds `homPseudo`, whose
-  -- coherence fields are sorried as of this branch, so the unfolded term now carries `sorryAx`
-  -- subterms with large types.  Re-check this the moment Gadgets is restored -- do NOT raise
-  -- maxHeartbeats to paper over it.
+  -- STATUS CHANGE worth recording: this lemma used to die with `(deterministic) timeout at
+  -- isDefEq` at 1e6 heartbeats, and the note here blamed a sorried `homPseudo` being unfolded
+  -- by the descent.  That diagnosis was right.  With `homPseudo` proved, the whole descent now
+  -- runs at the DEFAULT heartbeat budget -- the `set_option maxHeartbeats 1000000` this lemma
+  -- used to carry has been deleted, not raised.
+  --
+  -- Two fixes were needed on the way, both the same lesson as Gadgets': keep `prelax` FOLDED in
+  -- the descent (it is off the `dsimp only` list now) so `prelax_map₂_app` can fire, and unfold
+  -- `homMapId`/`homMapIdApp` explicitly since `mapId` is a named def rather than an inline term.
+  -- Together those clear the `PrelaxFunctor.mkOfHomFunctors` blob entirely.
+  --
+  -- What is left after `simp` is a single clean equation:
+  --     (Z.app a.1).map (ρ_ (𝟙 (unop a.1))).hom
+  --       = (<associator/unitor chain in `Bᵒᵖ ⥤ᵖ Cat`>).as.app a.1 |>.toNatTrans.app (𝟙 _)
+  -- i.e. pure structural 2-cell data in the functor bicategory, evaluated at a point.
+  --
+  -- The block that follows would finish it, and is measured NOT to fire: `simp` reports no
+  -- progress and Lean notes the target is not type-correct at `implicit` transparency, naming
+  -- the mismatch -- `𝟙 (unop a.1) ≫ 𝟙 (unop a.1)` typed `unop a.1 ⟶ unop a.1` where
+  -- `↑((yoneda₀ (unop a.1)).obj a.1)` is wanted.  Tried in both orders (before and after the
+  -- plain `simp`); same failure either way.
+  --
+  --   simp only [homCategory_comp_as_app, associator_hom_as_app, associator_inv_as_app,
+  --     leftUnitor_hom_as_app, rightUnitor_hom_as_app, whiskerLeft_as_app, whiskerRight_as_app,
+  --     Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+  --     Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app]
+  --
+  -- Next move: the padding trick (see `Evaluation.lean`'s section note) -- a `rfl` bridge naming
+  -- the RHS's value at the point, with the residual identities written into the statement,
+  -- chained with `Eq.trans` rather than `rw`.  That is what cleared five structurally identical
+  -- walls this session, and it sidesteps the transparency mismatch instead of fighting it.
   sorry
 
 /-- Core of `naturality_comp` for `yonedaLemmaForwards` (unlifted fibre form). -/
