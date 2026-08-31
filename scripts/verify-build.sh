@@ -72,6 +72,9 @@ CLEAN_DECLS=(
   "CategoryTheory.Bicategory.eval_right_unitor_rhs_app"
   "CategoryTheory.Bicategory.strongTrans_naturality_id_app"
   "CategoryTheory.Bicategory.eval_whisker_left"
+  "CategoryTheory.Bicategory.eval_whisker_right"
+  "CategoryTheory.Bicategory.map_comp_cancel"
+  "CategoryTheory.Bicategory.strongTrans_naturality_comp_inv_app"
   "CategoryTheory.Bicategory.evalMapComp_hom_app"
   "CategoryTheory.Bicategory.evalMapComp_inv_app"
   "CategoryTheory.Bicategory.strongTrans_naturality_conj"
@@ -142,7 +145,16 @@ note ""
 # axioms can land on continuation lines. Matching only the first line silently misses them --
 # this gate once reported a genuinely sorryAx-dependent declaration as clean. Pull the match
 # plus its continuations and truncate at the closing bracket.
+# Note the TWO messages Lean can emit. A declaration with a non-empty axiom list prints
+# "'X' depends on axioms: [...]", but one with an EMPTY list prints "'X' does not depend on any
+# axioms" -- no bracket, different wording. Matching only the first form reports the cleanest
+# possible result as "no axiom check ran", which is a false failure; caught 2026-08-30 by the
+# first declaration in this project to depend on nothing at all.
 axioms_of() {
+  if grep -qF "'$1' does not depend on any axioms" "$LOG"; then
+    echo "does not depend on any axioms"
+    return 0
+  fi
   grep -F -A6 "'$1' depends on axioms" "$LOG" | tr '\n' ' ' | sed 's/\].*//' || true
 }
 

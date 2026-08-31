@@ -97,6 +97,9 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms CategoryTheory.Bicategory.eval_right_unitor_rhs_app
 #print axioms CategoryTheory.Bicategory.strongTrans_naturality_id_app
 #print axioms CategoryTheory.Bicategory.eval_whisker_left
+#print axioms CategoryTheory.Bicategory.eval_whisker_right
+#print axioms CategoryTheory.Bicategory.map_comp_cancel
+#print axioms CategoryTheory.Bicategory.strongTrans_naturality_comp_inv_app
 #print axioms CategoryTheory.Bicategory.evalMapComp_hom_app
 #print axioms CategoryTheory.Bicategory.evalMapComp_inv_app
 #print axioms CategoryTheory.Bicategory.strongTrans_naturality_conj

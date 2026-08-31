@@ -474,6 +474,59 @@ lemma strongTrans_naturality_conj (α : F ⟶ G) {v v' : y ⟶ z} (σ : v ⟶ v'
   rw [← Category.assoc]
   exact (Iso.eq_comp_inv ((Cat.Hom.toNatIso (α.naturality v')).app W)).mpr h
 
+/-- Cancel an adjacent inverse/forward pair sitting **under a functor's `.map`**.
+
+`simp` cancels a bare adjacent inv/hom pair happily -- it does so on the other side of
+`eval_whisker_right` -- but it will not fold through the functor first, because
+`← Functor.map_comp` is the wrong direction for the default simp set and cannot be added to it
+without looping against the forward rule.  So the fold has to be named.  Taking the cancellation
+as a hypothesis rather than an `Iso` keeps the statement first-order: the goals here spell the
+pair as `(…).inv.toNatTrans.app Z`, whose head is `NatTrans.app`, so an `e.inv`-shaped pattern
+would never unify. -/
+@[reassoc]
+lemma map_comp_cancel {D E : Type*} [Category D] [Category E] (P : D ⥤ E) {a b : D}
+    (A : a ⟶ b) (B : b ⟶ a) (h : A ≫ B = 𝟙 a) :
+    P.map A ≫ P.map B = 𝟙 (P.obj a) := by
+  rw [← Functor.map_comp, h, Functor.map_id]
+
+/-- `StrongTrans.naturality_comp` at a point, in **inverse** form.
+
+Mathlib's `naturality_comp_hom_app` gives the forward direction; the whisker/associator cores
+meet the reverse one, and inverting a five-factor equation in place is exactly the kind of
+rewriting the `Cat` diamond blocks.  Stated once here with `f`, `g` and `α` abstract. -/
+lemma strongTrans_naturality_comp_inv_app (α : F ⟶ G) {a b c : C} (f : a ⟶ b) (g : b ⟶ c)
+    (W : ↑(F.obj a)) :
+    (G.mapComp f g).inv.toNatTrans.app ((α.app a).toFunctor.obj W) ≫
+        (α.naturality (f ≫ g)).inv.toNatTrans.app W
+      = (G.map g).toFunctor.map ((α.naturality f).inv.toNatTrans.app W) ≫
+        (α.naturality g).inv.toNatTrans.app ((F.map f).toFunctor.obj W) ≫
+        (α.app c).toFunctor.map ((F.mapComp f g).inv.toNatTrans.app W) := by
+  have h := Cat.Hom₂.congr_app (α.naturality_comp f g) W
+  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app] at h
+  -- `Cat`'s three associators are identities definitionally; write them in rather than
+  -- normalising them away (see the recipe on `eval_left_unitor`), then strip them here.
+  have hb : (α.app c).toFunctor.map ((F.mapComp f g).hom.toNatTrans.app W) ≫
+        (α_ (F.map f) (F.map g) (α.app c)).hom.toNatTrans.app W ≫
+          (α.naturality g).hom.toNatTrans.app ((F.map f).toFunctor.obj W) ≫
+            (α_ (F.map f) (α.app b) (G.map g)).inv.toNatTrans.app W ≫
+              (G.map g).toFunctor.map ((α.naturality f).hom.toNatTrans.app W) ≫
+                (α_ (α.app a) (G.map f) (G.map g)).hom.toNatTrans.app W
+      = (α.app c).toFunctor.map ((F.mapComp f g).hom.toNatTrans.app W) ≫ (𝟙 _) ≫
+          (α.naturality g).hom.toNatTrans.app ((F.map f).toFunctor.obj W) ≫ (𝟙 _) ≫
+            (G.map g).toFunctor.map ((α.naturality f).hom.toNatTrans.app W) ≫ (𝟙 _) := rfl
+  rw [hb] at h
+  simp only [Category.id_comp, Category.comp_id] at h
+  -- now invert the whole equation at the `Iso` level, where reversal is structural
+  have key :
+      ((Cat.Hom.toNatIso (α.naturality (f ≫ g))).app W ≪≫
+          (Cat.Hom.toNatIso (G.mapComp f g)).app ((α.app a).toFunctor.obj W))
+        = ((α.app c).toFunctor.mapIso ((Cat.Hom.toNatIso (F.mapComp f g)).app W) ≪≫
+            (Cat.Hom.toNatIso (α.naturality g)).app ((F.map f).toFunctor.obj W) ≪≫
+              (G.map g).toFunctor.mapIso ((Cat.Hom.toNatIso (α.naturality f)).app W)) :=
+    Iso.ext h
+  simpa using congrArg Iso.inv key
+
 /-- The same conjugation for a modification's naturality. -/
 lemma modification_naturality_conj {α α' : F ⟶ G} (Γ : α ⟶ α') {a b : C} (f : a ⟶ b)
     (W : ↑(F.obj a)) :
@@ -501,6 +554,11 @@ lemma eval_whisker_left (u : x ⟶ y) (α : F ⟶ G) {v v' : y ⟶ z} {β β' : 
   rw [strongTrans_naturality_conj]
   simp
 
+-- The descent below is a `simp` followed by targeted `rw`s, which `linter.flexible` flags.
+-- Squeezing it would pin the proof to today's simp normal form -- the failure mode this file's
+-- header records from the v4.30 -> v4.33 walk -- and every `rw` after it names an explicit
+-- lemma, so drift fails loudly rather than silently.
+set_option linter.flexible false in
 /-- Right-whiskering coherence for `evaluationPseudo`.
 
 PARKED (2026-08-30), with the prefix below reaching the residual described here.  The bridges
@@ -533,7 +591,29 @@ lemma eval_whisker_right {u u' : x ⟶ y} {α α' : F ⟶ G} (σ : u ⟶ u') (Γ
   simp [evalMapComp_hom_app, evalMapComp_inv_app,
     strongTrans_naturality_conj, modification_naturality_conj,
     Pseudofunctor.StrongTrans.naturality_comp_hom_app]
-  sorry
+  simp only [← Category.assoc]
+  simp only [← Functor.map_comp]
+  congr 1
+  simp
+  rw [map_comp_cancel_assoc (G.map v).toFunctor
+    ((α.naturality u').inv.toNatTrans.app Z) ((α.naturality u').hom.toNatTrans.app Z) (by simp)]
+  -- 1. slide `F.map₂ σ` through `α.naturality v`
+  have h1 := (α.naturality v).hom.toNatTrans.naturality ((F.map₂ σ).toNatTrans.app Z)
+  dsimp at h1
+  rw [reassoc_of% h1]
+  -- 2. `α`'s 2-naturality, conjugated
+  rw [strongTrans_naturality_conj]
+  -- 3. the conjugation leaves a second one-layer inv/hom pair; split and cancel it
+  simp only [Functor.map_comp, Category.assoc]
+  rw [map_comp_cancel_assoc (G.map v).toFunctor
+    ((α.naturality u').inv.toNatTrans.app Z) ((α.naturality u').hom.toNatTrans.app Z) (by simp)]
+  -- 4. slide the modification component through `G.mapComp u' v`
+  have h2 := (G.mapComp u' v).inv.toNatTrans.naturality ((Γ.as.app x).toNatTrans.app Z)
+  dsimp at h2
+  rw [← reassoc_of% h2]
+  -- 5. five leading factors now agree; what is left is `α'`'s composition coherence, inverted
+  iterate 5 refine congrArg (CategoryStruct.comp _) ?_
+  exact strongTrans_naturality_comp_inv_app α' u' v Z
 
 /-- Associator coherence for `evaluationPseudo`.  The largest of the five: three `mapComp`s and
 two `naturality` slides to align, with `F.map₂_associator` as its input.
