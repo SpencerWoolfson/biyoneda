@@ -130,11 +130,26 @@ def yonedaLemmaBackwardsData :
   naturality {a b} f :=
     NatIso.ofComponents (fun X ↦ backwardsNaturalityIso f X)
       (fun {X Y} f₁ ↦ backwards_naturality_iso_natural f f₁)
-  -- PARKED (v4.33).  `backwards_naturality_naturality_core` (proved) is the content; the long
-  -- descent that reaches it now hits a `whnf` timeout at 200k heartbeats.  The descent unfolds
-  -- `yonedaPairing`'s composite chain, which since this branch runs through a sorried
-  -- `homPseudo` -- so re-measure this the moment Gadgets is restored before touching the
-  -- heartbeat budget.
+  -- PARKED (v4.33).  `backwards_naturality_naturality_core` is the content; the long descent
+  -- that reaches it hits a `whnf` timeout at 200k heartbeats.
+  --
+  -- CORRECTION (2026-08-30).  The note here used to blame a sorried `homPseudo` and say to
+  -- re-measure once Gadgets was restored.  `homPseudo` is now fully proved and this has been
+  -- re-measured: **the timeout is unchanged**, so that hypothesis is refuted -- do not spend
+  -- another cycle on it.  (It was the right call for `forwards_naturality_id_core`, whose
+  -- timeout did vanish; these two sites had the same symptom and different causes.)
+  --
+  -- The real difference: this descent never unfolds `prelax`/`homPseudo` at all.  It unfolds
+  -- `precomposing`/`postcomposing`/`precomposingCat`/`postcomposingCat` and runs four `erw`s,
+  -- and `erw` at default transparency is the classic heartbeat sink.  The prior descent is on
+  -- the `comp-core` branch (`git show comp-core:Biyoneda/Backwards.lean`) and still elaborates
+  -- to the same timeout.
+  --
+  -- Next move: replace the `erw` chain with `rfl` bridges in the padding-trick style rather
+  -- than raising the budget -- each `erw` here is bridging a spelling difference that a stated
+  -- `rfl` lemma would make syntactic.  Note also that the terminal
+  -- `backwards_naturality_naturality_core` is itself sorried, so closing this descent alone
+  -- does not lower the sorry count.
   naturality_naturality' {a b} {f g} η x := by sorry
   naturality_id' a x := by sorry
   naturality_comp' {a b c} f g x := by sorry
