@@ -134,7 +134,7 @@ lemma backwards_naturality_square {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})}
   -- `f.2.app a.1 ≫ b.2.map f.1`, with `f.2.naturality f.1` as the conversion.  Porting them by
   -- hand yields statements that are subtly wrong and only report it as a defeq failure.
   --
-  -- The route in is `StrongTransIntoCats.ofStrongTrans` (not yet written) plus
+  -- The route in is `StrongTransIntoCats.ofStrongTrans` (written, see TransIntoCats) plus
   -- `ModificationIntoCats.isoMk`, which states this square at a point.  See
   -- `notes/intocats_audit_2026-08-30.md`.
   sorry
@@ -166,7 +166,7 @@ lemma backwards_naturality_iso_natural {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w,
   -- `f.2.app a.1 ≫ b.2.map f.1`, with `f.2.naturality f.1` as the conversion.  Porting them by
   -- hand yields statements that are subtly wrong and only report it as a defeq failure.
   --
-  -- The route in is `StrongTransIntoCats.ofStrongTrans` (not yet written) plus
+  -- The route in is `StrongTransIntoCats.ofStrongTrans` (written, see TransIntoCats) plus
   -- `ModificationIntoCats.isoMk`, which states this square at a point.  See
   -- `notes/intocats_audit_2026-08-30.md`.
   sorry

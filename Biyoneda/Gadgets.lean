@@ -46,8 +46,8 @@ no `Pseudofunctor.op`, and no two-variable hom-pseudofunctor. This file supplies
 | `Pseudofunctor.prod` | **complete** — all five coherence fields auto-discharged |
 | `Pseudofunctor.op` | **complete** — four coherence fields auto-discharge;
   `map₂_associator` via `mapComp_assoc_left_inv` |
-| `homPseudo` | **complete** — `mapId`/`mapComp` proved directly; all five coherence
-  fields close by `Cat.Hom₂.ext_app` descent + `bicategory` (recipe below) |
+| `homPseudo` | **complete** — `mapId`/`mapComp` are named module-level defs; all five
+  coherence fields close by `Cat.Hom₂.ext_app` descent + `bicategory` (recipe below) |
 
 This confirms the premise of the file: when the data is assembled from existing gadgets, the
 coherence really does come for free — including, in the end, for the two-variable hom.
@@ -79,6 +79,21 @@ This unblocked all five of `homPseudo`'s coherence fields identically — once r
 are pure structural bicategory equations (`α_`/`λ_`/`ρ_`/whiskerings only) that `bicategory`
 closes outright. Worth trying anywhere `bicategory`/`bicategory_coherence` reports a bound
 variable "is not a morphism" after descending through a `Cat.of` or similar bundling coercion.
+**Order matters**: do the `change` *after* the `simp only`, never before — see `hom_coherence`.
+
+**3. Name the inline isos, or the coherence fields cannot be proved at all.** `mapId` and
+`mapComp` were originally `where`-block tactic blocks. That made the five coherence fields
+depend on how those two *elaborate* rather than on what they *are*, and the dependency was
+mutual: sorrying `mapComp`'s naturality stopped the whole `mapComp` term being type-correct at
+`implicit` transparency, which stopped `prelax_map₂_app` firing, which broke the three fields
+that had nothing to do with `mapComp` — while restoring those three changed `mapComp`'s own
+goal enough that `bicategory` stopped applying. Neither end could be fixed alone.
+
+Pulling them out as `homMapId`/`homMapComp`, with the component of each an explicit iso in `B`
+and a `rfl` component lemma for each, breaks the cycle: the fields now rewrite with a lemma
+instead of unfolding a definition, so nothing downstream depends on anyone's elaboration. That
+is the whole reason this gadget is finished. It is the same "name your inline isos" move the
+skill recommends, and here it was not a cleanup — it was the proof.
 
 ## What Mathlib's `Bicategory/Yoneda.lean` teaches
 
@@ -259,6 +274,125 @@ treats `(λ_ f).hom.unop2` as an opaque atom without this. -/
 @[simp] lemma unop2_rightUnitor_hom {a b : Bᵒᵖ} (f : a ⟶ b) :
     (ρ_ f).hom.unop2 = (λ_ f.unop).hom := rfl
 
+/-- Whiskering in `Bᵒᵖ` unops to whiskering on the other side.  Mathlib generates these from
+the instance via `@[simps!]`, but under names that are not in scope here; both are `rfl`. -/
+@[simp] lemma unop2_whiskerLeft {a b c : Bᵒᵖ} {f : a ⟶ b} {g g' : b ⟶ c} (η : g ⟶ g') :
+    (f ◁ η).unop2 = η.unop2 ▷ f.unop := rfl
+
+@[simp] lemma unop2_whiskerRight {a b c : Bᵒᵖ} {f f' : a ⟶ b} {g : b ⟶ c} (η : f ⟶ f') :
+    (η ▷ g).unop2 = g.unop ◁ η.unop2 := rfl
+
+/-- The associator of `Bᵒᵖ` is the `B` associator read backwards -- so unopping its `hom` gives
+an `inv`.  `map₂_associator` is the only field that meets it. -/
+@[simp] lemma unop2_associator_hom {a b c d : Bᵒᵖ} (f : a ⟶ b) (g : b ⟶ c) (h : c ⟶ d) :
+    (α_ f g h).hom.unop2 = (α_ h.unop g.unop f.unop).inv := rfl
+
+@[simp] lemma unop2_associator_inv {a b c d : Bᵒᵖ} (f : a ⟶ b) (g : b ⟶ c) (h : c ⟶ d) :
+    (α_ f g h).inv.unop2 = (α_ h.unop g.unop f.unop).hom := rfl
+
+/-- The composite of Mathlib's generated `prod_associator_hom_fst` with `unop2_associator_hom`.
+Stated in one step because neither fires on `(α_ fg hi jk).hom.1.unop2` on its own -- simp needs
+a single syntactic match for the projection-then-unop chain. -/
+@[simp] lemma prod_associator_hom_fst_unop2 {a b c d : Bᵒᵖ × B} (fg : a ⟶ b) (hi : b ⟶ c)
+    (jk : c ⟶ d) :
+    (α_ fg hi jk).hom.1.unop2 = (α_ jk.1.unop hi.1.unop fg.1.unop).inv := rfl
+
+/-- The unitor analogues of `prod_associator_hom_fst_unop2`.  In `Bᵒᵖ` the two unitors swap,
+so a left unitor on the first (opposite) factor unops to a right unitor. -/
+@[simp] lemma prod_leftUnitor_hom_fst_unop2 {a b : Bᵒᵖ × B} (fg : a ⟶ b) :
+    (λ_ fg).hom.1.unop2 = (ρ_ fg.1.unop).hom := rfl
+
+@[simp] lemma prod_rightUnitor_hom_fst_unop2 {a b : Bᵒᵖ × B} (fg : a ⟶ b) :
+    (ρ_ fg).hom.1.unop2 = (λ_ fg.1.unop).hom := rfl
+
+
+/-- The object action of `prelax`'s `map`, as a `rfl` bridge.  Companion to
+`prelax_map₂_app`: without it the coherence goals carry `((prelax B).map f).toFunctor.obj x`
+un-normalised and `bicategory` sees an atom where a composite should be. -/
+@[simp] lemma prelax_map_obj {a b : Bᵒᵖ × B} (f : a ⟶ b) (x : unop a.1 ⟶ a.2) :
+    ((prelax B).map f).toFunctor.obj x = f.1.unop ≫ (x ≫ f.2) := rfl
+
+/-- The morphism action of `prelax`'s `map`.  `map₂_whisker_right` is the one field that whiskers
+a 2-cell *through* a 1-cell's image, so it is the only one that needs this. -/
+@[simp] lemma prelax_map_map {a b : Bᵒᵖ × B} (f : a ⟶ b) {x y : unop a.1 ⟶ a.2} (η : x ⟶ y) :
+    ((prelax B).map f).toFunctor.map η = f.1.unop ◁ (η ▷ f.2) := rfl
+
+/-! ### `homPseudo`'s two coherence isos, as named module-level definitions
+
+Both were originally written inline in `homPseudo`'s `where` block.  That made the five
+coherence fields depend on how `mapId`/`mapComp` *elaborate* rather than on what they *are*:
+sorrying `mapComp`'s naturality stopped the whole `mapComp` term being type-correct at
+`implicit` transparency, which stopped `prelax_map₂_app` firing in `hom_coherence`, which broke
+the three fields that had nothing to do with `mapComp`.  The dependency was mutual and neither
+end could be fixed alone.
+
+Naming them breaks that cycle.  The component of each is an explicit iso in `B` -- no `Cat`, no
+`prelax` -- and each gets a `rfl` component lemma, so the coherence fields below rewrite with a
+lemma instead of unfolding a definition.
+-/
+
+/-- The component of `homPseudo`'s unit coherence: `ᵽ ≫ (h ≫ ᵽ) ≅ h`. -/
+def homMapIdApp {p : Bᵒᵖ × B} (h : unop p.1 ⟶ p.2) :
+    𝟙 (unop p.1) ≫ (h ≫ 𝟙 p.2) ≅ h :=
+  λ_ (h ≫ 𝟙 p.2) ≪≫ ρ_ h
+
+/-- The component of `homPseudo`'s composition coherence, as an explicit chain of associators
+in `B`.  Reading it off the two sides: `prelax` sends `x` to `f.unop ≫ (x ≫ g)`, so composing
+`fg` then `hi` gives `hi₁ ≫ ((fg₁ ≫ (x ≫ fg₂)) ≫ hi₂)`, while the composite 1-cell
+`fg ≫ hi` gives `(hi₁ ≫ fg₁) ≫ (x ≫ (fg₂ ≫ hi₂))`.  Four associator moves connect them. -/
+def homMapCompApp {a b c : Bᵒᵖ × B} (fg : a ⟶ b) (hi : b ⟶ c) (x : unop a.1 ⟶ a.2) :
+    (hi.1.unop ≫ fg.1.unop) ≫ (x ≫ (fg.2 ≫ hi.2)) ≅
+      hi.1.unop ≫ ((fg.1.unop ≫ (x ≫ fg.2)) ≫ hi.2) :=
+  ((hi.1.unop ≫ fg.1.unop) ◁ᵢ (α_ x fg.2 hi.2).symm) ≪≫
+    (α_ (hi.1.unop ≫ fg.1.unop) (x ≫ fg.2) hi.2).symm ≪≫
+      ((α_ hi.1.unop fg.1.unop (x ≫ fg.2)) ▷ᵢ hi.2) ≪≫
+        α_ hi.1.unop (fg.1.unop ≫ x ≫ fg.2) hi.2
+
+/-- Naturality of `homMapIdApp`.  A pure structural goal in `B`: no `Cat`, no `prelax`. -/
+lemma homMapIdApp_naturality {p : Bᵒᵖ × B} {h h' : unop p.1 ⟶ p.2} (η : h ⟶ h') :
+    𝟙 (unop p.1) ◁ (η ▷ 𝟙 p.2) ≫ (homMapIdApp B (p := p) h').hom
+      = (homMapIdApp B (p := p) h).hom ≫ η := by
+  dsimp [homMapIdApp]
+  bicategory
+
+/-- Naturality of `homMapCompApp`.  Likewise pure structural data in `B`. -/
+lemma homMapCompApp_naturality {a b c : Bᵒᵖ × B} (fg : a ⟶ b) (hi : b ⟶ c)
+    {x y : unop a.1 ⟶ a.2} (F : x ⟶ y) :
+    (hi.1.unop ≫ fg.1.unop) ◁ (F ▷ (fg.2 ≫ hi.2)) ≫ (homMapCompApp B fg hi y).hom
+      = (homMapCompApp B fg hi x).hom ≫ hi.1.unop ◁ ((fg.1.unop ◁ (F ▷ fg.2)) ▷ hi.2) := by
+  dsimp [homMapCompApp]
+  simp only [Iso.symm_hom, Bicategory.whiskerLeftIso_hom, Bicategory.whiskerRightIso_hom]
+  bicategory
+
+/-- `homPseudo`'s unit coherence iso. -/
+def homMapId (p : Bᵒᵖ × B) : (prelax B).map (𝟙 p) ≅ 𝟙 ((prelax B).obj p) :=
+  Cat.Hom.isoMk
+    (NatIso.ofComponents (fun h ↦ homMapIdApp B (p := p) h) (fun η ↦ homMapIdApp_naturality B η))
+
+/-- `homPseudo`'s composition coherence iso. -/
+def homMapComp {a b c : Bᵒᵖ × B} (fg : a ⟶ b) (hi : b ⟶ c) :
+    (prelax B).map (fg ≫ hi) ≅ (prelax B).map fg ≫ (prelax B).map hi :=
+  Cat.Hom.isoMk
+    (NatIso.ofComponents (fun x ↦ homMapCompApp B fg hi x)
+      (fun F ↦ homMapCompApp_naturality B fg hi F))
+
+/-- The point form of `homMapId`.  This is what the coherence fields rewrite with, instead of
+unfolding the definition -- which is the whole reason these two are named. -/
+@[simp] lemma homMapId_hom_app (p : Bᵒᵖ × B) (h : unop p.1 ⟶ p.2) :
+    (homMapId B p).hom.toNatTrans.app h = (homMapIdApp B (p := p) h).hom := rfl
+
+/-- The point form of `homMapComp`. -/
+@[simp] lemma homMapComp_hom_app {a b c : Bᵒᵖ × B} (fg : a ⟶ b) (hi : b ⟶ c)
+    (x : unop a.1 ⟶ a.2) :
+    (homMapComp B fg hi).hom.toNatTrans.app x = (homMapCompApp B fg hi x).hom := rfl
+
+@[simp] lemma homMapId_inv_app (p : Bᵒᵖ × B) (h : unop p.1 ⟶ p.2) :
+    (homMapId B p).inv.toNatTrans.app h = (homMapIdApp B (p := p) h).inv := rfl
+
+@[simp] lemma homMapComp_inv_app {a b c : Bᵒᵖ × B} (fg : a ⟶ b) (hi : b ⟶ c)
+    (x : unop a.1 ⟶ a.2) :
+    (homMapComp B fg hi).inv.toNatTrans.app x = (homMapCompApp B fg hi x).inv := rfl
+
 /-- The shared shape of `homPseudo`'s five coherence fields: descend to a point via
 `Cat.Hom₂.ext_app`, retype it past the `Cat.of` coercion, rewrite `prelax`'s `map₂` with
 `prelax_map₂_app`, then call `bicategory`.
@@ -268,16 +402,29 @@ term `prelax_map₂_app` matches on, and without that rewrite `bicategory` canno
 context at all — "failed to construct a monoidal category or bicategory context".  Keep the
 gadget folded so its API can fire.
 
-This closes `map₂_whisker_left`, `map₂_whisker_right` and `map₂_associator`.  The two unitor
-fields still fail: `bicategory` runs but leaves a residual, even with the `unop2_*Unitor_hom`
-bridges above in place. -/
+Two details are load-bearing and were both found the hard way:
+
+* **No `dsimp [prelax]`.**  Unfolding `prelax` destroys the very term `prelax_map₂_app` matches
+  on, and without that rewrite `bicategory` cannot build a context at all.  Keep the gadget
+  folded so its API can fire.
+* **The `change` goes AFTER the `simp only`, not before.**  `bicategory` needs `x`'s
+  *syntactic* type to read `_ ⟶ _` rather than `↑(Cat.of _)`, so the retype is required -- but
+  performing it first makes the goal not type-correct at `implicit` transparency and `simp`
+  reports "made no progress" on every field.
+
+With those, all five fields close. -/
 local macro "hom_coherence" a:term : tactic =>
   `(tactic| (
     apply Cat.Hom₂.ext_app
     intro x
     dsimp
+    simp only [homMapIdApp, homMapCompApp, prod_associator_hom_fst_unop2,
+      prod_leftUnitor_hom_fst_unop2, prod_rightUnitor_hom_fst_unop2,
+      prod_associator_hom_snd, prod_leftUnitor_hom_snd, prod_rightUnitor_hom_snd,
+      Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv,
+      Bicategory.whiskerLeftIso_hom, Bicategory.whiskerLeftIso_inv,
+      Bicategory.whiskerRightIso_hom, Bicategory.whiskerRightIso_inv]
     change (unop ($a).1 ⟶ ($a).2) at x
-    simp only [prelax_map₂_app]
     bicategory))
 
 set_option backward.isDefEq.respectTransparency false in
@@ -288,77 +435,21 @@ The bicategorical analogue of `CategoryTheory.Functor.hom : Cᵒᵖ × C ⥤ Typ
 Built on `prelax` above, so `map`, `map₂`, `map₂_id` and `map₂_comp` are all inherited — in
 particular the interchange law, which is what `map₂_comp` amounts to, never has to be proved.
 
-`mapId` and `mapComp` are proved directly (the latter as a hand-built associator chain, whose
-naturality is a targeted `simp only`). All five coherence fields then close by descending to a
-point (`Cat.Hom₂.ext_app`) and retyping it past the `Cat.of` coercion before calling `bicategory`
-— see the module docstring's "unblocking `bicategory`" note for why the retype is needed. -/
+`mapId` and `mapComp` are the named module-level defs `homMapId`/`homMapComp` above rather than
+inline `where`-block terms — see the note there for why that distinction decides whether the
+five coherence fields can be proved at all. All five then close by descending to a point
+(`Cat.Hom₂.ext_app`), rewriting with the component `rfl` bridges, and retyping the point past
+the `Cat.of` coercion before calling `bicategory` — see the module docstring's "unblocking
+`bicategory`" note for why the retype is needed. -/
 def homPseudo : Bᵒᵖ × B ⥤ᵖ Cat.{w₁, v₁} where
   toPrelaxFunctor := prelax B -- prelax here needs a better name
-  mapId p := by
-    rcases p with ⟨a, b⟩
-    refine CategoryTheory.Cat.Hom.isoMk ?_
-    refine NatIso.ofComponents ?_ ?_
-    · intro h
-      exact (λ_ (h ≫ 𝟙 b)) ≪≫ ρ_ h
-    · intros h h' η
-      -- `dsimp [prelax]` alone now leaves `precomposingCat`/`postcomposingCat` applied, so the
-      -- unitor-naturality rewrites below no longer find their pattern.  Reducing those two as
-      -- well restores the shape they expect; the rewrites themselves are unchanged.
-      dsimp [prelax, precomposingCat, postcomposingCat, precomp, postcomp]
-      change (unop a ⟶ b) at h h'
-      bicategory
-  mapComp {a b c} fg hi := by
-    refine CategoryTheory.Cat.Hom.isoMk ?_
-    dsimp [postcomp,precomp,Functor.comp]
-    refine NatIso.ofComponents ?_ ?_
-    · intro x
-      refine ?_ ≪≫ (α_ hi.1.unop (fg.1.unop ≫ x ≫ fg.2) hi.2)
-      refine ?_ ≪≫ ((α_ hi.1.unop fg.1.unop  (x ≫ fg.2)) ▷ᵢ hi.2)
-      refine ?_ ≪≫ (α_ (hi.1.unop ≫ fg.1.unop) (x ≫ fg.2) hi.2).symm
-      refine (hi.1.unop ≫ fg.1.unop) ◁ᵢ (α_ x fg.2 hi.2).symm
-    · intros X Y F
-      -- PARKED (v4.33), but much closer than it was, and the diagnosis is now exact.
-      --
-      -- `dsimp [prelax]` used to sit on `mapComp`'s first line and unfolded the gadget to a raw
-      -- `PrelaxFunctor.mkOfHomFunctors` blob.  It turns out to be removable -- `Cat.Hom.isoMk`
-      -- elaborates fine without it -- and removing it is what lets the two `unopFunctor_obj_*`
-      -- bridges above normalise the left-hand side completely.  After the `dsimp` below the LHS
-      -- is clean structural data:
-      --     (hi.1.unop ≫ fg.1.unop) ◁ F ▷ (fg.2 ≫ hi.2) ≫ <associators>
-      -- and so is the first half of the RHS.  The ONLY thing left un-normalised is a single
-      -- `PrelaxFunctor.mkOfHomFunctors` blob at the tail of the RHS, which `prelax_map₂_app`
-      -- would match if it were still folded.  That blob is the whole remaining obstruction.
-      --
-      -- CORRECTION to the older note here: it claimed the three whisker/associator coherence
-      -- fields below would close under `hom_coherence` "immediately, with no other change" once
-      -- this naturality was restored.  That is now tested and false -- the dependency is
-      -- *mutual*.  Restoring those three changes this goal enough that `bicategory` stops
-      -- applying ("not implemented, try dsimp first"), and restoring this one does not by itself
-      -- make them close.  They have to be fixed together, which is another argument for the
-      -- recorded plan: pull `mapId`/`mapComp` out as named module-level defs with `rfl`
-      -- component lemmas, so neither depends on the other's elaboration.
-      dsimp [precomposingCat, postcomposingCat, precomp, postcomp]
-      sorry
-  -- PARKED (v4.33) -- but read this before counting five sorries of debt here.
-  --
-  -- The first three closed outright under `by hom_coherence a` for as long as `mapComp`'s
-  -- naturality above was a real proof.  Sorrying that naturality makes the whole `mapComp`
-  -- term stop being type-correct at `implicit` transparency, which in turn stops
-  -- `prelax_map₂_app` from firing in this macro -- `simp` reports "made no progress".  So
-  -- these three are *inherited*, not independent: restore `mapComp`'s naturality and
-  -- `by hom_coherence a` closes them again immediately, with no other change.
-  --
-  -- Only the two unitors are genuinely open.  There `bicategory` builds a context and runs
-  -- (which the `unop2_*Unitor_hom` bridges above are what made possible) but leaves a residual
-  -- containing `homPseudo.mapId`'s component as an opaque `Cat.Hom.isoMk (NatIso.ofComponents …)`
-  -- blob.  Reducing that blob is measurably the wrong move -- it breaks the three fields above,
-  -- twice tested -- so the fix is to pull `mapId` and `mapComp` out as named module-level defs
-  -- with `rfl` component lemmas, which is the "name your inline isos" refactor.
-  map₂_whisker_left {a b c} fg hi jk l := by sorry
-  map₂_whisker_right {a b c} fg hi jk l := by sorry
-  map₂_associator {a b c d} fg hi jk := by sorry
-  map₂_left_unitor {a b} fg := by sorry
-  map₂_right_unitor {a b} fg := by sorry
+  mapId p := homMapId B p
+  mapComp fg hi := homMapComp B fg hi
+  map₂_whisker_left {a b c} fg hi jk l := by hom_coherence a
+  map₂_whisker_right {a b c} fg hi jk l := by hom_coherence a
+  map₂_associator {a b c d} fg hi jk := by hom_coherence a
+  map₂_left_unitor {a b} fg := by hom_coherence a
+  map₂_right_unitor {a b} fg := by hom_coherence a
 
 /-! ### The composite: `yonedaPairing` rebuilt from the three gadgets above
 

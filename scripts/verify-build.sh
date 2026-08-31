@@ -35,9 +35,11 @@ BASELINE_FILE="$ROOT/.github/sorry-baseline"
 # The ratchet therefore still runs in both directions: nothing clean can silently rot,
 # and nothing that gets fixed can silently stay untracked.
 #
-# There were two roots. `catPseudoULift` (UniverseLift.lean) is now fully proved, which took
-# `lift` and `liftDom` clean -- they are promoted below. `homPseudo` (Gadgets.lean) is still
-# parked, and is the only thing keeping the two pairings contaminated.
+# There were three roots. `catPseudoULift` (UniverseLift.lean) and `homPseudo` (Gadgets.lean)
+# are both now fully proved -- the latter took `yonedaPairingComposite` and `yonedaPairing`
+# clean, so they are promoted below and CONTAMINATED_DECLS is empty. The remaining root is
+# `evaluationPseudo` (Evaluation.lean), which still parks `map₂_whisker_right` and
+# `map₂_associator` and is what keeps `yonedaEvaluation` and `yonedaLemma` dirty.
 CLEAN_DECLS=(
   "CategoryTheory.Bicategory.StrongTransIntoCats.lift"
   "CategoryTheory.Bicategory.StrongTransIntoCats.liftDom"
@@ -78,12 +80,21 @@ CLEAN_DECLS=(
   "Biyoneda.backwardsTransData"
   "Biyoneda.backwardsTrans"
   "Biyoneda.mapComp_assoc_app'"
-)
-
-CONTAMINATED_DECLS=(
+  "CategoryTheory.Bicategory.homMapIdApp"
+  "CategoryTheory.Bicategory.homMapCompApp"
+  "CategoryTheory.Bicategory.homMapIdApp_naturality"
+  "CategoryTheory.Bicategory.homMapCompApp_naturality"
+  "CategoryTheory.Bicategory.homMapId"
+  "CategoryTheory.Bicategory.homMapComp"
+  "CategoryTheory.Bicategory.homPseudo"
   "CategoryTheory.Bicategory.yonedaPairingComposite"
   "Biyoneda.yonedaPairing"
 )
+
+# Emptied on 2026-08-30: `homPseudo` closed, which took the pairing clean.  Keep the array --
+# `evaluationPseudo` is still open, and anything asserted about `yonedaEvaluation` or the
+# headline `yonedaLemma` belongs here until it is.
+CONTAMINATED_DECLS=()
 
 fail=0
 note() {

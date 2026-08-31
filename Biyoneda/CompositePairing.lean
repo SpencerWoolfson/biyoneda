@@ -44,11 +44,23 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms CategoryTheory.Bicategory.yonedaPairingComposite
 #print axioms yonedaPairing
 
+-- `homPseudo` and the two named coherence isos it is now built from.  These went clean on
+-- 2026-08-30 and are what took the two pairings above clean with them; the gate asserts it so
+-- neither can silently rot back.
+#print axioms CategoryTheory.Bicategory.homMapIdApp
+#print axioms CategoryTheory.Bicategory.homMapCompApp
+#print axioms CategoryTheory.Bicategory.homMapIdApp_naturality
+#print axioms CategoryTheory.Bicategory.homMapCompApp_naturality
+#print axioms CategoryTheory.Bicategory.homMapId
+#print axioms CategoryTheory.Bicategory.homMapComp
+#print axioms CategoryTheory.Bicategory.homPseudo
+
 -- Must be `sorryAx`-free.  `lift`/`liftDom` came clean when `catPseudoULift` was finished;
 -- `appFunctor`, `evalHom` and `evalAt` are the sorry-free half of the evaluation rebuild
--- (2026-08-29).  Note `evaluationPseudo` itself is deliberately NOT here: its five coherence
--- fields are still parked, so it -- and every `rfl` bridge stated about it -- is contaminated
--- by construction until Phase 2 lands.
+-- (2026-08-29).  Note `evaluationPseudo` itself is deliberately NOT here: two of its coherence
+-- fields (`map₂_whisker_right`, `map₂_associator`) are still parked, so it -- and every `rfl`
+-- bridge stated about it -- is contaminated by construction until those close.  It is now the
+-- project's only remaining root of `sorryAx`.
 #print axioms StrongTransIntoCats.lift
 #print axioms StrongTransIntoCats.liftDom
 #print axioms CategoryTheory.Pseudofunctor.StrongTrans.appFunctor

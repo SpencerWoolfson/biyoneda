@@ -22,20 +22,23 @@ on the product bicategory $\mathcal{B}^{\mathrm{op}} \times [\mathcal{B}^{\mathr
 
 **This is work in progress. The main theorem is not yet fully proved.**
 
-The project builds with no errors, but 26 declarations still contain `sorry`, and the
+The project builds with no errors, but 17 declarations still contain `sorry`, and the
 headline `yonedaLemma` depends on `sorryAx` through them. Concretely:
 
 | | |
 |---|---|
 | Build | 0 errors |
-| Declarations using `sorry` | 26 |
+| Declarations using `sorry` | 17 |
 | `yonedaLemma` axioms | `propext`, `sorryAx`, `Classical.choice`, `Quot.sound` |
 
-The outstanding work is concentrated in the coherence fields of `catPseudoULift`
-(`UniverseLift.lean`) and `homPseudo` (`Gadgets.lean`) — everything downstream inherits
-`sorryAx` from those two — together with the unit/counit isomorphisms in `Unit.lean` and
-the naturality cores in `Forwards.lean` and `Backwards*.lean`. Each `sorry` is marked at
-its site with the residual goal and what has been tried.
+There is now exactly **one** root: `evaluationPseudo` (`Evaluation.lean`), whose
+`map₂_whisker_right` and `map₂_associator` fields are parked. It is what keeps
+`yonedaEvaluation`, and so `yonedaLemma`, dirty. Everything else that uses `sorry` -- the
+unit/counit isomorphisms in `Unit.lean` and the naturality cores in `Forwards.lean` and
+`Backwards*.lean` -- is downstream of it. The other two roots are closed: `catPseudoULift`
+(`UniverseLift.lean`), and `homPseudo` (`Gadgets.lean`) as of 2026-08-30, which took
+`yonedaPairing` `sorryAx`-free. Each `sorry` is marked at its site with the residual goal and
+what has been tried.
 
 `scripts/verify-build.sh` gates CI on both a sorry ratchet and a per-declaration axiom
 check, so neither the count nor the set of `sorryAx`-dependent declarations can grow
