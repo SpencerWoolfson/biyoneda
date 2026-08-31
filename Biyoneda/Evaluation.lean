@@ -629,6 +629,40 @@ lemma eval_associator (s : x ⟶ y) (δ : F ⟶ G) (u : y ⟶ z) (α : G ⟶ H)
         (α_ (evalMap s δ) (evalMap u α) (evalMap v β)).hom ≫
         evalMap s δ ◁ (evalMapComp u α v β).inv ≫
         (evalMapComp s δ (u ≫ v) (α ≫ β)).inv := by
+  apply Cat.Hom₂.ext_app; intro Z
+  simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv,
+    whiskerLeftIso_hom, whiskerRightIso_hom, whiskerLeftIso_inv, whiskerRightIso_inv,
+    Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
+    Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
+    Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id]
+  simp [evalMapComp_hom_app, evalMapComp_inv_app]
+  -- PARKED (2026-08-30).  The prefix above is the `evaluationPseudo_mapComp_hom_app` descent
+  -- and it runs; the state it reaches is precise enough to name the obstruction.
+  --
+  -- The LHS distributes COMPLETELY: four factors, each a triple-nested
+  -- `(β.app t).map ((α.app t).map ((δ.app t).map …))`, over `F.mapComp (s ≫ u) v`,
+  -- `F.mapComp s u`, `F.mapComp u v` and `F.mapComp s (u ≫ v)`.  The first of those four
+  -- matches the RHS's first factor already.
+  --
+  -- What blocks it is one block on the RHS that will not split:
+  --     ((α_ (F.map (s ≫ u) ≫ δ.app z ≫ α.app z) (H.map v) (β.app t)).inv ≫
+  --       (evalMapComp s δ u α).hom ▷ H.map v ▷ β.app t ≫ …).toNatTrans.app Z
+  -- `Cat.Hom.toNatTrans_comp` and `NatTrans.comp_app` are both in the set above and neither
+  -- fires on it -- the `Cat` composition diamond, one layer in from where the rest of the goal
+  -- lives.  Running the whole distribution set a SECOND time is measured to make no progress,
+  -- so it is at a fixpoint, not merely under-applied.
+  --
+  -- Next move, and it is the move that closed `eval_whisker_right`: do not widen the simp set.
+  -- Add `rfl` component bridges for the two whiskered blocks by name --
+  -- `(evalMapComp s δ u α).hom ▷ evalMap v β` and `evalMap s δ ◁ (evalMapComp u α v β).inv`,
+  -- each at a point, with `Cat`'s associators written in as the identities they are -- in the
+  -- style of `evalMapComp_hom_app`/`evalMapComp_inv_app` just above.  Those two are what the
+  -- statement whiskers, and naming them is what lets `simp` past the diamond.
+  --
+  -- Once distributed, expect the same five-slide shape `eval_whisker_right` had, with
+  -- `map_comp_cancel` and `strongTrans_naturality_comp_inv_app` (both proved, above) doing the
+  -- same jobs; `δ`'s and `α`'s `naturality_comp` should supply the rest.
   sorry
 
 end Parts
