@@ -122,3 +122,22 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms Biyoneda.backwardsTransData
 #print axioms Biyoneda.backwardsTrans
 #print axioms Biyoneda.mapComp_assoc_app'
+
+-- The backwards naturality isomorphism, rebuilt on 2026-09-02 (Phase 2).  Every square is now
+-- reached by a `rfl` bridge that names the distributed form of each side, so the content lives
+-- in `*_core` lemmas stated in the fibre, where the ordinary tactics work.  With these,
+-- `BackwardsNaturality.lean` is sorry-free.
+#print axioms Biyoneda.backwards_inner_core
+#print axioms Biyoneda.backwards_app_core
+#print axioms Biyoneda.backwardsNaturalityIsoApp
+#print axioms Biyoneda.backwardsNaturalityIsoApp_hom_app
+#print axioms Biyoneda.backwards_square_lhs_app
+#print axioms Biyoneda.backwards_square_rhs_app
+#print axioms Biyoneda.backwards_square_tail_app
+#print axioms Biyoneda.backwards_square_core
+#print axioms Biyoneda.backwards_naturality_square
+#print axioms Biyoneda.backwardsNaturalityIso
+#print axioms Biyoneda.backwards_natural_lhs_app
+#print axioms Biyoneda.backwards_natural_rhs_app
+#print axioms Biyoneda.backwards_natural_core
+#print axioms Biyoneda.backwards_naturality_iso_natural

@@ -101,6 +101,20 @@ CLEAN_DECLS=(
   "CategoryTheory.Bicategory.homPseudo"
   "CategoryTheory.Bicategory.yonedaPairingComposite"
   "Biyoneda.yonedaPairing"
+  "Biyoneda.backwards_inner_core"
+  "Biyoneda.backwards_app_core"
+  "Biyoneda.backwardsNaturalityIsoApp"
+  "Biyoneda.backwardsNaturalityIsoApp_hom_app"
+  "Biyoneda.backwards_square_lhs_app"
+  "Biyoneda.backwards_square_rhs_app"
+  "Biyoneda.backwards_square_tail_app"
+  "Biyoneda.backwards_square_core"
+  "Biyoneda.backwards_naturality_square"
+  "Biyoneda.backwardsNaturalityIso"
+  "Biyoneda.backwards_natural_lhs_app"
+  "Biyoneda.backwards_natural_rhs_app"
+  "Biyoneda.backwards_natural_core"
+  "Biyoneda.backwards_naturality_iso_natural"
 )
 
 # Emptied on 2026-08-30: `homPseudo` closed, which took the pairing clean.  Keep the array --
