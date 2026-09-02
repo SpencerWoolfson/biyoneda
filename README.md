@@ -22,23 +22,25 @@ on the product bicategory $\mathcal{B}^{\mathrm{op}} \times [\mathcal{B}^{\mathr
 
 **This is work in progress. The main theorem is not yet fully proved.**
 
-The project builds with no errors, but 17 declarations still contain `sorry`, and the
+The project builds with no errors, but 15 declarations still contain `sorry`, and the
 headline `yonedaLemma` depends on `sorryAx` through them. Concretely:
 
 | | |
 |---|---|
 | Build | 0 errors |
-| Declarations using `sorry` | 17 |
+| Declarations using `sorry` | 15 |
 | `yonedaLemma` axioms | `propext`, `sorryAx`, `Classical.choice`, `Quot.sound` |
 
-There is now exactly **one** root: `evaluationPseudo` (`Evaluation.lean`), whose
-`map₂_whisker_right` and `map₂_associator` fields are parked. It is what keeps
-`yonedaEvaluation`, and so `yonedaLemma`, dirty. Everything else that uses `sorry` -- the
-unit/counit isomorphisms in `Unit.lean` and the naturality cores in `Forwards.lean` and
-`Backwards*.lean` -- is downstream of it. The other two roots are closed: `catPseudoULift`
-(`UniverseLift.lean`), and `homPseudo` (`Gadgets.lean`) as of 2026-08-30, which took
-`yonedaPairing` `sorryAx`-free. Each `sorry` is marked at its site with the residual goal and
-what has been tried.
+**Both sides of the equivalence are now `sorryAx`-free.** `yonedaPairing` and
+`yonedaEvaluation` — and the three gadgets under them, `catPseudoULift` (`UniverseLift.lean`),
+`homPseudo` (`Gadgets.lean`) and `evaluationPseudo` (`Evaluation.lean`) — all depend only on
+`propext`, `Classical.choice` and `Quot.sound`. There is no longer any root of `sorryAx` in a
+coherence field.
+
+What remains is entirely in the **assembly layers**: the two strong transformations between
+those pseudofunctors (`Forwards.lean`, `Backwards*.lean`) and the unit/counit isomorphisms
+(`Unit.lean`). Each `sorry` is marked at its site with the residual goal and what has been
+tried.
 
 `scripts/verify-build.sh` gates CI on both a sorry ratchet and a per-declaration axiom
 check, so neither the count nor the set of `sorryAx`-dependent declarations can grow

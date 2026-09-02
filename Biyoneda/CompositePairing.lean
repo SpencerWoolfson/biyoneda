@@ -57,10 +57,8 @@ variable {B : Type u} [Bicategory.{w, v} B]
 
 -- Must be `sorryAx`-free.  `lift`/`liftDom` came clean when `catPseudoULift` was finished;
 -- `appFunctor`, `evalHom` and `evalAt` are the sorry-free half of the evaluation rebuild
--- (2026-08-29).  Note `evaluationPseudo` itself is deliberately NOT here: two of its coherence
--- fields (`map₂_whisker_right`, `map₂_associator`) are still parked, so it -- and every `rfl`
--- bridge stated about it -- is contaminated by construction until those close.  It is now the
--- project's only remaining root of `sorryAx`.
+-- (2026-08-29).  `evaluationPseudo` used to be excluded here because two of its coherence fields
+-- were parked; both closed on 2026-09-02, so it is asserted below with the rest.
 #print axioms StrongTransIntoCats.lift
 #print axioms StrongTransIntoCats.liftDom
 #print axioms CategoryTheory.Pseudofunctor.StrongTrans.appFunctor
@@ -100,6 +98,18 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms CategoryTheory.Bicategory.eval_whisker_right
 #print axioms CategoryTheory.Bicategory.map_comp_cancel
 #print axioms CategoryTheory.Bicategory.strongTrans_naturality_comp_inv_app
+
+-- Phase 1 complete (2026-09-02): `evaluationPseudo`'s last two coherence fields closed, so the
+-- evaluation side is clean too.  With the pairing already clean, the project now has NO root of
+-- `sorryAx` -- every remaining one is in the assembly layers.
+#print axioms CategoryTheory.Bicategory.eval_associator
+#print axioms CategoryTheory.Bicategory.eval_associator_rhs_app
+#print axioms CategoryTheory.Bicategory.strongTrans_comp_naturality_app
+#print axioms CategoryTheory.Bicategory.map_map_comp
+#print axioms CategoryTheory.Bicategory.strongTrans_naturality_slide
+#print axioms CategoryTheory.Bicategory.evaluationPseudo
+#print axioms Biyoneda.yonedaEvaluation'
+#print axioms Biyoneda.yonedaEvaluation
 #print axioms CategoryTheory.Bicategory.evalMapComp_hom_app
 #print axioms CategoryTheory.Bicategory.evalMapComp_inv_app
 #print axioms CategoryTheory.Bicategory.strongTrans_naturality_conj

@@ -1,7 +1,6 @@
 -- General, Yoneda-independent material (all upstream candidates).
--- NOTE: no longer sorry-free. `evaluationPseudo` carries two parked coherence fields
--- (`map₂_whisker_right`, `map₂_associator`) and is the project's only remaining root of
--- `sorryAx`; see README "Status".
+-- All sorry-free as of 2026-09-02: `evaluationPseudo`'s last two coherence fields closed, so
+-- `yonedaEvaluation` is clean and nothing in this group roots a `sorryAx`.
 import Biyoneda.ForMathlib
 import Biyoneda.UniverseLift
 import Biyoneda.BiEquiv

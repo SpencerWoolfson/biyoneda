@@ -423,7 +423,7 @@ lemma eval_right_unitor (u : x ⟶ y) (α : F ⟶ G) :
   refine Eq.trans ?_ (eval_right_unitor_rhs_app u α Z).symm
   simp [strongTrans_naturality_id_app]
 
-/-! ### Shared machinery for the three remaining cores
+/-! ### Shared machinery for the whisker and associator cores
 
 `evalMapComp`'s two directions, distributed at a point.  These are the general-argument
 companions of the identity-specialised shape lemmas above, and they are what `simp` cannot
@@ -494,6 +494,7 @@ lemma map_comp_cancel {D E : Type*} [Category D] [Category E] (P : D ⥤ E) {a b
 Mathlib's `naturality_comp_hom_app` gives the forward direction; the whisker/associator cores
 meet the reverse one, and inverting a five-factor equation in place is exactly the kind of
 rewriting the `Cat` diamond blocks.  Stated once here with `f`, `g` and `α` abstract. -/
+@[reassoc]
 lemma strongTrans_naturality_comp_inv_app (α : F ⟶ G) {a b c : C} (f : a ⟶ b) (g : b ⟶ c)
     (W : ↑(F.obj a)) :
     (G.mapComp f g).inv.toNatTrans.app ((α.app a).toFunctor.obj W) ≫
@@ -526,6 +527,47 @@ lemma strongTrans_naturality_comp_inv_app (α : F ⟶ G) {a b c : C} (f : a ⟶ 
               (G.map g).toFunctor.mapIso ((Cat.Hom.toNatIso (α.naturality f)).app W)) :=
     Iso.ext h
   simpa using congrArg Iso.inv key
+
+/-- The naturality of a **composite** strong transformation, at a point.
+
+`(δ ≫ α).naturality f` is an associator sandwich around `δ`'s and `α`'s; in `Cat` the three
+associators are identities definitionally, so this is `rfl` once they are written in, and the
+padding comes off with `simp`.  Without it the composite's naturality sits in the goal as an
+opaque five-factor block that no distribution lemma will touch. -/
+lemma strongTrans_comp_naturality_app (δ : F ⟶ G) (α : G ⟶ H) {a b : C} (f : a ⟶ b)
+    (W : ↑(F.obj a)) :
+    ((δ ≫ α).naturality f).hom.toNatTrans.app W
+      = (α.app b).toFunctor.map ((δ.naturality f).hom.toNatTrans.app W) ≫
+        (α.naturality f).hom.toNatTrans.app ((δ.app a).toFunctor.obj W) := by
+  have h : ((δ ≫ α).naturality f).hom.toNatTrans.app W
+      = (𝟙 _) ≫ (α.app b).toFunctor.map ((δ.naturality f).hom.toNatTrans.app W) ≫ (𝟙 _) ≫
+        (α.naturality f).hom.toNatTrans.app ((δ.app a).toFunctor.obj W) ≫ (𝟙 _) := rfl
+  simpa using h
+
+/-- Fold two nested `.map` layers across a composition.  The one-layer version is
+`← Functor.map_comp`, which cannot be a simp lemma (wrong direction, loops against the forward
+rule); this is its two-layer companion, and `@[reassoc]` supplies the right-associated form the
+goals actually carry. -/
+@[reassoc]
+lemma map_map_comp {D E W : Type*} [Category D] [Category E] [Category W]
+    (Q : D ⥤ E) (P : E ⥤ W) {a b c : D} (A : a ⟶ b) (B : b ⟶ c) :
+    P.map (Q.map A) ≫ P.map (Q.map B) = P.map (Q.map (A ≫ B)) := by
+  rw [← Functor.map_comp, ← Functor.map_comp]
+
+/-- Slide a morphism through `α.naturality v` and cancel the pair: the conjugation form for the
+naturality **isomorphism** itself, as opposed to `strongTrans_naturality_conj`, which is the one
+for `map₂`.  This is what collapses the `hom … inv` sandwich the associator core produces. -/
+@[reassoc]
+lemma strongTrans_naturality_slide (α : G ⟶ H) {a b : C} (v : a ⟶ b) {W W' : ↑(G.obj a)}
+    (m : W ⟶ W') :
+    (α.naturality v).hom.toNatTrans.app W ≫
+        (H.map v).toFunctor.map ((α.app a).toFunctor.map m) ≫
+        (α.naturality v).inv.toNatTrans.app W'
+      = (α.app b).toFunctor.map ((G.map v).toFunctor.map m) := by
+  have h := (α.naturality v).hom.toNatTrans.naturality m
+  dsimp at h
+  rw [← Category.assoc, ← h, Category.assoc]
+  simp
 
 /-- The same conjugation for a modification's naturality. -/
 lemma modification_naturality_conj {α α' : F ⟶ G} (Γ : α ⟶ α') {a b : C} (f : a ⟶ b)
@@ -561,27 +603,16 @@ lemma eval_whisker_left (u : x ⟶ y) (α : F ⟶ G) {v v' : y ⟶ z} {β β' : 
 set_option linter.flexible false in
 /-- Right-whiskering coherence for `evaluationPseudo`.
 
-PARKED (2026-08-30), with the prefix below reaching the residual described here.  The bridges
-strip both sides down to chains of `(β.app z).toFunctor.map` factors that agree except for
-three slides; two of them go through (`strongTrans_naturality_conj` and
-`modification_naturality_conj` both fire, and `naturality_comp_hom_app` splits
-`α.naturality (u' ≫ v)`).
+Closed 2026-09-02.  Every factor on both sides is `(β.app z).toFunctor.map (…)`, and
+`← Functor.map_comp` does fire on that outer layer -- so fold it completely and strip it with
+`congr 1`, which drops the goal one level, where the pairs are single-layer and adjacent.
+`map_comp_cancel` supplies the fold `simp` will not do, and the residual is five named slides
+ending in `strongTrans_naturality_comp_inv_app`.
 
-What blocks it is the *cancellation*.  The right-hand side ends up with the adjacent pair
-
-  (β.app z).map ((G.map v).map (α.naturality u').inv) ≫
-  (β.app z).map ((G.map v).map (α.naturality u').hom)
-
-which is an identity, but collapsing it needs `← Functor.map_comp` to fire through **two**
-nested `.map` layers.  It fires through the outer one (the analogous `F.mapComp u' v` pair on
-the left-hand side does cancel this way) and not the inner one -- the same reducible-transparency
-failure this file's `cat_*` note describes, one level down.
-
-Next move: a `rfl` bridge naming the doubly-nested fold, in the spirit of the bridges above --
-`(β.app z).map ((G.map v).map A) ≫ (β.app z).map ((G.map v).map B)` against
-`(β.app z).map ((G.map v).map (A ≫ B))` -- rather than another `simp only [← Functor.map_comp]`.
-Measured to fail: `simp only [← Category.assoc]; simp only [← Functor.map_comp]` iterated four
-times, with and without the `inv_hom_id` component lemmas interleaved. -/
+Note the `rw` rather than a `simp` argument for `strongTrans_naturality_conj`: as a simp lemma
+it also fires on the right-hand side's `β'` and the two sides diverge.  `rw` takes the first
+occurrence, which is the left-hand side's `F.map₂ σ`, and that is the only one that needs it.
+-/
 lemma eval_whisker_right {u u' : x ⟶ y} {α α' : F ⟶ G} (σ : u ⟶ u') (Γ : α ⟶ α')
     (v : y ⟶ z) (β : G ⟶ H) :
     evalMap₂ (σ ▷ v) (Γ ▷ β)
@@ -615,12 +646,45 @@ lemma eval_whisker_right {u u' : x ⟶ y} {α α' : F ⟶ G} (σ : u ⟶ u') (Γ
   iterate 5 refine congrArg (CategoryStruct.comp _) ?_
   exact strongTrans_naturality_comp_inv_app α' u' v Z
 
+/-- `eval_associator`'s right-hand side, **split** at a point.
+
+Only the splitting: the four `evalMapComp` components are left folded so that
+`evalMapComp_hom_app`/`evalMapComp_inv_app` can rewrite them afterwards.  This is the padding
+recipe's step 3 -- the side `simp` cannot distribute, with `Cat`'s associator written in as the
+identity it is.
+
+Why it is needed at all: left to itself `simp` normalises `_ ▷ evalMap v β` with
+`whiskerRight_comp`, which *introduces* `Cat` associators, and then cannot remove them again --
+the whole right-hand side then sits as one un-splittable block.  Bridging before `simp` runs
+avoids creating the obstruction rather than fighting it. -/
+lemma eval_associator_rhs_app (s : x ⟶ y) (δ : F ⟶ G) (u : y ⟶ z) (α : G ⟶ H)
+    (v : z ⟶ t) (β : H ⟶ E) (Z : ↑(F.obj x)) :
+    ((evalMapComp (s ≫ u) (δ ≫ α) v β).hom ≫
+        (evalMapComp s δ u α).hom ▷ evalMap v β ≫
+        (α_ (evalMap s δ) (evalMap u α) (evalMap v β)).hom ≫
+        evalMap s δ ◁ (evalMapComp u α v β).inv ≫
+        (evalMapComp s δ (u ≫ v) (α ≫ β)).inv).toNatTrans.app Z
+      = (evalMapComp (s ≫ u) (δ ≫ α) v β).hom.toNatTrans.app Z ≫
+        (β.app t).toFunctor.map ((H.map v).toFunctor.map
+          ((evalMapComp s δ u α).hom.toNatTrans.app Z)) ≫
+        (𝟙 _) ≫
+        (evalMapComp u α v β).inv.toNatTrans.app
+          ((δ.app y).toFunctor.obj ((F.map s).toFunctor.obj Z)) ≫
+        (evalMapComp s δ (u ≫ v) (α ≫ β)).inv.toNatTrans.app Z := rfl
+
 /-- Associator coherence for `evaluationPseudo`.  The largest of the five: three `mapComp`s and
 two `naturality` slides to align, with `F.map₂_associator` as its input.
 
-PARKED (2026-08-30).  The bridges above apply and the descent runs, but the residual is
-substantially larger than `eval_whisker_right`'s and has not been analysed.  Close that one
-first -- the doubly-nested fold it needs is almost certainly needed here too. -/
+Closed 2026-09-02.  The shape is `eval_whisker_right`'s, one layer deeper: bridge the RHS
+before `simp` can mangle it (`eval_associator_rhs_app`), distribute, then alternate
+**fold-and-strip** with a coherence slide, twice -- once peeling `β.app t` and consuming `α`'s
+naturality sandwich, once peeling `α.app t` and consuming `δ`'s.
+
+The one thing that had to be got right is the ORDER.  `simp` left to itself normalises
+`_ ▷ evalMap v β` with `whiskerRight_comp`, which *introduces* `Cat` associators it then cannot
+remove, leaving the whole right-hand side as one un-splittable block -- which is exactly what
+the earlier parking note described.  Bridging first avoids creating the obstruction instead of
+fighting it. -/
 lemma eval_associator (s : x ⟶ y) (δ : F ⟶ G) (u : y ⟶ z) (α : G ⟶ H)
     (v : z ⟶ t) (β : H ⟶ E) :
     evalMap₂ (α_ s u v).hom (α_ δ α β).hom
@@ -630,40 +694,25 @@ lemma eval_associator (s : x ⟶ y) (δ : F ⟶ G) (u : y ⟶ z) (α : G ⟶ H)
         evalMap s δ ◁ (evalMapComp u α v β).inv ≫
         (evalMapComp s δ (u ≫ v) (α ≫ β)).inv := by
   apply Cat.Hom₂.ext_app; intro Z
-  simp only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv,
-    whiskerLeftIso_hom, whiskerRightIso_hom, whiskerLeftIso_inv, whiskerRightIso_inv,
-    Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
-    Cat.associator_hom_toNatTrans_app, Cat.associator_inv_toNatTrans_app,
-    Cat.Hom.comp_toFunctor, Functor.comp_obj, Category.id_comp, Category.comp_id]
-  simp [evalMapComp_hom_app, evalMapComp_inv_app]
-  -- PARKED (2026-08-30).  The prefix above is the `evaluationPseudo_mapComp_hom_app` descent
-  -- and it runs; the state it reaches is precise enough to name the obstruction.
-  --
-  -- The LHS distributes COMPLETELY: four factors, each a triple-nested
-  -- `(β.app t).map ((α.app t).map ((δ.app t).map …))`, over `F.mapComp (s ≫ u) v`,
-  -- `F.mapComp s u`, `F.mapComp u v` and `F.mapComp s (u ≫ v)`.  The first of those four
-  -- matches the RHS's first factor already.
-  --
-  -- What blocks it is one block on the RHS that will not split:
-  --     ((α_ (F.map (s ≫ u) ≫ δ.app z ≫ α.app z) (H.map v) (β.app t)).inv ≫
-  --       (evalMapComp s δ u α).hom ▷ H.map v ▷ β.app t ≫ …).toNatTrans.app Z
-  -- `Cat.Hom.toNatTrans_comp` and `NatTrans.comp_app` are both in the set above and neither
-  -- fires on it -- the `Cat` composition diamond, one layer in from where the rest of the goal
-  -- lives.  Running the whole distribution set a SECOND time is measured to make no progress,
-  -- so it is at a fixpoint, not merely under-applied.
-  --
-  -- Next move, and it is the move that closed `eval_whisker_right`: do not widen the simp set.
-  -- Add `rfl` component bridges for the two whiskered blocks by name --
-  -- `(evalMapComp s δ u α).hom ▷ evalMap v β` and `evalMap s δ ◁ (evalMapComp u α v β).inv`,
-  -- each at a point, with `Cat`'s associators written in as the identities they are -- in the
-  -- style of `evalMapComp_hom_app`/`evalMapComp_inv_app` just above.  Those two are what the
-  -- statement whiskers, and naming them is what lets `simp` past the diamond.
-  --
-  -- Once distributed, expect the same five-slide shape `eval_whisker_right` had, with
-  -- `map_comp_cancel` and `strongTrans_naturality_comp_inv_app` (both proved, above) doing the
-  -- same jobs; `δ`'s and `α`'s `naturality_comp` should supply the rest.
-  sorry
+  refine Eq.trans ?_ (eval_associator_rhs_app s δ u α v β Z).symm
+  simp only [evalMapComp_hom_app, evalMapComp_inv_app, strongTrans_comp_naturality_app]
+  simp
+  simp only [← Category.assoc]
+  simp only [← Functor.map_comp]
+  congr 1
+  simp
+  rw [map_map_comp_assoc (α.app z).toFunctor (H.map v).toFunctor,
+    strongTrans_naturality_slide_assoc]
+  -- strip the `α.app t` layer the same way
+  simp only [← Category.assoc]
+  simp only [← Functor.map_comp]
+  congr 1
+  simp
+  rw [strongTrans_naturality_comp_inv_app_assoc]
+  rw [map_comp_cancel_assoc (G.map v).toFunctor
+    ((δ.naturality u).hom.toNatTrans.app ((F.map s).toFunctor.obj Z))
+    ((δ.naturality u).inv.toNatTrans.app ((F.map s).toFunctor.obj Z)) (by simp)]
+  rw [strongTrans_naturality_slide_assoc]
 
 end Parts
 

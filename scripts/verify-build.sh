@@ -37,9 +37,10 @@ BASELINE_FILE="$ROOT/.github/sorry-baseline"
 #
 # There were three roots. `catPseudoULift` (UniverseLift.lean) and `homPseudo` (Gadgets.lean)
 # are both now fully proved -- the latter took `yonedaPairingComposite` and `yonedaPairing`
-# clean, so they are promoted below and CONTAMINATED_DECLS is empty. The remaining root is
-# `evaluationPseudo` (Evaluation.lean), which still parks `map₂_whisker_right` and
-# `map₂_associator` and is what keeps `yonedaEvaluation` and `yonedaLemma` dirty.
+# clean. The third, `evaluationPseudo` (Evaluation.lean), closed on 2026-09-02 and took
+# `yonedaEvaluation` with it. There is now NO remaining root: every declaration that still
+# depends on `sorryAx` does so through the assembly layers (Forwards, Backwards*, Unit), not
+# through a parked coherence field. CONTAMINATED_DECLS is empty.
 CLEAN_DECLS=(
   "CategoryTheory.Bicategory.StrongTransIntoCats.lift"
   "CategoryTheory.Bicategory.StrongTransIntoCats.liftDom"
@@ -75,6 +76,14 @@ CLEAN_DECLS=(
   "CategoryTheory.Bicategory.eval_whisker_right"
   "CategoryTheory.Bicategory.map_comp_cancel"
   "CategoryTheory.Bicategory.strongTrans_naturality_comp_inv_app"
+  "CategoryTheory.Bicategory.eval_associator"
+  "CategoryTheory.Bicategory.eval_associator_rhs_app"
+  "CategoryTheory.Bicategory.strongTrans_comp_naturality_app"
+  "CategoryTheory.Bicategory.map_map_comp"
+  "CategoryTheory.Bicategory.strongTrans_naturality_slide"
+  "CategoryTheory.Bicategory.evaluationPseudo"
+  "Biyoneda.yonedaEvaluation'"
+  "Biyoneda.yonedaEvaluation"
   "CategoryTheory.Bicategory.evalMapComp_hom_app"
   "CategoryTheory.Bicategory.evalMapComp_inv_app"
   "CategoryTheory.Bicategory.strongTrans_naturality_conj"
