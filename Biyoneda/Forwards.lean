@@ -310,14 +310,24 @@ lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
   -- differently (not defeq), so this needs a genuine re-proof rather than a re-spelling.
   sorry
 
--- `linter.flexible` wants the two non-terminal `simp`s below squeezed to `simp only [...]`.
--- The suggested lists run to 17 and 30 lemma names, which the pending v4.30 -> v4.33 walk would
--- invalidate wholesale; and both are followed by a match against a *named* lemma, so simp drift
--- fails loudly rather than silently. Revisit after the bump.
-set_option linter.flexible false in
+/--
+Distributing a functor over a composite whose left factor is itself a functor image.  Three
+`Functor.map_comp` steps, stated in bare categories because at the use site they are exactly
+what will not fire: the goal there is not type-correct at `implicit` transparency.  Instantiated
+by `exact`, which checks at default transparency, it goes straight through.
+-/
+lemma map_map_comp_dist {C D E : Type*} [Category C] [Category D] [Category E]
+    (F : D ⥤ E) (G : C ⥤ D) {X Y Z : C} (u : X ⟶ Y) (v : Y ⟶ Z) {W : D} (N : G.obj Z ⟶ W) :
+    F.map (G.map (u ≫ v) ≫ N) = F.map (G.map u) ≫ F.map (G.map v) ≫ F.map N := by
+  simp
+
 set_option backward.isDefEq.respectTransparency false in
 /-- The data for `yonedaLemmaForwards`, stated against the *unlifted* `yonedaEvaluation'`.
-`StrongTransIntoCats.lift` then supplies the lifted strong transformation. -/
+`StrongTransIntoCats.lift` then supplies the lifted strong transformation.
+
+Every field is now a term: three are their `*_core` lemmas verbatim, and `naturality` is the
+core with `map_map_comp_dist` distributing the folded `mapIso` on each side.  Only
+`naturality_comp'` is still open, through `forwards_naturality_comp_core`. -/
 def yonedaLemmaForwardsData :
     StrongTransIntoCats (@yonedaPairing B _) (@yonedaEvaluation' B _) where
   app := yonedaLemmaForwardsFunctor
@@ -328,23 +338,20 @@ def yonedaLemmaForwardsData :
             ((X.app b.1).toFunctor.mapIso (λ_ f.1.unop ≪≫ (ρ_ f.1.unop).symm) ≪≫
               (Cat.Hom.toNatIso (X.naturality f.1)).app (𝟙 (unop a.1))))
       (by
+        -- The mathematical content is exactly `forwards_naturality_core`, which states the two
+        -- sides distributed; the field states them folded, as one `mapIso`.  The old proof tried
+        -- to close that gap with a descent simp set and `convert`, which cannot work -- the goal
+        -- is not type-correct at `implicit` transparency, so `Functor.map_comp` never fires.
+        -- Distributing by an explicitly instantiated term does work, and the `rfl`-equal
+        -- composite-functor spellings on the outside are absorbed by `exact`.
         intro X Y h
-        -- The mathematical content is exactly `forwards_naturality_core`; the simp set
-        -- descends the composite pairing to its shape.  `convert` then absorbs both the
-        -- `Cat`-instance mismatch (the two sides spell the fibre category differently, which is
-        -- why `Functor.map_comp` will not fire here) and the residual regrouping.
-        -- PARKED (v4.33).  `forwards_naturality_core` above is proved and is exactly the
-        -- mathematical content; what fails is the reconciliation -- `convert ... using 2` no
-        -- longer closes the residual after the descent simp set.
-        have key := forwards_naturality_core f h
-        simp only [Category.assoc] at key
-        sorry)
+        refine Eq.trans (congrArg (CategoryStruct.comp _)
+          (map_map_comp_dist (f.2.app b.1).toFunctor (Y.app b.1).toFunctor _ _ _)) ?_
+        refine Eq.trans ?_ (congrArg (fun t => t ≫ _)
+          (map_map_comp_dist (f.2.app b.1).toFunctor (X.app b.1).toFunctor _ _ _)).symm
+        exact forwards_naturality_core f h)
   naturality_naturality' {a b} {f g} η Z := forwards_naturality_naturality_core η Z
-  naturality_id' a Z := by
-    -- PARKED (v4.33), inherited: `forwards_naturality_id_core` is itself parked above, so this
-    -- field could only inherit that sorry even with a working reconciliation.
-    have core := forwards_naturality_id_core a Z
-    sorry
+  naturality_id' a Z := forwards_naturality_id_core a Z
   naturality_comp' {a b c} f g Z := forwards_naturality_comp_core f g Z
 
 /--

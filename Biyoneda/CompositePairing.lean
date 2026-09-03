@@ -153,3 +153,24 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms Biyoneda.forwards_naturality_naturality_rhs_app
 #print axioms Biyoneda.forwards_naturality_naturality_core
 #print axioms Biyoneda.forwards_naturality_id_core
+
+-- Phase 4, 2026-09-03: the assembly layer.  `yonedaLemmaForwardsData` and
+-- `yonedaLemmaBackwardsData` are the two `StrongTransIntoCats` records the Yoneda
+-- transformations are lifted from.  Their supporting lemmas are clean; the records themselves
+-- are still `sorryAx`-dependent through the two `mapComp` obligations, and are asserted as
+-- such in `CONTAMINATED_DECLS` -- `yonedaLemmaForwardsData` no longer emits a `sorry`
+-- *warning* (its own fields are all proved), so without that assertion the remaining debt
+-- would be invisible to the gate.
+#print axioms Biyoneda.map_map_comp_dist
+#print axioms Biyoneda.backwards_naturality_naturality_core
+#print axioms Biyoneda.backwards_nn_lhs_app
+#print axioms Biyoneda.backwards_nn_rhs_app
+#print axioms Biyoneda.backwards_nn_slide
+#print axioms Biyoneda.yonedaPairing_mapId_app
+#print axioms Biyoneda.backwards_id_core
+#print axioms Biyoneda.backwards_id_lhs_app
+#print axioms Biyoneda.backwards_id_rhs_app
+#print axioms Biyoneda.yonedaLemmaForwardsData
+#print axioms Biyoneda.yonedaLemmaForwards
+#print axioms Biyoneda.yonedaLemmaBackwardsData
+#print axioms Biyoneda.yonedaLemmaBackwards

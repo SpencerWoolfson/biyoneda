@@ -121,12 +121,30 @@ CLEAN_DECLS=(
   "Biyoneda.forwards_naturality_naturality_rhs_app"
   "Biyoneda.forwards_naturality_naturality_core"
   "Biyoneda.forwards_naturality_id_core"
+  "Biyoneda.map_map_comp_dist"
+  "Biyoneda.backwards_naturality_naturality_core"
+  "Biyoneda.backwards_nn_lhs_app"
+  "Biyoneda.backwards_nn_rhs_app"
+  "Biyoneda.backwards_nn_slide"
+  "Biyoneda.yonedaPairing_mapId_app"
+  "Biyoneda.backwards_id_core"
+  "Biyoneda.backwards_id_lhs_app"
+  "Biyoneda.backwards_id_rhs_app"
 )
 
-# Emptied on 2026-08-30: `homPseudo` closed, which took the pairing clean.  Keep the array --
-# `evaluationPseudo` is still open, and anything asserted about `yonedaEvaluation` or the
-# headline `yonedaLemma` belongs here until it is.
-CONTAMINATED_DECLS=()
+# Emptied on 2026-08-30 when `homPseudo` closed, and repopulated on 2026-09-03 for the opposite
+# reason.  Phase 4 proved every field of `yonedaLemmaForwardsData` except `naturality_comp'`,
+# which means the record no longer emits a `sorry` *warning* -- its own body is sorry-free and
+# the debt now sits behind a named constant (`forwards_naturality_comp_core`).  The sorry
+# ratchet cannot see that.  Asserting the four assembly declarations here keeps the remaining
+# contamination visible and turns "one of them became clean" into a NOTICE telling you to
+# promote it.
+CONTAMINATED_DECLS=(
+  "Biyoneda.yonedaLemmaForwardsData"
+  "Biyoneda.yonedaLemmaForwards"
+  "Biyoneda.yonedaLemmaBackwardsData"
+  "Biyoneda.yonedaLemmaBackwards"
+)
 
 fail=0
 note() {

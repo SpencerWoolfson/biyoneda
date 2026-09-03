@@ -22,13 +22,13 @@ on the product bicategory $\mathcal{B}^{\mathrm{op}} \times [\mathcal{B}^{\mathr
 
 **This is work in progress. The main theorem is not yet fully proved.**
 
-The project builds with no errors, but 9 declarations still contain `sorry`, and the
+The project builds with no errors, but 7 declarations still contain `sorry`, and the
 headline `yonedaLemma` depends on `sorryAx` through them. Concretely:
 
 | | |
 |---|---|
 | Build | 0 errors |
-| Declarations using `sorry` | 9 |
+| Declarations using `sorry` | 7 |
 | `yonedaLemma` axioms | `propext`, `sorryAx`, `Classical.choice`, `Quot.sound` |
 
 **Both sides of the equivalence are now `sorryAx`-free.** `yonedaPairing` and
@@ -44,9 +44,19 @@ tried.
 
 `BackwardsNaturality.lean` — the naturality isomorphism of the backward transformation — is
 sorry-free as of 2026-09-02.  On 2026-09-03 the forward direction's three coherence *cores*
-closed as well, leaving `Forwards.lean` with two open declarations: `forwards_naturality_comp_core`
-(the one genuinely open piece of mathematics in the file) and the assembly
-`yonedaLemmaForwardsData`.
+closed, and then the assembly layer: `yonedaLemmaForwardsData` is now sorry-free in its own
+body, and `yonedaLemmaBackwardsData` is down to one field.
+
+What is left has narrowed to a single mathematical object.  Both remaining coherence
+obligations — `forwards_naturality_comp_core` and `yonedaLemmaBackwardsData.naturality_comp'` —
+need the *same* thing: `yonedaPairing.mapComp` evaluated at a point.  The unit analogue
+(`yonedaPairing_mapId_app`) is proved; the composition one is not, and it is the one place in
+the development where the composite pairing genuinely defines a different morphism rather than
+a different spelling.
+
+Note on reading the sorry count: `yonedaLemmaForwardsData` no longer emits a `sorry` warning
+even though it still depends on `sorryAx` through a named lemma.  `CONTAMINATED_DECLS` in
+`scripts/verify-build.sh` asserts that dependency explicitly so it cannot go unnoticed.
 
 `scripts/verify-build.sh` gates CI on both a sorry ratchet and a per-declaration axiom
 check, so neither the count nor the set of `sorryAx`-dependent declarations can grow
