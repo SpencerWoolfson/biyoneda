@@ -115,6 +115,12 @@ CLEAN_DECLS=(
   "Biyoneda.backwards_natural_rhs_app"
   "Biyoneda.backwards_natural_core"
   "Biyoneda.backwards_naturality_iso_natural"
+  "Biyoneda.unitor_conj_pad"
+  "Biyoneda.forwards_naturality_naturality_unitor"
+  "Biyoneda.forwards_naturality_naturality_lhs_app"
+  "Biyoneda.forwards_naturality_naturality_rhs_app"
+  "Biyoneda.forwards_naturality_naturality_core"
+  "Biyoneda.forwards_naturality_id_core"
 )
 
 # Emptied on 2026-08-30: `homPseudo` closed, which took the pairing clean.  Keep the array --

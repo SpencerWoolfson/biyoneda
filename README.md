@@ -22,13 +22,13 @@ on the product bicategory $\mathcal{B}^{\mathrm{op}} \times [\mathcal{B}^{\mathr
 
 **This is work in progress. The main theorem is not yet fully proved.**
 
-The project builds with no errors, but 12 declarations still contain `sorry`, and the
+The project builds with no errors, but 9 declarations still contain `sorry`, and the
 headline `yonedaLemma` depends on `sorryAx` through them. Concretely:
 
 | | |
 |---|---|
 | Build | 0 errors |
-| Declarations using `sorry` | 12 |
+| Declarations using `sorry` | 9 |
 | `yonedaLemma` axioms | `propext`, `sorryAx`, `Classical.choice`, `Quot.sound` |
 
 **Both sides of the equivalence are now `sorryAx`-free.** `yonedaPairing` and
@@ -43,7 +43,10 @@ those pseudofunctors (`Forwards.lean`, `Backwards.lean`) and the unit/counit iso
 tried.
 
 `BackwardsNaturality.lean` — the naturality isomorphism of the backward transformation — is
-sorry-free as of 2026-09-02.
+sorry-free as of 2026-09-02.  On 2026-09-03 the forward direction's three coherence *cores*
+closed as well, leaving `Forwards.lean` with two open declarations: `forwards_naturality_comp_core`
+(the one genuinely open piece of mathematics in the file) and the assembly
+`yonedaLemmaForwardsData`.
 
 `scripts/verify-build.sh` gates CI on both a sorry ratchet and a per-declaration axiom
 check, so neither the count nor the set of `sorryAx`-dependent declarations can grow

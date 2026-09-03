@@ -141,3 +141,15 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms Biyoneda.backwards_natural_rhs_app
 #print axioms Biyoneda.backwards_natural_core
 #print axioms Biyoneda.backwards_naturality_iso_natural
+
+-- The forward direction's three coherence cores, rebuilt on 2026-09-03 (Phase 3).  All three
+-- were blocked on the same thing: their goals are not type-correct at `implicit` transparency,
+-- so no `rw` or `simp` can fire on them.  `forwards_naturality_id_core` is closed by the padding
+-- trick (name the chain's value at the point, identities included); the other two are assembled
+-- as terms, with the mathematics factored into `unitor_conj_pad` and the two `rfl` bridges.
+#print axioms Biyoneda.unitor_conj_pad
+#print axioms Biyoneda.forwards_naturality_naturality_unitor
+#print axioms Biyoneda.forwards_naturality_naturality_lhs_app
+#print axioms Biyoneda.forwards_naturality_naturality_rhs_app
+#print axioms Biyoneda.forwards_naturality_naturality_core
+#print axioms Biyoneda.forwards_naturality_id_core
