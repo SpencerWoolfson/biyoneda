@@ -569,6 +569,75 @@ lemma strongTrans_naturality_slide (α : G ⟶ H) {a b : C} (v : a ⟶ b) {W W' 
   rw [← Category.assoc, ← h, Category.assoc]
   simp
 
+/-- The naturality of a **composite** strong transformation at a point, in inverse form.
+`strongTrans_comp_naturality_app` gives the forward direction; inverting a composite reverses
+it, and the cleanest way to say so is to invert the whole `Iso` rather than the equation. -/
+lemma strongTrans_comp_naturality_inv_app (δ : F ⟶ G) (α : G ⟶ H) {a b : C} (f : a ⟶ b)
+    (W : ↑(F.obj a)) :
+    ((δ ≫ α).naturality f).inv.toNatTrans.app W
+      = (α.naturality f).inv.toNatTrans.app ((δ.app a).toFunctor.obj W) ≫
+        (α.app b).toFunctor.map ((δ.naturality f).inv.toNatTrans.app W) := by
+  have key : (Cat.Hom.toNatIso ((δ ≫ α).naturality f)).app W
+      = (α.app b).toFunctor.mapIso ((Cat.Hom.toNatIso (δ.naturality f)).app W) ≪≫
+        (Cat.Hom.toNatIso (α.naturality f)).app ((δ.app a).toFunctor.obj W) :=
+    Iso.ext (strongTrans_comp_naturality_app δ α f W)
+  exact congrArg Iso.inv key
+
+/-- The associativity coherence a strong transformation's `naturality` satisfies against the
+two pseudofunctors' `mapComp`s, at a point.
+
+Three 1-cells and one transformation: it says that transporting `x` along `u ≫ v` and then `W`
+agrees with transporting along `u` and then `v ≫ W`, once both are corrected by the `mapComp`
+constraints.  Both `naturality_comp` obligations of the Yoneda equivalence come down to this.
+
+The proof is four moves: `simp` turns `F.map₂ (α_ u v W).hom` into `F`'s own `mapComp`
+associativity (`map₂_associator`); then three applications of
+`strongTrans_naturality_comp_inv_app`, each followed by the `hom`/`inv` cancellation it exposes,
+strip the `G`-side coherences; what is left is one naturality square of `(α.naturality W).inv`. -/
+lemma naturality_comp_assoc_core (α : F ⟶ G) {p q r s : C} (u : p ⟶ q) (v : q ⟶ r) (W : r ⟶ s)
+    (x : ↑(F.obj p)) :
+    ((G.map W).toFunctor.map ((α.naturality (u ≫ v)).hom.toNatTrans.app x) ≫
+        (G.mapComp (u ≫ v) W).inv.toNatTrans.app ((α.app p).toFunctor.obj x) ≫
+          (α.naturality ((u ≫ v) ≫ W)).inv.toNatTrans.app x) ≫
+      (α.app s).toFunctor.map ((F.map₂ (α_ u v W).hom).toNatTrans.app x) =
+    (G.map W).toFunctor.map
+        ((α.app r).toFunctor.map ((F.mapComp u v).hom.toNatTrans.app x) ≫
+          (α.naturality v).hom.toNatTrans.app ((F.map u).toFunctor.obj x)) ≫
+      (G.mapComp v W).inv.toNatTrans.app
+          ((α.app q).toFunctor.obj ((F.map u).toFunctor.obj x)) ≫
+        (G.map (v ≫ W)).toFunctor.map ((α.naturality u).hom.toNatTrans.app x) ≫
+          (G.mapComp u (v ≫ W)).inv.toNatTrans.app ((α.app p).toFunctor.obj x) ≫
+            (α.naturality (u ≫ v ≫ W)).inv.toNatTrans.app x := by
+  simp
+  rw [strongTrans_naturality_comp_inv_app_assoc α (u ≫ v) W x,
+    map_comp_cancel_assoc (G.map W).toFunctor
+      ((α.naturality (u ≫ v)).hom.toNatTrans.app x)
+      ((α.naturality (u ≫ v)).inv.toNatTrans.app x)
+      (Cat.Hom.hom_inv_id_toNatTrans_app (α.naturality (u ≫ v)) _),
+    map_comp_cancel_assoc (α.app s).toFunctor
+      ((F.mapComp (u ≫ v) W).inv.toNatTrans.app x)
+      ((F.mapComp (u ≫ v) W).hom.toNatTrans.app x)
+      (Cat.Hom.inv_hom_id_toNatTrans_app (F.mapComp (u ≫ v) W) _)]
+  rw [strongTrans_naturality_comp_inv_app α u (v ≫ W) x,
+    map_comp_cancel_assoc (G.map (v ≫ W)).toFunctor
+      ((α.naturality u).hom.toNatTrans.app x)
+      ((α.naturality u).inv.toNatTrans.app x)
+      (Cat.Hom.hom_inv_id_toNatTrans_app (α.naturality u) _)]
+  rw [strongTrans_naturality_comp_inv_app_assoc α v W ((F.map u).toFunctor.obj x),
+    map_comp_cancel_assoc (G.map W).toFunctor
+      ((α.naturality v).hom.toNatTrans.app ((F.map u).toFunctor.obj x))
+      ((α.naturality v).inv.toNatTrans.app ((F.map u).toFunctor.obj x))
+      (Cat.Hom.hom_inv_id_toNatTrans_app (α.naturality v) _)]
+  have hfin : (G.map W).toFunctor.map
+        ((α.app r).toFunctor.map ((F.mapComp u v).hom.toNatTrans.app x)) ≫
+      (α.naturality W).inv.toNatTrans.app
+        ((F.map v).toFunctor.obj ((F.map u).toFunctor.obj x))
+      = (α.naturality W).inv.toNatTrans.app ((F.map (u ≫ v)).toFunctor.obj x) ≫
+        (α.app s).toFunctor.map
+          ((F.map W).toFunctor.map ((F.mapComp u v).hom.toNatTrans.app x)) :=
+    (α.naturality W).inv.toNatTrans.naturality _
+  rw [reassoc_of% hfin]
+
 /-- The same conjugation for a modification's naturality. -/
 lemma modification_naturality_conj {α α' : F ⟶ G} (Γ : α ⟶ α') {a b : C} (f : a ⟶ b)
     (W : ↑(F.obj a)) :

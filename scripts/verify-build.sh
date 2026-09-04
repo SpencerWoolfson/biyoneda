@@ -131,13 +131,21 @@ CLEAN_DECLS=(
   "Biyoneda.backwards_comp_map_app"
   "Biyoneda.backwards_comp_lhs_app"
   "Biyoneda.backwards_comp_rhs_app"
+  "CategoryTheory.Bicategory.strongTrans_comp_naturality_inv_app"
+  "CategoryTheory.Bicategory.naturality_comp_assoc_core"
+  "Biyoneda.backwards_comp_core"
+  "Biyoneda.yonedaLemmaBackwardsData"
+  "Biyoneda.yonedaLemmaBackwards"
   "Biyoneda.backwards_id_core"
   "Biyoneda.backwards_id_lhs_app"
   "Biyoneda.backwards_id_rhs_app"
 )
 
-# Emptied on 2026-08-30 when `homPseudo` closed, and repopulated on 2026-09-03 for the opposite
-# reason.  Phase 4 proved every field of `yonedaLemmaForwardsData` except `naturality_comp'`,
+# Emptied on 2026-08-30 when `homPseudo` closed, repopulated on 2026-09-03, and halved again the
+# same day when `backwards_comp_core` closed and took the whole backward direction clean --
+# `yonedaLemmaBackwardsData` and `yonedaLemmaBackwards` are promoted to CLEAN_DECLS.  What is
+# left here is the forward direction only.  Phase 4 proved every field of
+# `yonedaLemmaForwardsData` except `naturality_comp'`,
 # which means the record no longer emits a `sorry` *warning* -- its own body is sorry-free and
 # the debt now sits behind a named constant (`forwards_naturality_comp_core`).  The sorry
 # ratchet cannot see that.  Asserting the four assembly declarations here keeps the remaining
@@ -146,8 +154,6 @@ CLEAN_DECLS=(
 CONTAMINATED_DECLS=(
   "Biyoneda.yonedaLemmaForwardsData"
   "Biyoneda.yonedaLemmaForwards"
-  "Biyoneda.yonedaLemmaBackwardsData"
-  "Biyoneda.yonedaLemmaBackwards"
 )
 
 fail=0

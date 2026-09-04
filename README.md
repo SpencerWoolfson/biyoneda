@@ -22,13 +22,13 @@ on the product bicategory $\mathcal{B}^{\mathrm{op}} \times [\mathcal{B}^{\mathr
 
 **This is work in progress. The main theorem is not yet fully proved.**
 
-The project builds with no errors, but 7 declarations still contain `sorry`, and the
+The project builds with no errors, but 6 declarations still contain `sorry`, and the
 headline `yonedaLemma` depends on `sorryAx` through them. Concretely:
 
 | | |
 |---|---|
 | Build | 0 errors |
-| Declarations using `sorry` | 7 |
+| Declarations using `sorry` | 6 |
 | `yonedaLemma` axioms | `propext`, `sorryAx`, `Classical.choice`, `Quot.sound` |
 
 **Both sides of the equivalence are now `sorryAx`-free.** `yonedaPairing` and
@@ -47,9 +47,14 @@ sorry-free as of 2026-09-02.  On 2026-09-03 the forward direction's three cohere
 closed, and then the assembly layer: `yonedaLemmaForwardsData` is now sorry-free in its own
 body, and `yonedaLemmaBackwardsData` is down to one field.
 
-Both `StrongTransIntoCats` records are now structurally complete, and the whole remaining
-coherence debt is two named lemmas stated in the fibre: `forwards_naturality_comp_core` and
-`backwards_comp_core`.  They are the same coherence seen from the two sides.
+**The backward direction is finished.**  `yonedaLemmaBackwards` — and the record it is lifted
+from — depend only on `propext`, `Classical.choice` and `Quot.sound`.  The last piece was
+`backwards_comp_core`, which reduces to `naturality_comp_assoc_core`: the associativity
+coherence a strong transformation's `naturality` satisfies against the two pseudofunctors'
+`mapComp`s, at a point.  Both directions' `naturality_comp` obligations come down to that one
+statement, so it is stated once, in `Evaluation.lean`, for an arbitrary strong transformation.
+
+What remains of the coherence debt is its forward twin, `forwards_naturality_comp_core`.
 
 `yonedaPairing.mapComp` evaluated at a point — the object both of them were blocked on — is
 proved (`yonedaPairing_mapComp_app`, with its unit analogue `yonedaPairing_mapId_app`).  These

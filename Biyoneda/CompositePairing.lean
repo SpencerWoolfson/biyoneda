@@ -189,3 +189,11 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms Biyoneda.backwards_comp_map_app
 #print axioms Biyoneda.backwards_comp_lhs_app
 #print axioms Biyoneda.backwards_comp_rhs_app
+
+-- `backwards_comp_core` closes (2026-09-03), and with it the whole backward direction:
+-- `yonedaLemmaBackwards` is `sorryAx`-free.  The two general lemmas it rests on are in
+-- `Biyoneda/Evaluation.lean`; `naturality_comp_assoc_core` is the coherence both directions'
+-- `naturality_comp` obligations reduce to once the pairing side has been descended.
+#print axioms CategoryTheory.Bicategory.strongTrans_comp_naturality_inv_app
+#print axioms CategoryTheory.Bicategory.naturality_comp_assoc_core
+#print axioms Biyoneda.backwards_comp_core

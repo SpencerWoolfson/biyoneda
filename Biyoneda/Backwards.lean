@@ -276,51 +276,143 @@ lemma backwards_comp_rhs_app {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f
               (f.2.naturality (f.1 ≫ Quiver.Hom.op (ZZ ≫ g.1.unop))).inv.toNatTrans.app x)
       := rfl
 
-/-- The fibre content of `naturality_comp` for `yonedaLemmaBackwards`: the composite
-transformation's naturality against the two factors' naturalities, glued by `c.2`'s `mapComp`
-and the associator that `yonedaPairing.mapComp` contributes.
+/-- The fibre content of `naturality_comp` for `yonedaLemmaBackwards`.
 
-**PARKED (2026-09-03) -- the last open coherence in the backward direction.**  Everything
-around it is proved: the descent above reaches this statement exactly, so the remaining work is
-a single equation in `↑(c.2.obj γ)` with no folded pseudofunctor left in it.
+Both sides reduce, by the same three moves, to a composite that begins with
+`(g.2.naturality ZZ.op).inv` and continues inside `(g.2.app γ).map` -- at which point `g.2` and
+`c.2` cancel out of the problem entirely and what is left is `naturality_comp_assoc_core`, a
+statement about the single transformation `f.2` and the pseudofunctors `a.2`, `b.2`.
 
-Ingredients that are known to be the right ones and elaborate here:
-`strongTrans_comp_naturality_app f.2 g.2 (f.1 ≫ g.1) x` and the same at
-`(f.1 ≫ g.1) ≫ ZZ.op` expand the two `(f ≫ g).2.naturality` factors;
-`(yonedaEvaluation'.mapComp f g).hom.toNatTrans.app x` is `evalMapComp f.1 f.2 g.1 g.2` at `x`
-by `rfl`.  Measured NOT to close it: `simp`, `cat_disch`, and
-`simp only [strongTrans_comp_naturality_app, strongTrans_comp_app]` followed by `simp` -- the
-last unfolds `vcomp`'s naturality into a five-factor associator chain, which is further from
-the goal rather than closer.  Expect the shape of `backwards_square_core`
-(`Biyoneda/BackwardsNaturality.lean`): four coherences applied in a fixed order, each one
-`reassoc_of%`-ed into place. -/
+Note the types of `x` and `ZZ`: bare (`↑(a.2.obj a.1)` and `unop γ ⟶ unop c.1`), not through
+`yonedaEvaluation'` or `Cat`'s coercion.  That is load-bearing, not cosmetic -- with the coerced
+spellings `rw` cannot find any of the patterns below and `evalMapComp_hom_app` will not
+instantiate.  `exact` bridges to the coerced forms at the use site. -/
 lemma backwards_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
-    (x : ↑(yonedaEvaluation'.obj a)) {γ : Bᵒᵖ} (ZZ : ↑((yoneda₀ (unop c.1)).obj γ)) :
+    (x : ↑(a.2.obj a.1)) {γ : Bᵒᵖ} (ZZ : unop γ ⟶ unop c.1) :
     ((c.2.map (Quiver.Hom.op ZZ)).toFunctor.map
-          (((f ≫ g).2.naturality (f ≫ g).1).hom.toNatTrans.app x) ≫
-        (c.2.mapComp (f ≫ g).1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
-          (((f ≫ g).2.app a.1).toFunctor.obj x) ≫
-          ((f ≫ g).2.naturality ((f ≫ g).1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app x) ≫
+          (((f.2 ≫ g.2).naturality (f.1 ≫ g.1)).hom.toNatTrans.app x) ≫
+        (c.2.mapComp (f.1 ≫ g.1) (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+          (((f.2 ≫ g.2).app a.1).toFunctor.obj x) ≫
+          ((f.2 ≫ g.2).naturality ((f.1 ≫ g.1) ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app x) ≫
       (g.2.app γ).toFunctor.map
         ((f.2.app γ).toFunctor.map
-          ((((yonedaLemmaBackwardsFunctor a).obj x).app γ).toFunctor.map
-            (α_ ZZ g.1.unop f.1.unop).inv)) =
+          ((a.2.map₂ (op2 (α_ ZZ g.1.unop f.1.unop).inv)).toNatTrans.app x)) =
     (c.2.map (Quiver.Hom.op ZZ)).toFunctor.map
-        ((yonedaEvaluation'.mapComp f g).hom.toNatTrans.app x) ≫
+        ((evalMapComp f.1 f.2 g.1 g.2).hom.toNatTrans.app x) ≫
       ((c.2.map (Quiver.Hom.op ZZ)).toFunctor.map
             ((g.2.naturality g.1).hom.toNatTrans.app
-              ((yonedaEvaluation'.map f).toFunctor.obj x)) ≫
+              ((f.2.app b.1).toFunctor.obj ((a.2.map f.1).toFunctor.obj x))) ≫
           (c.2.mapComp g.1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
-              ((g.2.app b.1).toFunctor.obj ((yonedaEvaluation'.map f).toFunctor.obj x)) ≫
+              ((g.2.app b.1).toFunctor.obj
+                ((f.2.app b.1).toFunctor.obj ((a.2.map f.1).toFunctor.obj x))) ≫
             (g.2.naturality (g.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app
-              ((yonedaEvaluation'.map f).toFunctor.obj x)) ≫
+              ((f.2.app b.1).toFunctor.obj ((a.2.map f.1).toFunctor.obj x))) ≫
         (g.2.app γ).toFunctor.map
           ((b.2.map (Quiver.Hom.op (ZZ ≫ g.1.unop))).toFunctor.map
               ((f.2.naturality f.1).hom.toNatTrans.app x) ≫
             (b.2.mapComp f.1 (Quiver.Hom.op (ZZ ≫ g.1.unop))).inv.toNatTrans.app
                 ((f.2.app a.1).toFunctor.obj x) ≫
               (f.2.naturality (f.1 ≫ Quiver.Hom.op (ZZ ≫ g.1.unop))).inv.toNatTrans.app x) := by
-  sorry
+  rw [strongTrans_comp_naturality_app f.2 g.2 (f.1 ≫ g.1) x,
+    strongTrans_comp_naturality_inv_app f.2 g.2 ((f.1 ≫ g.1) ≫ Quiver.Hom.op ZZ) x]
+  dsimp only [Pseudofunctor.StrongTrans.comp_app, Cat.Hom.comp_toFunctor, Functor.comp_obj]
+  simp only [Functor.map_comp, Category.assoc]
+  have hslide : (c.2.mapComp (f.1 ≫ g.1) ZZ.op).inv.toNatTrans.app
+        ((g.2.app a.1).toFunctor.obj ((f.2.app a.1).toFunctor.obj x)) ≫
+      (g.2.naturality ((f.1 ≫ g.1) ≫ ZZ.op)).inv.toNatTrans.app
+        ((f.2.app a.1).toFunctor.obj x) ≫
+      (g.2.app (Opposite.op (unop γ))).toFunctor.map
+        ((f.2.naturality ((f.1 ≫ g.1) ≫ ZZ.op)).inv.toNatTrans.app x)
+      = (c.2.map ZZ.op).toFunctor.map
+          ((g.2.naturality (f.1 ≫ g.1)).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj x)) ≫
+        (g.2.naturality ZZ.op).inv.toNatTrans.app
+          ((b.2.map (f.1 ≫ g.1)).toFunctor.obj ((f.2.app a.1).toFunctor.obj x)) ≫
+        (g.2.app γ).toFunctor.map
+          ((b.2.mapComp (f.1 ≫ g.1) ZZ.op).inv.toNatTrans.app
+            ((f.2.app a.1).toFunctor.obj x)) ≫
+        (g.2.app (Opposite.op (unop γ))).toFunctor.map
+          ((f.2.naturality ((f.1 ≫ g.1) ≫ ZZ.op)).inv.toNatTrans.app x) :=
+    strongTrans_naturality_comp_inv_app_assoc g.2 (f.1 ≫ g.1) ZZ.op
+      ((f.2.app a.1).toFunctor.obj x) _
+  rw [hslide]
+  rw [map_comp_cancel_assoc (c.2.map ZZ.op).toFunctor
+    ((g.2.naturality (f.1 ≫ g.1)).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj x))
+    ((g.2.naturality (f.1 ≫ g.1)).inv.toNatTrans.app ((f.2.app a.1).toFunctor.obj x))
+    (Cat.Hom.hom_inv_id_toNatTrans_app (g.2.naturality (f.1 ≫ g.1)) _)]
+  have hnat0 : (c.2.map ZZ.op).toFunctor.map
+        ((g.2.app c.1).toFunctor.map ((f.2.naturality (f.1 ≫ g.1)).hom.toNatTrans.app x)) ≫
+      (g.2.naturality ZZ.op).inv.toNatTrans.app
+        ((b.2.map (f.1 ≫ g.1)).toFunctor.obj ((f.2.app a.1).toFunctor.obj x))
+      = (g.2.naturality ZZ.op).inv.toNatTrans.app
+          ((f.2.app c.1).toFunctor.obj ((a.2.map (f.1 ≫ g.1)).toFunctor.obj x)) ≫
+        (g.2.app γ).toFunctor.map
+          ((b.2.map ZZ.op).toFunctor.map
+            ((f.2.naturality (f.1 ≫ g.1)).hom.toNatTrans.app x)) :=
+    (g.2.naturality ZZ.op).inv.toNatTrans.naturality _
+  rw [← Category.assoc, hnat0, Category.assoc]
+  simp only [← Functor.map_comp]
+  have hslideR : (c.2.mapComp g.1 ZZ.op).inv.toNatTrans.app
+        ((g.2.app b.1).toFunctor.obj
+          ((f.2.app b.1).toFunctor.obj ((a.2.map f.1).toFunctor.obj x))) ≫
+      (g.2.naturality (g.1 ≫ ZZ.op)).inv.toNatTrans.app
+        ((f.2.app b.1).toFunctor.obj ((a.2.map f.1).toFunctor.obj x)) ≫
+      (g.2.app γ).toFunctor.map
+        ((b.2.map (ZZ ≫ g.1.unop).op).toFunctor.map
+            ((f.2.naturality f.1).hom.toNatTrans.app x) ≫
+          (b.2.mapComp f.1 (ZZ ≫ g.1.unop).op).inv.toNatTrans.app
+            ((f.2.app a.1).toFunctor.obj x) ≫
+          (f.2.naturality (f.1 ≫ (ZZ ≫ g.1.unop).op)).inv.toNatTrans.app x)
+      = (c.2.map ZZ.op).toFunctor.map
+          ((g.2.naturality g.1).inv.toNatTrans.app
+            ((f.2.app b.1).toFunctor.obj ((a.2.map f.1).toFunctor.obj x))) ≫
+        (g.2.naturality ZZ.op).inv.toNatTrans.app
+          ((b.2.map g.1).toFunctor.obj
+            ((f.2.app b.1).toFunctor.obj ((a.2.map f.1).toFunctor.obj x))) ≫
+        (g.2.app γ).toFunctor.map
+          ((b.2.mapComp g.1 ZZ.op).inv.toNatTrans.app
+            ((f.2.app b.1).toFunctor.obj ((a.2.map f.1).toFunctor.obj x))) ≫
+        (g.2.app γ).toFunctor.map
+        ((b.2.map (ZZ ≫ g.1.unop).op).toFunctor.map
+            ((f.2.naturality f.1).hom.toNatTrans.app x) ≫
+          (b.2.mapComp f.1 (ZZ ≫ g.1.unop).op).inv.toNatTrans.app
+            ((f.2.app a.1).toFunctor.obj x) ≫
+          (f.2.naturality (f.1 ≫ (ZZ ≫ g.1.unop).op)).inv.toNatTrans.app x) :=
+    strongTrans_naturality_comp_inv_app_assoc g.2 g.1 ZZ.op
+      ((f.2.app b.1).toFunctor.obj ((a.2.map f.1).toFunctor.obj x)) _
+  rw [hslideR]
+  rw [map_comp_cancel_assoc (c.2.map ZZ.op).toFunctor
+    ((g.2.naturality g.1).hom.toNatTrans.app
+      ((f.2.app b.1).toFunctor.obj ((a.2.map f.1).toFunctor.obj x)))
+    ((g.2.naturality g.1).inv.toNatTrans.app
+      ((f.2.app b.1).toFunctor.obj ((a.2.map f.1).toFunctor.obj x)))
+    (Cat.Hom.hom_inv_id_toNatTrans_app (g.2.naturality g.1) _)]
+  have hev : (evalMapComp f.1 f.2 g.1 g.2).hom.toNatTrans.app x
+      = (g.2.app c.1).toFunctor.map
+          ((f.2.app c.1).toFunctor.map ((a.2.mapComp f.1 g.1).hom.toNatTrans.app x) ≫
+            (f.2.naturality g.1).hom.toNatTrans.app ((a.2.map f.1).toFunctor.obj x)) := by
+    rw [evalMapComp_hom_app]
+    simp [Functor.map_comp]
+  rw [hev]
+  have hnatR : (c.2.map ZZ.op).toFunctor.map
+        ((g.2.app c.1).toFunctor.map
+          ((f.2.app c.1).toFunctor.map ((a.2.mapComp f.1 g.1).hom.toNatTrans.app x) ≫
+            (f.2.naturality g.1).hom.toNatTrans.app ((a.2.map f.1).toFunctor.obj x))) ≫
+      (g.2.naturality ZZ.op).inv.toNatTrans.app ((b.2.map g.1).toFunctor.obj
+        ((f.2.app b.1).toFunctor.obj ((a.2.map f.1).toFunctor.obj x)))
+      = (g.2.naturality ZZ.op).inv.toNatTrans.app
+          ((f.2.app c.1).toFunctor.obj ((a.2.map (f.1 ≫ g.1)).toFunctor.obj x)) ≫
+        (g.2.app γ).toFunctor.map
+          ((b.2.map ZZ.op).toFunctor.map
+            ((f.2.app c.1).toFunctor.map ((a.2.mapComp f.1 g.1).hom.toNatTrans.app x) ≫
+              (f.2.naturality g.1).hom.toNatTrans.app ((a.2.map f.1).toFunctor.obj x))) :=
+    (g.2.naturality ZZ.op).inv.toNatTrans.naturality _
+  refine Eq.trans ?_ (((Category.assoc _ _ _).symm.trans
+    (congrArg (fun t => t ≫ _) hnatR)).trans (Category.assoc _ _ _)).symm
+  simp only [← Functor.map_comp]
+  refine Eq.trans (Category.assoc _ _ _) (congrArg (CategoryStruct.comp _) ?_)
+  refine Eq.trans ((g.2.app γ).toFunctor.map_comp _ _).symm ?_
+  refine congrArg (g.2.app γ).toFunctor.map ?_
+  exact naturality_comp_assoc_core f.2 f.1 g.1 ZZ.op x
 
 set_option linter.flexible false in
 /-- The data for `yonedaLemmaBackwards`, stated against the *unlifted* `yonedaEvaluation'`.
