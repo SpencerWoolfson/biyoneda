@@ -127,6 +127,7 @@ CLEAN_DECLS=(
   "Biyoneda.backwards_nn_rhs_app"
   "Biyoneda.backwards_nn_slide"
   "Biyoneda.yonedaPairing_mapId_app"
+  "Biyoneda.yonedaPairing_mapComp_app"
   "Biyoneda.backwards_id_core"
   "Biyoneda.backwards_id_lhs_app"
   "Biyoneda.backwards_id_rhs_app"

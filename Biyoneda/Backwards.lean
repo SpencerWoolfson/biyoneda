@@ -182,26 +182,9 @@ lemma backwards_nn_slide {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} {f g : a
 
 `yonedaPairing.mapId` is a chain of structural 2-cells in `Bᵒᵖ ⥤ᵖ Cat`; descending it with the
 `*_as_app` lemmas does not work (see the note in `Biyoneda/Forwards.lean`), so
-`yonedaPairing_mapId_app` uses the padding trick instead: name the chain's value at the point
-with its structural identities written in, and let `simp` cancel them.  With that in hand the
-field is two `rfl` bridges and one pseudofunctor coherence.
+`yonedaPairing_mapId_app` (in `Biyoneda/Pairing.lean`, with its `mapComp` companion) descends it
+another way.  With that in hand the field is two `rfl` bridges and one pseudofunctor coherence.
 -/
-
-set_option backward.isDefEq.respectTransparency false in
-/-- The pairing's unit constraint, evaluated on a strong transformation and then at a point:
-just the right unitor, transported by that transformation.  Proved by the padding trick --
-each `𝟙` below is one structural factor of the chain. -/
-lemma yonedaPairing_mapId_app (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})) (Z : ↑(yonedaPairing.obj a))
-    (γ : Bᵒᵖ) (ZZ : ↑((yoneda₀ (unop a.1)).obj γ)) :
-    (((yonedaPairing.mapId a).hom.toNatTrans.app Z).as.app γ).toNatTrans.app ZZ
-      = (Z.app γ).toFunctor.map (ρ_ ZZ).hom := by
-  dsimp only [yonedaPairing, yonedaPairingComposite, Pseudofunctor.comp, homPseudo,
-    homMapId, homMapIdApp, Pseudofunctor.prod, Pseudofunctor.op]
-  simp only [prelax_map₂_app, Iso.trans_hom, Cat.Hom.isoMk_hom, NatIso.ofComponents_hom_app,
-    Cat.toCatHom₂_toNatTrans, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
-    PrelaxFunctor.map₂Iso_hom, Category.assoc]
-  change (Z.app γ).toFunctor.map (ρ_ ZZ).hom ≫ 𝟙 _ ≫ 𝟙 _ ≫ 𝟙 _ = _
-  simp
 
 /-- The fibre content of `naturality_id`: `mapComp_id_left` for `F`, with the four identities
 the identity strong transformation's own naturality contributes. -/

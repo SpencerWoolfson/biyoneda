@@ -174,3 +174,11 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms Biyoneda.yonedaLemmaForwards
 #print axioms Biyoneda.yonedaLemmaBackwardsData
 #print axioms Biyoneda.yonedaLemmaBackwards
+
+-- The composite pairing's own unit and composition constraints, evaluated at a point
+-- (`Biyoneda/Pairing.lean`).  `mapId`/`mapComp` are the two projections that do NOT bridge to
+-- the hand-rolled spelling by `rfl`, so these are the only places in the development where the
+-- composite had to be computed rather than re-spelled.  Both come out as pure structural data:
+-- a right unitor and an associator, transported.
+#print axioms Biyoneda.yonedaPairing_mapId_app
+#print axioms Biyoneda.yonedaPairing_mapComp_app

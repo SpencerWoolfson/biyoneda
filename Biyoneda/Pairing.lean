@@ -156,4 +156,67 @@ lemma yonedaEvaluation_map₂_app_down {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w,
   dsimp [yonedaEvaluation, Pseudofunctor.comp, catPseudoULift, catLift, ULiftHom.up]
   rfl
 
+/-! ### The pairing's unit and composition constraints, at a point
+
+`yonedaPairing` is a composite, so its `mapId`/`mapComp` are chains of structural 2-cells in
+`Bᵒᵖ ⥤ᵖ Cat` -- and unlike `.obj`/`.map`/`.map₂` they do **not** bridge to the hand-rolled
+spelling by `rfl`.  Descending such a chain with the `*_as_app` lemmas alone does not work: the
+goals are not type-correct at `implicit` transparency (see the note in `Biyoneda/Forwards.lean`),
+and `(𝟙 F).app α` versus `𝟙 (F.obj α)` is a `CategoryStruct` diamond that no simp lemma bridges.
+
+What does work is to descend to a point first and *then* distribute.  The unit lemma takes the
+padding trick -- name the chain's value with its structural identities written in, and let
+`simp` cancel them.  The composition lemma is longer but no harder once the chain is split by
+`change _ ≫ _ ≫ _ ≫ _ ≫ _ ≫ _ = _`, an all-holes `change` that reveals the six factors instead
+of asking you to guess them.
+
+Both are needed on *both* sides of the equivalence -- `Forwards.lean` and `Backwards.lean` are
+siblings -- which is why they live here rather than next to either use site.
+-/
+
+set_option backward.isDefEq.respectTransparency false in
+/-- The pairing's unit constraint, evaluated on a strong transformation and then at a point:
+just the right unitor, transported by that transformation. -/
+lemma yonedaPairing_mapId_app (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})) (Z : ↑(yonedaPairing.obj a))
+    (γ : Bᵒᵖ) (ZZ : ↑((yoneda₀ (unop a.1)).obj γ)) :
+    (((yonedaPairing.mapId a).hom.toNatTrans.app Z).as.app γ).toNatTrans.app ZZ
+      = (Z.app γ).toFunctor.map (ρ_ ZZ).hom := by
+  dsimp only [yonedaPairing, yonedaPairingComposite, Pseudofunctor.comp, homPseudo,
+    homMapId, homMapIdApp, Pseudofunctor.prod, Pseudofunctor.op]
+  simp only [prelax_map₂_app, Iso.trans_hom, Cat.Hom.isoMk_hom, NatIso.ofComponents_hom_app,
+    Cat.toCatHom₂_toNatTrans, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+    PrelaxFunctor.map₂Iso_hom, Category.assoc]
+  -- the chain has four factors; three of them are identities at a point
+  change (Z.app γ).toFunctor.map (ρ_ ZZ).hom ≫ 𝟙 _ ≫ 𝟙 _ ≫ 𝟙 _ = _
+  simp
+
+set_option backward.isDefEq.respectTransparency false in
+/-- The pairing's composition constraint, evaluated on a strong transformation and then at a
+point: just the associator, transported by that transformation and then by the two component
+functors.  This is the one place where the composite's `mapComp` had to be computed rather than
+re-spelled, and it is what both `forwards_naturality_comp_core` and
+`yonedaLemmaBackwardsData.naturality_comp'` reduce to. -/
+lemma yonedaPairing_mapComp_app {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
+    (Z : ↑(yonedaPairing.obj a)) (γ : Bᵒᵖ) (ZZ : ↑((yoneda₀ (unop c.1)).obj γ)) :
+    (((yonedaPairing.mapComp f g).hom.toNatTrans.app Z).as.app γ).toNatTrans.app ZZ
+      = (g.2.app γ).toFunctor.map
+          ((f.2.app γ).toFunctor.map
+            ((Z.app γ).toFunctor.map (α_ ZZ g.1.unop f.1.unop).inv)) := by
+  dsimp only [yonedaPairing, yonedaPairingComposite, Pseudofunctor.comp, homPseudo,
+    homMapComp, homMapCompApp, Pseudofunctor.prod, Pseudofunctor.op]
+  simp only [prelax_map₂_app, Iso.trans_hom, Cat.Hom.isoMk_hom, NatIso.ofComponents_hom_app,
+    Cat.toCatHom₂_toNatTrans, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+    PrelaxFunctor.map₂Iso_hom, Category.assoc]
+  -- all-holes `change`: split the chain into its six factors without guessing what they are
+  change _ ≫ _ ≫ _ ≫ _ ≫ _ ≫ _ = _
+  dsimp only [Pseudofunctor.StrongTrans.comp_app]
+  simp only [whiskerLeftIso_hom, whiskerRightIso_hom, Iso.symm_hom,
+    whiskerLeft_as_app, whiskerRight_as_app, associator_hom_as_app, associator_inv_as_app]
+  simp only [Cat.whiskerRight_app, Cat.whiskerLeft_app, Cat.associator_hom_app,
+    Cat.associator_inv_app, Cat.Hom.comp_toFunctor, Functor.comp_obj]
+  simp
+  -- `(Pseudofunctor.id _).map (f.2 ≫ g.2)` does not reduce at reducible transparency, so the
+  -- last step is an `exact` rather than another `simp`
+  exact Category.comp_id _
+
 end Biyoneda
