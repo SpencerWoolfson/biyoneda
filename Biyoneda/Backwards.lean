@@ -217,6 +217,111 @@ lemma backwards_id_rhs_app (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})) (x : ↑
       = (a.2.map (Quiver.Hom.op ZZ)).toFunctor.map
           ((a.2.mapId a.1).hom.toNatTrans.app x) := rfl
 
+/-! ### The `naturality_comp` field, descended
+
+Same three-step shape as the two fields above, and it now goes all the way down: two `rfl`
+bridges distribute the two sides at a point, `yonedaPairing_mapComp_app` turns the composite
+pairing's composition constraint into an associator, and what is left is
+`backwards_comp_core` -- a plain equation in the fibre `↑(c.2.obj γ)`.
+
+That core is the last open coherence in this direction, and it is stated rather than inlined on
+purpose: as a standalone lemma it can be attacked without re-deriving any of the descent.
+-/
+
+/-- The pairing's action on a modification, at a point.  A `rfl` bridge. -/
+lemma backwards_comp_map_app {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (g : a ⟶ b)
+    {Z₁ Z₂ : ↑(yonedaPairing.obj a)} (μ : Z₁ ⟶ Z₂) (γ : Bᵒᵖ)
+    (ZZ : ↑((yoneda₀ (unop b.1)).obj γ)) :
+    ((((yonedaPairing.map g).toFunctor.map μ).as.app γ).toNatTrans.app ZZ)
+      = (g.2.app γ).toFunctor.map
+          ((μ.as.app γ).toNatTrans.app (ZZ ≫ g.1.unop)) := rfl
+
+/-- Left-hand side of the `naturality_comp` square, distributed at a point.  The pairing's
+`mapComp` is left folded here; `yonedaPairing_mapComp_app` handles it separately. -/
+lemma backwards_comp_lhs_app {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
+    (x : ↑(yonedaEvaluation'.obj a)) (γ : Bᵒᵖ) (ZZ : ↑((yoneda₀ (unop c.1)).obj γ)) :
+    ((((backwardsNaturalityIso (f ≫ g) x).hom ≫
+        (yonedaPairing.mapComp f g).hom.toNatTrans.app
+          ((yonedaLemmaBackwardsFunctor a).obj x)).as.app γ).toNatTrans.app ZZ)
+      = ((c.2.map (Quiver.Hom.op ZZ)).toFunctor.map
+              (((f ≫ g).2.naturality (f ≫ g).1).hom.toNatTrans.app x) ≫
+            (c.2.mapComp (f ≫ g).1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+              (((f ≫ g).2.app a.1).toFunctor.obj x) ≫
+            ((f ≫ g).2.naturality ((f ≫ g).1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app x) ≫
+          ((((yonedaPairing.mapComp f g).hom.toNatTrans.app
+            ((yonedaLemmaBackwardsFunctor a).obj x)).as.app γ).toNatTrans.app ZZ) := rfl
+
+/-- Right-hand side of the `naturality_comp` square, distributed at a point. -/
+lemma backwards_comp_rhs_app {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
+    (x : ↑(yonedaEvaluation'.obj a)) (γ : Bᵒᵖ) (ZZ : ↑((yoneda₀ (unop c.1)).obj γ)) :
+    ((((yonedaLemmaBackwardsFunctor c).map
+          ((yonedaEvaluation'.mapComp f g).hom.toNatTrans.app x) ≫
+        (backwardsNaturalityIso g ((yonedaEvaluation'.map f).toFunctor.obj x)).hom ≫
+        (yonedaPairing.map g).toFunctor.map
+          (backwardsNaturalityIso f x).hom).as.app γ).toNatTrans.app ZZ)
+      = (c.2.map (Quiver.Hom.op ZZ)).toFunctor.map
+            ((yonedaEvaluation'.mapComp f g).hom.toNatTrans.app x) ≫
+          ((c.2.map (Quiver.Hom.op ZZ)).toFunctor.map
+              ((g.2.naturality g.1).hom.toNatTrans.app
+                ((yonedaEvaluation'.map f).toFunctor.obj x)) ≫
+            (c.2.mapComp g.1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+              ((g.2.app b.1).toFunctor.obj ((yonedaEvaluation'.map f).toFunctor.obj x)) ≫
+            (g.2.naturality (g.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app
+              ((yonedaEvaluation'.map f).toFunctor.obj x)) ≫
+          (g.2.app γ).toFunctor.map
+            ((b.2.map (Quiver.Hom.op (ZZ ≫ g.1.unop))).toFunctor.map
+                ((f.2.naturality f.1).hom.toNatTrans.app x) ≫
+              (b.2.mapComp f.1 (Quiver.Hom.op (ZZ ≫ g.1.unop))).inv.toNatTrans.app
+                ((f.2.app a.1).toFunctor.obj x) ≫
+              (f.2.naturality (f.1 ≫ Quiver.Hom.op (ZZ ≫ g.1.unop))).inv.toNatTrans.app x)
+      := rfl
+
+/-- The fibre content of `naturality_comp` for `yonedaLemmaBackwards`: the composite
+transformation's naturality against the two factors' naturalities, glued by `c.2`'s `mapComp`
+and the associator that `yonedaPairing.mapComp` contributes.
+
+**PARKED (2026-09-03) -- the last open coherence in the backward direction.**  Everything
+around it is proved: the descent above reaches this statement exactly, so the remaining work is
+a single equation in `↑(c.2.obj γ)` with no folded pseudofunctor left in it.
+
+Ingredients that are known to be the right ones and elaborate here:
+`strongTrans_comp_naturality_app f.2 g.2 (f.1 ≫ g.1) x` and the same at
+`(f.1 ≫ g.1) ≫ ZZ.op` expand the two `(f ≫ g).2.naturality` factors;
+`(yonedaEvaluation'.mapComp f g).hom.toNatTrans.app x` is `evalMapComp f.1 f.2 g.1 g.2` at `x`
+by `rfl`.  Measured NOT to close it: `simp`, `cat_disch`, and
+`simp only [strongTrans_comp_naturality_app, strongTrans_comp_app]` followed by `simp` -- the
+last unfolds `vcomp`'s naturality into a five-factor associator chain, which is further from
+the goal rather than closer.  Expect the shape of `backwards_square_core`
+(`Biyoneda/BackwardsNaturality.lean`): four coherences applied in a fixed order, each one
+`reassoc_of%`-ed into place. -/
+lemma backwards_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
+    (x : ↑(yonedaEvaluation'.obj a)) {γ : Bᵒᵖ} (ZZ : ↑((yoneda₀ (unop c.1)).obj γ)) :
+    ((c.2.map (Quiver.Hom.op ZZ)).toFunctor.map
+          (((f ≫ g).2.naturality (f ≫ g).1).hom.toNatTrans.app x) ≫
+        (c.2.mapComp (f ≫ g).1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+          (((f ≫ g).2.app a.1).toFunctor.obj x) ≫
+          ((f ≫ g).2.naturality ((f ≫ g).1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app x) ≫
+      (g.2.app γ).toFunctor.map
+        ((f.2.app γ).toFunctor.map
+          ((((yonedaLemmaBackwardsFunctor a).obj x).app γ).toFunctor.map
+            (α_ ZZ g.1.unop f.1.unop).inv)) =
+    (c.2.map (Quiver.Hom.op ZZ)).toFunctor.map
+        ((yonedaEvaluation'.mapComp f g).hom.toNatTrans.app x) ≫
+      ((c.2.map (Quiver.Hom.op ZZ)).toFunctor.map
+            ((g.2.naturality g.1).hom.toNatTrans.app
+              ((yonedaEvaluation'.map f).toFunctor.obj x)) ≫
+          (c.2.mapComp g.1 (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+              ((g.2.app b.1).toFunctor.obj ((yonedaEvaluation'.map f).toFunctor.obj x)) ≫
+            (g.2.naturality (g.1 ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app
+              ((yonedaEvaluation'.map f).toFunctor.obj x)) ≫
+        (g.2.app γ).toFunctor.map
+          ((b.2.map (Quiver.Hom.op (ZZ ≫ g.1.unop))).toFunctor.map
+              ((f.2.naturality f.1).hom.toNatTrans.app x) ≫
+            (b.2.mapComp f.1 (Quiver.Hom.op (ZZ ≫ g.1.unop))).inv.toNatTrans.app
+                ((f.2.app a.1).toFunctor.obj x) ≫
+              (f.2.naturality (f.1 ≫ Quiver.Hom.op (ZZ ≫ g.1.unop))).inv.toNatTrans.app x) := by
+  sorry
+
 set_option linter.flexible false in
 /-- The data for `yonedaLemmaBackwards`, stated against the *unlifted* `yonedaEvaluation'`.
 `StrongTransIntoCats.liftDom` then supplies the domain-side universe lift, so no `ULift`
@@ -255,26 +360,16 @@ def yonedaLemmaBackwardsData :
       (Eq.trans ?_ (backwards_id_rhs_app a x γ ZZ).symm)
     refine Eq.trans (congrArg (CategoryStruct.comp _) (yonedaPairing_mapId_app a _ γ ZZ)) ?_
     exact backwards_id_core a.2 ZZ x
-  -- PARKED (2026-09-03).  The descent is done and costs nothing: `homCategory.ext`, then
-  -- `Cat.Hom₂.ext_app`, then `change _ ≫ _ = _ ≫ _ ≫ _` splits the field into five factors.
-  -- Four of them already have `rfl` bridges -- `backwardsNaturalityIsoApp_hom_app` twice,
-  -- `backwards_map_comp` once, and one more of the same kind for
-  -- `(yonedaPairing.map g).toFunctor.map`.  The fifth is the whole problem:
-  --
-  --     (((yonedaPairing.mapComp f g).hom.toNatTrans.app Z).as.app γ).toNatTrans.app ZZ
-  --
-  -- i.e. `yonedaPairing_mapComp_app`, the `mapComp` analogue of `yonedaPairing_mapId_app`
-  -- above.  That is the SAME object that blocks `forwards_naturality_comp_core`; the two
-  -- should be done together, and neither before it.
-  --
-  -- Measured, so as not to repeat it: after the `homMapComp` descent the chain has SIX
-  -- factors, and `change _ ≫ _ ≫ _ ≫ _ ≫ _ ≫ _ = _` distributes them -- `change` with all
-  -- holes is the move that reveals the shape, not guessing a padded form.  Guessing was tried
-  -- and fails: neither `(Z.app γ).map _ ≫ 𝟙 ≫ …` nor
-  -- `(g.2.app γ).map ((f.2.app γ).map ((Z.app γ).map _)) ≫ 𝟙 ≫ …` matches at any padding
-  -- length from three to five.  The reason the unit lemma's shape does not carry over is that
-  -- the first factor whiskers by `Z ≫ (f.2 ≫ g.2)` here, where `mapId` whiskers by `Z ≫ 𝟙`.
-  naturality_comp' {a b c} f g x := by sorry
+  naturality_comp' {a b c} f g x := by
+    apply homCategory.ext
+    intro γ
+    apply Cat.Hom₂.ext_app
+    intro ZZ
+    refine Eq.trans (backwards_comp_lhs_app f g x γ ZZ)
+      (Eq.trans ?_ (backwards_comp_rhs_app f g x γ ZZ).symm)
+    refine Eq.trans (congrArg (CategoryStruct.comp _)
+      (yonedaPairing_mapComp_app f g ((yonedaLemmaBackwardsFunctor a).obj x) γ ZZ)) ?_
+    exact backwards_comp_core f g x ZZ
 
 /--
 The *backward strong transformation* `yonedaEvaluation ⟶ yonedaPairing` for the Yoneda lemma.

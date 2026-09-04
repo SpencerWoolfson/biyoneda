@@ -306,8 +306,20 @@ lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
           ((f.2.app b.1).toFunctor.map
               ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) ≫
                 (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1)))) := by
-  -- Pending: the statement mentions `yonedaPairing.mapComp`, which the composite defines
-  -- differently (not defeq), so this needs a genuine re-proof rather than a re-spelling.
+  -- PARKED.  The statement mentions `yonedaPairing.mapComp`, which the composite defines
+  -- differently and *not* definitionally, so this needs a genuine proof rather than a
+  -- re-spelling.  The missing piece is no longer missing: `yonedaPairing_mapComp_app`
+  -- (`Biyoneda/Pairing.lean`, proved 2026-09-03) says that at `γ = c.1` and the point
+  -- `𝟙 (unop c.1)` the first right-hand factor is
+  --     (g.2.app c.1).map ((f.2.app c.1).map ((Z.app c.1).map (α_ _ g.1.unop f.1.unop).inv))
+  -- i.e. pure associator data.  The two other ingredients are `strongTrans_comp_naturality_app`
+  -- (Phase 1), which expands `((yonedaPairing.map f).obj Z).naturality g.1` -- that object is
+  -- `postcomp₂ f.1.unop ≫ Z ≫ f.2`, a composite strong transformation -- and `evalMapComp`,
+  -- which is what `yonedaEvaluation'.mapComp` is by `rfl`.
+  --
+  -- Its twin is `backwards_comp_core` (`Biyoneda/Backwards.lean`); the two are the same
+  -- coherence seen from the two sides, and the note there records what has been measured not
+  -- to work on it.
   sorry
 
 /--

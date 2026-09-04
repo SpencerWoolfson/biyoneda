@@ -182,3 +182,10 @@ variable {B : Type u} [Bicategory.{w, v} B]
 -- a right unitor and an associator, transported.
 #print axioms Biyoneda.yonedaPairing_mapId_app
 #print axioms Biyoneda.yonedaPairing_mapComp_app
+
+-- The `naturality_comp` descent for the backward direction: with these, both
+-- `StrongTransIntoCats` records are structurally complete and the whole remaining coherence
+-- debt is two named fibre lemmas (`backwards_comp_core`, `forwards_naturality_comp_core`).
+#print axioms Biyoneda.backwards_comp_map_app
+#print axioms Biyoneda.backwards_comp_lhs_app
+#print axioms Biyoneda.backwards_comp_rhs_app

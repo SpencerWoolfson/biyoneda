@@ -47,12 +47,16 @@ sorry-free as of 2026-09-02.  On 2026-09-03 the forward direction's three cohere
 closed, and then the assembly layer: `yonedaLemmaForwardsData` is now sorry-free in its own
 body, and `yonedaLemmaBackwardsData` is down to one field.
 
-What is left has narrowed to a single mathematical object.  Both remaining coherence
-obligations — `forwards_naturality_comp_core` and `yonedaLemmaBackwardsData.naturality_comp'` —
-need the *same* thing: `yonedaPairing.mapComp` evaluated at a point.  The unit analogue
-(`yonedaPairing_mapId_app`) is proved; the composition one is not, and it is the one place in
-the development where the composite pairing genuinely defines a different morphism rather than
-a different spelling.
+Both `StrongTransIntoCats` records are now structurally complete, and the whole remaining
+coherence debt is two named lemmas stated in the fibre: `forwards_naturality_comp_core` and
+`backwards_comp_core`.  They are the same coherence seen from the two sides.
+
+`yonedaPairing.mapComp` evaluated at a point — the object both of them were blocked on — is
+proved (`yonedaPairing_mapComp_app`, with its unit analogue `yonedaPairing_mapId_app`).  These
+are the only two projections of the composite pairing that do not bridge to the hand-rolled
+spelling by `rfl`, so they are the only places where the composite had to be *computed* rather
+than re-spelled.  Both come out as pure structural data: a right unitor and an associator,
+transported.
 
 Note on reading the sorry count: `yonedaLemmaForwardsData` no longer emits a `sorry` warning
 even though it still depends on `sorryAx` through a named lemma.  `CONTAMINATED_DECLS` in

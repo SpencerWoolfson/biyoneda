@@ -190,6 +190,9 @@ lemma yonedaPairing_mapId_app (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})) (Z : 
   change (Z.app γ).toFunctor.map (ρ_ ZZ).hom ≫ 𝟙 _ ≫ 𝟙 _ ≫ 𝟙 _ = _
   simp
 
+-- `linter.flexible`: the final `simp` is followed by a `Category.comp_id` supplied as a named
+-- term, so drift fails loudly rather than silently.
+set_option linter.flexible false in
 set_option backward.isDefEq.respectTransparency false in
 /-- The pairing's composition constraint, evaluated on a strong transformation and then at a
 point: just the associator, transported by that transformation and then by the two component
