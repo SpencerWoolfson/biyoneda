@@ -197,3 +197,15 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms CategoryTheory.Bicategory.strongTrans_comp_naturality_inv_app
 #print axioms CategoryTheory.Bicategory.naturality_comp_assoc_core
 #print axioms Biyoneda.backwards_comp_core
+
+-- `forwards_naturality_comp_core` closes (2026-09-05), and with it the forward direction:
+-- `yonedaLemmaForwards` is `sorryAx`-free, so BOTH transformations of the equivalence are now
+-- real.  `strongTrans_naturality_comp_hom_app` is the forward companion to the inverse form
+-- and lives in `Biyoneda/Evaluation.lean`; the four bridges name every folded piece of the
+-- core's statement, which is what makes it attackable at all.
+#print axioms CategoryTheory.Bicategory.strongTrans_naturality_comp_hom_app
+#print axioms Biyoneda.yonedaEvaluation_mapComp_app
+#print axioms Biyoneda.yonedaEvaluation_map_map
+#print axioms Biyoneda.yonedaPairing_mapObj_app_map
+#print axioms Biyoneda.yonedaPairing_mapObj_naturality_app
+#print axioms Biyoneda.forwards_naturality_comp_core

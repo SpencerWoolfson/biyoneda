@@ -136,25 +136,26 @@ CLEAN_DECLS=(
   "Biyoneda.backwards_comp_core"
   "Biyoneda.yonedaLemmaBackwardsData"
   "Biyoneda.yonedaLemmaBackwards"
+  "CategoryTheory.Bicategory.strongTrans_naturality_comp_hom_app"
+  "Biyoneda.yonedaEvaluation_mapComp_app"
+  "Biyoneda.yonedaEvaluation_map_map"
+  "Biyoneda.yonedaPairing_mapObj_app_map"
+  "Biyoneda.yonedaPairing_mapObj_naturality_app"
+  "Biyoneda.forwards_naturality_comp_core"
+  "Biyoneda.yonedaLemmaForwardsData"
+  "Biyoneda.yonedaLemmaForwards"
   "Biyoneda.backwards_id_core"
   "Biyoneda.backwards_id_lhs_app"
   "Biyoneda.backwards_id_rhs_app"
 )
 
-# Emptied on 2026-08-30 when `homPseudo` closed, repopulated on 2026-09-03, and halved again the
-# same day when `backwards_comp_core` closed and took the whole backward direction clean --
-# `yonedaLemmaBackwardsData` and `yonedaLemmaBackwards` are promoted to CLEAN_DECLS.  What is
-# left here is the forward direction only.  Phase 4 proved every field of
-# `yonedaLemmaForwardsData` except `naturality_comp'`,
-# which means the record no longer emits a `sorry` *warning* -- its own body is sorry-free and
-# the debt now sits behind a named constant (`forwards_naturality_comp_core`).  The sorry
-# ratchet cannot see that.  Asserting the four assembly declarations here keeps the remaining
-# contamination visible and turns "one of them became clean" into a NOTICE telling you to
-# promote it.
-CONTAMINATED_DECLS=(
-  "Biyoneda.yonedaLemmaForwardsData"
-  "Biyoneda.yonedaLemmaForwards"
-)
+# Emptied on 2026-08-30, repopulated on 2026-09-03, and emptied again on 2026-09-05 when
+# `forwards_naturality_comp_core` closed and took the forward direction clean.  Both
+# transformations of the equivalence are now `sorryAx`-free, so nothing belongs here; the
+# remaining debt is in `Unit.lean`, whose declarations still carry literal `sorry`s and are
+# therefore visible to the sorry ratchet.  Keep the array: the moment a `Unit.lean` obligation
+# is delegated to a named lemma, its warning disappears and its entry belongs here.
+CONTAMINATED_DECLS=()
 
 fail=0
 note() {

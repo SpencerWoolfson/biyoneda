@@ -286,6 +286,67 @@ lemma forwards_naturality_id_core (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v}))
   change _ = 𝟙 _ ≫ (Z.app a.1).toFunctor.map (ρ_ (𝟙 (unop a.1))).hom ≫ 𝟙 _ ≫ 𝟙 _ ≫ 𝟙 _ ≫ 𝟙 _
   simp
 
+/-! ### The `naturality_comp` core, and the four bridges that reach it
+
+Every folded piece of the statement gets a name here: the evaluation side's `mapComp` and
+`map`, and the pairing image's component functor and naturality.  All four are `rfl` or
+one-line, and they are what let the core be attacked at all -- its goal is not type-correct at
+`implicit` transparency, so the pieces cannot be unfolded in place by `rw`.
+-/
+
+/-- `yonedaEvaluation'`'s composition constraint at a point: `evalMapComp`, identities
+cancelled. -/
+lemma yonedaEvaluation_mapComp_app {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
+    (g : b ⟶ c) (X : ↑(a.2.obj a.1)) :
+    (yonedaEvaluation'.mapComp f g).hom.toNatTrans.app X
+      = (g.2.app c.1).toFunctor.map
+          ((f.2.app c.1).toFunctor.map ((a.2.mapComp f.1 g.1).hom.toNatTrans.app X) ≫
+            (f.2.naturality g.1).hom.toNatTrans.app ((a.2.map f.1).toFunctor.obj X)) := by
+  rw [show (yonedaEvaluation'.mapComp f g).hom.toNatTrans.app X
+      = (evalMapComp f.1 f.2 g.1 g.2).hom.toNatTrans.app X from rfl, evalMapComp_hom_app]
+  simp [Functor.map_comp]
+  rfl
+
+/-- `yonedaEvaluation'.map` on a fibre morphism.  A `rfl` bridge. -/
+lemma yonedaEvaluation_map_map {b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (g : b ⟶ c)
+    {P Q : ↑(b.2.obj b.1)} (k : P ⟶ Q) :
+    (yonedaEvaluation'.map g).toFunctor.map k
+      = (g.2.app c.1).toFunctor.map ((b.2.map g.1).toFunctor.map k) := rfl
+
+/-- The component functor of the pairing's image of a strong transformation, on a 2-cell.
+A `rfl` bridge -- note the bare `{P Q : unop γ ⟶ unop b.1}`. -/
+lemma yonedaPairing_mapObj_app_map {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b)
+    (Z : Pseudofunctor.StrongTrans (yoneda₀ (unop a.1)) a.2) (γ : Bᵒᵖ)
+    {P Q : unop γ ⟶ unop b.1} (k : P ⟶ Q) :
+    (((yonedaPairing.map f).toFunctor.obj Z).app γ).toFunctor.map k
+      = (f.2.app γ).toFunctor.map
+          ((Z.app γ).toFunctor.map (((postcomp₂ f.1.unop).app γ).toFunctor.map k)) := rfl
+
+/-- The naturality of that image: `postcomp₂ f.1.unop ≫ Z ≫ f.2` is a triple composite, so
+`strongTrans_comp_naturality_app` applies twice. -/
+lemma yonedaPairing_mapObj_naturality_app {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})}
+    (f : a ⟶ b) (g : b ⟶ c)
+    (Z : Pseudofunctor.StrongTrans (yoneda₀ (unop a.1)) a.2) :
+    (((yonedaPairing.map f).toFunctor.obj Z).naturality g.1).hom.toNatTrans.app
+        (𝟙 (unop b.1))
+      = (f.2.app c.1).toFunctor.map
+            ((Z.app c.1).toFunctor.map
+              (((postcomp₂ f.1.unop).naturality g.1).hom.toNatTrans.app (𝟙 (unop b.1)))) ≫
+          (f.2.app c.1).toFunctor.map
+            ((Z.naturality g.1).hom.toNatTrans.app
+              (((postcomp₂ f.1.unop).app b.1).toFunctor.obj (𝟙 (unop b.1)))) ≫
+            (f.2.naturality g.1).hom.toNatTrans.app
+              ((Z.app b.1).toFunctor.obj
+                (((postcomp₂ f.1.unop).app b.1).toFunctor.obj (𝟙 (unop b.1)))) := by
+  exact (strongTrans_comp_naturality_app (postcomp₂ f.1.unop) (Z ≫ f.2) g.1
+      (𝟙 (unop b.1))).trans
+    (congrArg (CategoryStruct.comp _)
+      (strongTrans_comp_naturality_app Z f.2 g.1
+        (((postcomp₂ f.1.unop).app b.1).toFunctor.obj (𝟙 (unop b.1)))))
+
+-- `linter.flexible`: the `simp` in the middle of the proof below is followed by explicitly
+-- typed `have`s and term applications, so drift fails loudly rather than silently.
+set_option linter.flexible false in
 /-- Core of `naturality_comp` for `yonedaLemmaForwards` (unlifted fibre form). -/
 lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (g : b ⟶ c)
     (Z : Pseudofunctor.StrongTrans (yoneda₀ (unop a.1)) a.2) :
@@ -306,21 +367,120 @@ lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
           ((f.2.app b.1).toFunctor.map
               ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) ≫
                 (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1)))) := by
-  -- PARKED.  The statement mentions `yonedaPairing.mapComp`, which the composite defines
-  -- differently and *not* definitionally, so this needs a genuine proof rather than a
-  -- re-spelling.  The missing piece is no longer missing: `yonedaPairing_mapComp_app`
-  -- (`Biyoneda/Pairing.lean`, proved 2026-09-03) says that at `γ = c.1` and the point
-  -- `𝟙 (unop c.1)` the first right-hand factor is
-  --     (g.2.app c.1).map ((f.2.app c.1).map ((Z.app c.1).map (α_ _ g.1.unop f.1.unop).inv))
-  -- i.e. pure associator data.  The two other ingredients are `strongTrans_comp_naturality_app`
-  -- (Phase 1), which expands `((yonedaPairing.map f).obj Z).naturality g.1` -- that object is
-  -- `postcomp₂ f.1.unop ≫ Z ≫ f.2`, a composite strong transformation -- and `evalMapComp`,
-  -- which is what `yonedaEvaluation'.mapComp` is by `rfl`.
+  -- The pairing's `mapComp` is the only genuinely new input (`yonedaPairing_mapComp_app`);
+  -- after it, the four bridges above expand everything else and the proof is a funnel: strip
+  -- `g.2`, then `f.2`, then `Z`, leaving a pure 2-cell identity in `B` that `bicategory` closes.
   --
-  -- Its twin is `backwards_comp_core` (`Biyoneda/Backwards.lean`); the two are the same
-  -- coherence seen from the two sides, and the note there records what has been measured not
-  -- to work on it.
-  sorry
+  -- `rw` cannot be used past the first step -- the goal is not type-correct at `implicit`
+  -- transparency, because the evaluation point `𝟙` makes objects like `𝟙 ≫ (f.1 ≫ g.1).unop`
+  -- elaborate bare where `↑((yoneda₀ (unop a.1)).obj c.1)` is wanted.  `change` and term
+  -- application both check at *default* transparency, so the proof is built out of those.
+  rw [yonedaPairing_mapComp_app f g Z c.1 (𝟙 (unop c.1))]
+  simp only [Pseudofunctor.StrongTrans.comp_app, Cat.Hom.comp_toFunctor, Functor.comp_map,
+    Functor.comp_obj]
+  rw [yonedaEvaluation_mapComp_app f g ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))),
+    yonedaPairing_mapObj_naturality_app f g Z]
+  change _ =
+    (g.2.app c.1).toFunctor.map
+        ((f.2.app c.1).toFunctor.map
+          ((Z.app c.1).toFunctor.map (α_ (𝟙 (unop c.1)) g.1.unop f.1.unop).inv)) ≫
+      (g.2.app c.1).toFunctor.map
+          ((f.2.app c.1).toFunctor.map
+              ((Z.app c.1).toFunctor.map
+                (((postcomp₂ f.1.unop).app c.1).toFunctor.map
+                  ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv))) ≫
+            (f.2.app c.1).toFunctor.map
+                ((Z.app c.1).toFunctor.map
+                  (((postcomp₂ f.1.unop).naturality g.1).hom.toNatTrans.app (𝟙 (unop b.1)))) ≫
+              (f.2.app c.1).toFunctor.map
+                  ((Z.naturality g.1).hom.toNatTrans.app
+                    (((postcomp₂ f.1.unop).app b.1).toFunctor.obj (𝟙 (unop b.1)))) ≫
+                (f.2.naturality g.1).hom.toNatTrans.app
+                  ((Z.app b.1).toFunctor.obj
+                    (((postcomp₂ f.1.unop).app b.1).toFunctor.obj (𝟙 (unop b.1))))) ≫
+        (g.2.app c.1).toFunctor.map
+          ((b.2.map g.1).toFunctor.map
+            ((f.2.app b.1).toFunctor.map
+              ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) ≫
+                (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1)))))
+  simp only [← Functor.map_comp, Category.assoc]
+  refine Eq.trans ((g.2.app c.1).toFunctor.map_comp _ _).symm ?_
+  refine congrArg (g.2.app c.1).toFunctor.map ?_
+  have hslide : (f.2.naturality g.1).hom.toNatTrans.app
+        ((Z.app b.1).toFunctor.obj
+          (((postcomp₂ f.1.unop).app b.1).toFunctor.obj (𝟙 (unop b.1)))) ≫
+      (b.2.map g.1).toFunctor.map
+        ((f.2.app b.1).toFunctor.map
+          ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) ≫
+            (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))))
+      = (f.2.app c.1).toFunctor.map
+          ((a.2.map g.1).toFunctor.map
+            ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) ≫
+              (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1)))) ≫
+        (f.2.naturality g.1).hom.toNatTrans.app
+          ((a.2.map f.1).toFunctor.obj ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1)))) :=
+    ((f.2.naturality g.1).hom.toNatTrans.naturality _).symm
+  refine Eq.trans ?_ (congrArg (CategoryStruct.comp _) (congrArg (CategoryStruct.comp _)
+    (congrArg (CategoryStruct.comp _) (congrArg (CategoryStruct.comp _) hslide)))).symm
+  simp only [← Functor.map_comp_assoc]
+  refine Eq.trans ?_
+    ((congrArg (CategoryStruct.comp _)
+        (Functor.map_comp_assoc (f.2.app c.1).toFunctor _ _ _).symm).trans
+      (Functor.map_comp_assoc (f.2.app c.1).toFunctor _ _ _).symm).symm
+  refine congrArg (fun t => t ≫ (f.2.naturality g.1).hom.toNatTrans.app
+    ((a.2.map f.1).toFunctor.obj ((Z.app a.1).toFunctor.obj (𝟙 (unop a.1))))) ?_
+  refine congrArg (f.2.app c.1).toFunctor.map ?_
+  refine Eq.trans (Category.assoc _ _ _) ?_
+  refine Eq.trans (congrArg (CategoryStruct.comp _)
+    (strongTrans_naturality_comp_hom_app Z f.1 g.1 (𝟙 (unop a.1))).symm) ?_
+  simp
+  have hsl : (Z.naturality g.1).hom.toNatTrans.app
+        (((postcomp₂ f.1.unop).app b.1).toFunctor.obj (𝟙 (unop b.1))) ≫
+      (a.2.map g.1).toFunctor.map
+        ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv))
+      = (Z.app c.1).toFunctor.map
+          (((yoneda₀ (unop a.1)).map g.1).toFunctor.map
+            ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)) ≫
+        (Z.naturality g.1).hom.toNatTrans.app
+          (((yoneda₀ (unop a.1)).map f.1).toFunctor.obj (𝟙 (unop a.1))) :=
+    ((Z.naturality g.1).hom.toNatTrans.naturality _).symm
+  have htail : (Z.naturality g.1).hom.toNatTrans.app
+        (((postcomp₂ f.1.unop).app b.1).toFunctor.obj (𝟙 (unop b.1))) ≫
+      (a.2.map g.1).toFunctor.map
+        ((Z.app b.1).toFunctor.map ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) ≫
+          (Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1)))
+      = (Z.app c.1).toFunctor.map
+            (((yoneda₀ (unop a.1)).map g.1).toFunctor.map
+              ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)) ≫
+          (Z.naturality g.1).hom.toNatTrans.app
+            (((yoneda₀ (unop a.1)).map f.1).toFunctor.obj (𝟙 (unop a.1))) ≫
+          (a.2.map g.1).toFunctor.map
+            ((Z.naturality f.1).hom.toNatTrans.app (𝟙 (unop a.1))) := by
+    exact (congrArg (CategoryStruct.comp _)
+        ((a.2.map g.1).toFunctor.map_comp _ _)).trans
+      (((Category.assoc _ _ _).symm.trans (congrArg (fun t => t ≫ _) hsl)).trans
+        (Category.assoc _ _ _))
+  refine Eq.trans ?_ (congrArg (CategoryStruct.comp _) (congrArg (CategoryStruct.comp _)
+    (congrArg (CategoryStruct.comp _) htail))).symm
+  refine Eq.trans (Functor.map_comp_assoc (Z.app c.1).toFunctor _ _ _).symm ?_
+  refine Eq.trans ?_
+    ((congrArg (CategoryStruct.comp _) (congrArg (CategoryStruct.comp _)
+        (Functor.map_comp_assoc (Z.app c.1).toFunctor _ _ _).symm)).trans
+      ((congrArg (CategoryStruct.comp _)
+          (Functor.map_comp_assoc (Z.app c.1).toFunctor _ _ _).symm).trans
+        (Functor.map_comp_assoc (Z.app c.1).toFunctor _ _ _).symm)).symm
+  refine congrArg (fun t => t ≫ _) ?_
+  refine congrArg (Z.app c.1).toFunctor.map ?_
+  have hp : ((postcomp₂ f.1.unop).app c.1).toFunctor.map
+        ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv)
+      = ((λ_ g.1.unop).hom ≫ (ρ_ g.1.unop).inv) ▷ f.1.unop := rfl
+  have ha : ((postcomp₂ f.1.unop).naturality g.1).hom.toNatTrans.app (𝟙 (unop b.1))
+      = (α_ g.1.unop (𝟙 (unop b.1)) f.1.unop).hom := rfl
+  have hy : ((yoneda₀ (unop a.1)).map g.1).toFunctor.map
+        ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv)
+      = g.1.unop ◁ ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv) := rfl
+  rw [hp, ha, hy]
+  bicategory
 
 /--
 Distributing a functor over a composite whose left factor is itself a functor image.  Three

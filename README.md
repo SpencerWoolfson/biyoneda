@@ -22,13 +22,13 @@ on the product bicategory $\mathcal{B}^{\mathrm{op}} \times [\mathcal{B}^{\mathr
 
 **This is work in progress. The main theorem is not yet fully proved.**
 
-The project builds with no errors, but 6 declarations still contain `sorry`, and the
+The project builds with no errors, but 5 declarations still contain `sorry`, and the
 headline `yonedaLemma` depends on `sorryAx` through them. Concretely:
 
 | | |
 |---|---|
 | Build | 0 errors |
-| Declarations using `sorry` | 6 |
+| Declarations using `sorry` | 5 |
 | `yonedaLemma` axioms | `propext`, `sorryAx`, `Classical.choice`, `Quot.sound` |
 
 **Both sides of the equivalence are now `sorryAx`-free.** `yonedaPairing` and
@@ -47,25 +47,24 @@ sorry-free as of 2026-09-02.  On 2026-09-03 the forward direction's three cohere
 closed, and then the assembly layer: `yonedaLemmaForwardsData` is now sorry-free in its own
 body, and `yonedaLemmaBackwardsData` is down to one field.
 
-**The backward direction is finished.**  `yonedaLemmaBackwards` — and the record it is lifted
-from — depend only on `propext`, `Classical.choice` and `Quot.sound`.  The last piece was
-`backwards_comp_core`, which reduces to `naturality_comp_assoc_core`: the associativity
-coherence a strong transformation's `naturality` satisfies against the two pseudofunctors'
-`mapComp`s, at a point.  Both directions' `naturality_comp` obligations come down to that one
-statement, so it is stated once, in `Evaluation.lean`, for an arbitrary strong transformation.
+**Both directions are finished.**  `yonedaLemmaForwards` and `yonedaLemmaBackwards` — and the
+two records they are lifted from — depend only on `propext`, `Classical.choice` and
+`Quot.sound`.  Everything that remains is in `Unit.lean`: the unit and counit isomorphisms.
 
-What remains of the coherence debt is its forward twin, `forwards_naturality_comp_core`.
+The last two coherences were the two halves of one statement.  `backwards_comp_core` reduces to
+`naturality_comp_assoc_core` — the associativity coherence a strong transformation's
+`naturality` satisfies against the two pseudofunctors' `mapComp`s, at a point.
+`forwards_naturality_comp_core` reduces, through the same funnel, to a pure 2-cell identity in
+`B` that `bicategory` discharges.  Both needed `yonedaPairing.mapComp` evaluated at a point
+(`yonedaPairing_mapComp_app`), which together with its unit analogue are the only two places
+where the composite pairing had to be *computed* rather than re-spelled; both come out as pure
+structural data, a right unitor and an associator.
 
-`yonedaPairing.mapComp` evaluated at a point — the object both of them were blocked on — is
-proved (`yonedaPairing_mapComp_app`, with its unit analogue `yonedaPairing_mapId_app`).  These
-are the only two projections of the composite pairing that do not bridge to the hand-rolled
-spelling by `rfl`, so they are the only places where the composite had to be *computed* rather
-than re-spelled.  Both come out as pure structural data: a right unitor and an associator,
-transported.
-
-Note on reading the sorry count: `yonedaLemmaForwardsData` no longer emits a `sorry` warning
-even though it still depends on `sorryAx` through a named lemma.  `CONTAMINATED_DECLS` in
-`scripts/verify-build.sh` asserts that dependency explicitly so it cannot go unnoticed.
+Note on reading the sorry count: a declaration whose own body is sorry-free but which delegates
+to a named sorried lemma emits no `sorry` warning at all, so the ratchet stops counting it while
+`#print axioms` still shows `sorryAx`.  `CONTAMINATED_DECLS` in `scripts/verify-build.sh` exists
+to assert such dependencies explicitly.  It is empty right now — every remaining obligation
+carries a literal `sorry` — and it should be repopulated the moment that stops being true.
 
 `scripts/verify-build.sh` gates CI on both a sorry ratchet and a per-declaration axiom
 check, so neither the count nor the set of `sorryAx`-dependent declarations can grow

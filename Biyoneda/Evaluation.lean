@@ -569,6 +569,33 @@ lemma strongTrans_naturality_slide (α : G ⟶ H) {a b : C} (v : a ⟶ b) {W W' 
   rw [← Category.assoc, ← h, Category.assoc]
   simp
 
+/-- `StrongTrans.naturality_comp` at a point, in **forward** form: the companion to
+`strongTrans_naturality_comp_inv_app`.  In `Cat` the three associators of the axiom are
+identities definitionally, so writing them in and stripping them is the whole proof. -/
+@[reassoc]
+lemma strongTrans_naturality_comp_hom_app (α : F ⟶ G) {a b c : C} (f : a ⟶ b) (g : b ⟶ c)
+    (W : ↑(F.obj a)) :
+    (α.app c).toFunctor.map ((F.mapComp f g).hom.toNatTrans.app W) ≫
+        (α.naturality g).hom.toNatTrans.app ((F.map f).toFunctor.obj W) ≫
+        (G.map g).toFunctor.map ((α.naturality f).hom.toNatTrans.app W)
+      = (α.naturality (f ≫ g)).hom.toNatTrans.app W ≫
+        (G.mapComp f g).hom.toNatTrans.app ((α.app a).toFunctor.obj W) := by
+  have h := Cat.Hom₂.congr_app (α.naturality_comp f g) W
+  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, Functor.whiskerLeft_app, Functor.whiskerRight_app] at h
+  have hb : (α.app c).toFunctor.map ((F.mapComp f g).hom.toNatTrans.app W) ≫
+        (α_ (F.map f) (F.map g) (α.app c)).hom.toNatTrans.app W ≫
+          (α.naturality g).hom.toNatTrans.app ((F.map f).toFunctor.obj W) ≫
+            (α_ (F.map f) (α.app b) (G.map g)).inv.toNatTrans.app W ≫
+              (G.map g).toFunctor.map ((α.naturality f).hom.toNatTrans.app W) ≫
+                (α_ (α.app a) (G.map f) (G.map g)).hom.toNatTrans.app W
+      = (α.app c).toFunctor.map ((F.mapComp f g).hom.toNatTrans.app W) ≫ (𝟙 _) ≫
+          (α.naturality g).hom.toNatTrans.app ((F.map f).toFunctor.obj W) ≫ (𝟙 _) ≫
+            (G.map g).toFunctor.map ((α.naturality f).hom.toNatTrans.app W) ≫ (𝟙 _) := rfl
+  rw [hb] at h
+  simp only [Category.id_comp, Category.comp_id] at h
+  exact h.symm
+
 /-- The naturality of a **composite** strong transformation at a point, in inverse form.
 `strongTrans_comp_naturality_app` gives the forward direction; inverting a composite reverses
 it, and the cleanest way to say so is to invert the whole `Iso` rather than the equation. -/
