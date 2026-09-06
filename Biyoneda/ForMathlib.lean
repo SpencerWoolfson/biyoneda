@@ -26,20 +26,29 @@ All three are general facts about `Cat`-valued pseudofunctors, independent of th
 ## `Cat` is strict: coherence 2-cells are the identity
 
 `Cat` is a `Bicategory.Strict` (functor composition is *definitionally* associative and unital),
-so the associator and unitor `2`-morphisms are literally identity natural transformations. Mathlib
-states their component lemmas (`Cat.associator_hom_app`, `Cat.leftUnitor_hom_app`, …) as
-`eqToHom (by simp)`, whose proof is `rfl` only at **default** transparency — so `simp`
-(which matches at *reducible* transparency) cannot fire `eqToHom_refl` on them, and proofs are
-forced onto slow `erw`. The lemmas below give `𝟙` directly (each holds by `rfl`), so `simp` can do
-the coherence cleanup that `erw` used to. They are the correct `@[simp]` normal form for a strict
-bicategory and are the natural thing to upstream (ideally by making the existing Mathlib lemmas
-produce `𝟙`).
+so its associators and unitors are literally identity 2-cells. This file records that twice:
+once at the level of 2-cells (`leftUnitor_hom_eq_id` and friends), which Mathlib does not state
+at all — it has only the `Strict` instance, whose `associator_eqToIso` and friends route through
+`eqToIso` — and once at the level of components (`leftUnitor_hom_toNatTrans_app` and friends),
+where Mathlib's own `Cat.leftUnitor_hom_app` states `eqToHom (by simp)` instead of `𝟙`.
 
-**`@[simp]` note.** For an actual Mathlib PR these should be `@[simp]`. Here we deliberately leave
-them un-tagged and use them *explicitly* in the proofs that need them: tagging them `@[simp]`
-globally adds a match attempt to every bare `simp`/`dsimp` across the 2000-line development for a
-tiny per-call cost that, summed over the file, can outweigh the local wins. Keeping them opt-in
-makes each golf a guaranteed *localized* net improvement. Flip them to `@[simp]` at upstream time.
+Each of ours holds by `rfl`. That is the case for upstreaming them: a `rfl` statement is
+available to `dsimp`, to `change`, and to definitional reasoning, not only to `simp`. It is
+also the form `to_app`'s cleanup pass is already trying to reach — `catAppSimp` lists the six
+`Cat.*_app` lemmas followed by `eqToHom_refl`, `Category.comp_id` and `Category.id_comp`,
+i.e. a pipeline whose job is to undo the `eqToHom` those lemmas introduce.
+
+**Corrected 2026-09-06.** This section previously claimed that `simp` *cannot* fire
+`eqToHom_refl` on Mathlib's form, forcing proofs onto `erw`. That is false and was never
+measured: `(λ_ F).hom.toNatTrans.app X = 𝟙 _` closes by `simp` against the current lemmas. The
+honest case is "strictly stronger, and `rfl`", not "the existing one is broken".
+
+**`@[simp]` note.** Left un-tagged, and that is a measured decision rather than a local
+convenience: on 2026-08-29, tagging the 2-cell forms globally shifted the simp normal form
+enough to break an unrelated proof in this development. Mathlib's existing `Cat.*_app` lemmas
+are not `@[simp]` either, so un-tagged also matches precedent. Any upstream version should stay
+un-tagged, or be tagged only after benchmarking — do not flip them on the way out.
+
 -/
 
 open CategoryTheory Bicategory Pseudofunctor StrongTrans Functor
