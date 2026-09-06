@@ -22,13 +22,13 @@ on the product bicategory $\mathcal{B}^{\mathrm{op}} \times [\mathcal{B}^{\mathr
 
 **This is work in progress. The main theorem is not yet fully proved.**
 
-The project builds with no errors, but 2 declarations still contain `sorry`, and the
-headline `yonedaLemma` depends on `sorryAx` through them. Concretely:
+The project builds with no errors, but 1 declaration still contains `sorry`, and the
+headline `yonedaLemma` depends on `sorryAx` through it. Concretely:
 
 | | |
 |---|---|
 | Build | 0 errors |
-| Declarations using `sorry` | 2 |
+| Declarations using `sorry` | 1 |
 | `yonedaLemma` axioms | `propext`, `sorryAx`, `Classical.choice`, `Quot.sound` |
 
 **Both sides of the equivalence are now `sorryAx`-free.** `yonedaPairing` and
@@ -60,19 +60,23 @@ The last two coherences were the two halves of one statement.  `backwards_comp_c
 where the composite pairing had to be *computed* rather than re-spelled; both come out as pure
 structural data, a right unitor and an associator.
 
-**The unit is built up to its top square.**  Its three nested isomorphisms —
-`yonedaHomInvIdFunctorIso`, `yonedaHomInvIdObjIso`, `yonedaHomInvIdNatIso`, the components at a
-point, at a fibre and at an object — closed on 2026-09-05, along with the counit's
-`yonedaInvHomIdNatIso`.  Each rests on a core stated in unbundled variables: `α`'s
-`naturality_naturality` solved for the bare `map₂` image, its `naturality_comp` against the
-codomain's `mapComp`, and the modification axiom at the identity.  What is left of the unit is
-one modification square, `yonedaHomInvIdIso`; the counit is still parked on its own.
+**The unit is finished.**  `yonedaHomInvId` — `yonedaLemmaForwards ≫ yonedaLemmaBackwards ≅ 𝟙
+yonedaPairing` — depends only on `propext`, `Classical.choice` and `Quot.sound`.  It closed on
+2026-09-05, inside out: the components at a point, at a fibre and at an object
+(`yonedaHomInvIdFunctorIso`, `yonedaHomInvIdObjIso`, `yonedaHomInvIdNatIso`), then the
+modification square itself (`yonedaHomInvIdIso`).  Each layer rests on a core stated in
+unbundled variables, because inside the definitions the evaluation point `𝟙 b₀` is not
+type-correct at `implicit` transparency and no rewriting tactic can fire; the four cores are
+the transformation's `naturality_naturality` solved for the bare `map₂` image, its
+`naturality_comp` against the codomain's `mapComp`, the modification axiom at the identity, and
+naturality of the whole thing in the pair `(b₀, F)`.  All four end in a 2-cell identity in `B`.
+
+The counit is all that remains.
 
 Note on reading the sorry count: a declaration whose own body is sorry-free but which delegates
 to a named sorried lemma emits no `sorry` warning at all, so the ratchet stops counting it while
 `#print axioms` still shows `sorryAx`.  `CONTAMINATED_DECLS` in `scripts/verify-build.sh` exists
-to assert such dependencies explicitly, and it now holds exactly that case: `yonedaHomInvId`
-carries no `sorry` of its own but delegates to `yonedaHomInvIdIso`.
+to assert such dependencies explicitly.
 
 `scripts/verify-build.sh` gates CI on both a sorry ratchet and a per-declaration axiom
 check, so neither the count nor the set of `sorryAx`-dependent declarations can grow

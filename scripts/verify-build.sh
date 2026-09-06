@@ -42,11 +42,8 @@ BASELINE_FILE="$ROOT/.github/sorry-baseline"
 # depends on `sorryAx` does so through the assembly layers, and after 2026-09-05 those are
 # exactly the unit's top square and the counit -- two sorries, both in Unit.lean.
 #
-# CONTAMINATED_DECLS is non-empty again, and this is the case its comment warns about:
-# `yonedaHomInvId` and `yonedaInvHomId` carry no `sorry` warning of their own, because each
-# delegates its remaining obligation to a *named* declaration (`yonedaHomInvIdIso`, and the
-# parked square inside `yonedaInvHomId` itself). The sorry ratchet cannot see that; only
-# `#print axioms` can.
+# The unit closed on 2026-09-05, taking `yonedaHomInvIdIso` and `yonedaHomInvId` with it.
+# CONTAMINATED_DECLS is down to one entry: the counit.
 CLEAN_DECLS=(
   "CategoryTheory.Bicategory.StrongTransIntoCats.lift"
   "CategoryTheory.Bicategory.StrongTransIntoCats.liftDom"
@@ -164,6 +161,13 @@ CLEAN_DECLS=(
   "Biyoneda.yonedaHomInvIdObjIso"
   "Biyoneda.yonedaHomInvIdNatIso"
   "Biyoneda.yonedaInvHomIdNatIso"
+  # The unit's modification square, and with it the unit itself (2026-09-05).
+  "Biyoneda.unit_top_lhs"
+  "Biyoneda.unit_top_rhs"
+  "Biyoneda.unit_top_alpha"
+  "Biyoneda.unit_top_core"
+  "Biyoneda.yonedaHomInvIdIso"
+  "Biyoneda.yonedaHomInvId"
 )
 
 # Emptied on 2026-08-30, repopulated on 2026-09-03, and emptied again on 2026-09-05 when
@@ -173,11 +177,7 @@ CLEAN_DECLS=(
 # therefore visible to the sorry ratchet.  Keep the array: the moment a `Unit.lean` obligation
 # is delegated to a named lemma, its warning disappears and its entry belongs here.
 CONTAMINATED_DECLS=(
-  # The unit's top square: `ModificationIntoCats.isoMk`'s naturality obligation.
-  "Biyoneda.yonedaHomInvIdIso"
-  # Sorry-free by the ratchet's reckoning -- it delegates to the named lemma above.
-  "Biyoneda.yonedaHomInvId"
-  # The counit, still parked on its own naturality square.
+  # The counit, still parked on its own naturality square.  The last one.
   "Biyoneda.yonedaInvHomId"
 )
 

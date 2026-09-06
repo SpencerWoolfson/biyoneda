@@ -279,6 +279,158 @@ def yonedaHomInvIdNatIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
   intro V
   exact unit_natiso_core m b V
 
+
+/-! ### The unit's modification square
+
+`ModificationIntoCats.isoMk`'s obligation, at a point.  The four folded pieces of the goal --
+the transported transformation's unit component, the identity transformation's naturality, the
+composite record's naturality, and the pairing's action on the unit modification -- are all
+definitionally the shapes below, so the descent needs no bridges: `exact` crosses it.
+
+What the square says is that the unit is natural in the *pair* `(b₀, F)`.  The proof splits it
+into three: `unit_top_lhs` and `unit_top_rhs` strip the outer transformation `β`, and
+`unit_top_alpha` is what is left -- a statement about `α` alone, ending in the 2-cell identity
+`(α_ ZZ (𝟙 _) g).inv ≫ (ρ_ ZZ).hom ▷ g = ZZ ◁ ((λ_ g).hom ≫ (ρ_ g).inv) ≫ (α_ ZZ g (𝟙 _)).inv
+≫ (ρ_ (ZZ ≫ g)).hom`, which `bicategory` discharges.
+-/
+
+section UnitTop
+
+variable {b₀ b₁ : B} {F G : Bᵒᵖ ⥤ᵖ Cat.{w, v}} (α : yoneda₀ b₀ ⟶ F) (β : F ⟶ G)
+  (g : b₁ ⟶ b₀) {γ : Bᵒᵖ} (ZZ : unop γ ⟶ b₁)
+
+set_option backward.isDefEq.respectTransparency false in
+/-- Left-hand side of the unit's modification square, with `β` pulled out in front.
+
+`postcomp₂ g ≫ α ≫ β` is a triple composite, so `strongTrans_comp_naturality_inv_app` applies
+twice; `postcomp₂`'s own naturality is an associator, definitionally. -/
+lemma unit_top_lhs :
+    ((postcomp₂ g ≫ α ≫ β).naturality (Quiver.Hom.op ZZ)).inv.toNatTrans.app (𝟙 b₁) ≫
+        ((postcomp₂ g ≫ α ≫ β).app γ).toFunctor.map (ρ_ ZZ).hom
+      = (β.naturality (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+            ((α.app (op b₁)).toFunctor.obj (𝟙 b₁ ≫ g)) ≫
+          (β.app γ).toFunctor.map
+            ((α.naturality (Quiver.Hom.op ZZ)).inv.toNatTrans.app (𝟙 b₁ ≫ g) ≫
+              (α.app γ).toFunctor.map ((α_ ZZ (𝟙 b₁) g).inv ≫ ((ρ_ ZZ).hom ▷ g))) := by
+  rw [strongTrans_comp_naturality_inv_app (postcomp₂ g) (α ≫ β) (Quiver.Hom.op ZZ) (𝟙 b₁),
+    strongTrans_comp_naturality_inv_app α β (Quiver.Hom.op ZZ)
+      (((postcomp₂ g).app (op b₁)).toFunctor.obj (𝟙 b₁))]
+  simp only [Category.assoc, Functor.map_comp]
+  rfl
+
+set_option backward.isDefEq.respectTransparency false in
+/-- Right-hand side of the same square, brought to the same shape.
+
+`β`'s `naturality_comp` (in inverse form) exposes a `hom`/`inv` pair under `G.map ZZ.op`, and
+once that cancels the remaining `β`-factor slides out in front by naturality. -/
+lemma unit_top_rhs :
+    ((G.map (Quiver.Hom.op ZZ)).toFunctor.map
+          ((β.app (op b₁)).toFunctor.map
+            ((α.app (op b₁)).toFunctor.map ((λ_ g).hom ≫ (ρ_ g).inv) ≫
+              (α.naturality (Quiver.Hom.op g)).hom.toNatTrans.app (𝟙 b₀))) ≫
+        ((G.map (Quiver.Hom.op ZZ)).toFunctor.map
+            ((β.naturality (Quiver.Hom.op g)).hom.toNatTrans.app
+              ((α.app (op b₀)).toFunctor.obj (𝟙 b₀))) ≫
+          (G.mapComp (Quiver.Hom.op g) (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+            ((β.app (op b₀)).toFunctor.obj ((α.app (op b₀)).toFunctor.obj (𝟙 b₀))) ≫
+          (β.naturality (Quiver.Hom.op g ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app
+            ((α.app (op b₀)).toFunctor.obj (𝟙 b₀)))) ≫
+      (β.app γ).toFunctor.map
+        ((α.naturality (Quiver.Hom.op (ZZ ≫ g))).inv.toNatTrans.app (𝟙 b₀) ≫
+          (α.app γ).toFunctor.map (ρ_ (ZZ ≫ g)).hom)
+      = (β.naturality (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+            ((α.app (op b₁)).toFunctor.obj (𝟙 b₁ ≫ g)) ≫
+          (β.app γ).toFunctor.map
+            ((F.map (Quiver.Hom.op ZZ)).toFunctor.map
+                ((α.app (op b₁)).toFunctor.map ((λ_ g).hom ≫ (ρ_ g).inv) ≫
+                  (α.naturality (Quiver.Hom.op g)).hom.toNatTrans.app (𝟙 b₀)) ≫
+              (F.mapComp (Quiver.Hom.op g) (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+                ((α.app (op b₀)).toFunctor.obj (𝟙 b₀)) ≫
+              ((α.naturality (Quiver.Hom.op (ZZ ≫ g))).inv.toNatTrans.app (𝟙 b₀) ≫
+                (α.app γ).toFunctor.map (ρ_ (ZZ ≫ g)).hom)) := by
+  simp only [Category.assoc]
+  rw [strongTrans_naturality_comp_inv_app_assoc β (Quiver.Hom.op g) (Quiver.Hom.op ZZ)
+    ((α.app (op b₀)).toFunctor.obj (𝟙 b₀))]
+  rw [map_comp_cancel_assoc (G.map (Quiver.Hom.op ZZ)).toFunctor _ _
+    (Cat.Hom.hom_inv_id_toNatTrans_app (β.naturality (Quiver.Hom.op g))
+      ((α.app (op b₀)).toFunctor.obj (𝟙 b₀)))]
+  have hslide : (G.map (Quiver.Hom.op ZZ)).toFunctor.map
+        ((β.app (op b₁)).toFunctor.map
+          ((α.app (op b₁)).toFunctor.map ((λ_ g).hom ≫ (ρ_ g).inv) ≫
+            (α.naturality (Quiver.Hom.op g)).hom.toNatTrans.app (𝟙 b₀))) ≫
+      (β.naturality (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+        ((F.map (Quiver.Hom.op g)).toFunctor.obj ((α.app (op b₀)).toFunctor.obj (𝟙 b₀)))
+      = (β.naturality (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+            ((α.app (op b₁)).toFunctor.obj (𝟙 b₁ ≫ g)) ≫
+          (β.app γ).toFunctor.map
+            ((F.map (Quiver.Hom.op ZZ)).toFunctor.map
+              ((α.app (op b₁)).toFunctor.map ((λ_ g).hom ≫ (ρ_ g).inv) ≫
+                (α.naturality (Quiver.Hom.op g)).hom.toNatTrans.app (𝟙 b₀))) :=
+    (β.naturality (Quiver.Hom.op ZZ)).inv.toNatTrans.naturality _
+  rw [reassoc_of% hslide]
+  simp only [Functor.map_comp, Category.assoc]
+
+set_option backward.isDefEq.respectTransparency false in
+/-- What the square reduces to once `β` is stripped: a statement about `α` alone.
+
+Same three moves as `unit_obj_core`, in the other order -- `α`'s `naturality_comp`, the
+cancellation it exposes, and one naturality square of `(α.naturality ZZ.op).inv` -- ending in a
+pure 2-cell identity in `B`. -/
+lemma unit_top_alpha :
+    (α.naturality (Quiver.Hom.op ZZ)).inv.toNatTrans.app (𝟙 b₁ ≫ g) ≫
+        (α.app γ).toFunctor.map ((α_ ZZ (𝟙 b₁) g).inv ≫ ((ρ_ ZZ).hom ▷ g))
+      = (F.map (Quiver.Hom.op ZZ)).toFunctor.map
+            ((α.app (op b₁)).toFunctor.map ((λ_ g).hom ≫ (ρ_ g).inv) ≫
+              (α.naturality (Quiver.Hom.op g)).hom.toNatTrans.app (𝟙 b₀)) ≫
+          (F.mapComp (Quiver.Hom.op g) (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+            ((α.app (op b₀)).toFunctor.obj (𝟙 b₀)) ≫
+          ((α.naturality (Quiver.Hom.op g ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app (𝟙 b₀) ≫
+            (α.app γ).toFunctor.map (ρ_ (ZZ ≫ g)).hom) := by
+  simp only [Category.assoc, Functor.map_comp]
+  rw [strongTrans_naturality_comp_inv_app_assoc α (Quiver.Hom.op g) (Quiver.Hom.op ZZ) (𝟙 b₀)]
+  rw [map_comp_cancel_assoc (F.map (Quiver.Hom.op ZZ)).toFunctor _ _
+    (Cat.Hom.hom_inv_id_toNatTrans_app (α.naturality (Quiver.Hom.op g)) (𝟙 b₀))]
+  rw [map_map_comp_assoc (α.app (op b₁)).toFunctor (F.map (Quiver.Hom.op ZZ)).toFunctor]
+  have hsl : (F.map (Quiver.Hom.op ZZ)).toFunctor.map
+        ((α.app (op b₁)).toFunctor.map ((λ_ g).hom ≫ (ρ_ g).inv)) ≫
+      (α.naturality (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+        (((yoneda₀ b₀).map (Quiver.Hom.op g)).toFunctor.obj (𝟙 b₀))
+      = (α.naturality (Quiver.Hom.op ZZ)).inv.toNatTrans.app (𝟙 b₁ ≫ g) ≫
+        (α.app γ).toFunctor.map (ZZ ◁ ((λ_ g).hom ≫ (ρ_ g).inv)) :=
+    (α.naturality (Quiver.Hom.op ZZ)).inv.toNatTrans.naturality _
+  rw [reassoc_of% hsl]
+  refine congrArg (fun t =>
+    (α.naturality (Quiver.Hom.op ZZ)).inv.toNatTrans.app (𝟙 b₁ ≫ g) ≫ t) ?_
+  rw [← Functor.map_comp, ← Functor.map_comp, ← Functor.map_comp]
+  refine congrArg (α.app γ).toFunctor.map ?_
+  exact (by bicategory : (α_ ZZ (𝟙 b₁) g).inv ≫ ((ρ_ ZZ).hom ▷ g)
+    = ZZ ◁ ((λ_ g).hom ≫ (ρ_ g).inv) ≫ (α_ ZZ g (𝟙 b₀)).inv ≫ (ρ_ (ZZ ≫ g)).hom)
+
+/-- The unit's modification square, at a point, in clean unbundled variables. -/
+lemma unit_top_core :
+    ((postcomp₂ g ≫ α ≫ β).naturality (Quiver.Hom.op ZZ)).inv.toNatTrans.app (𝟙 b₁) ≫
+        ((postcomp₂ g ≫ α ≫ β).app γ).toFunctor.map (ρ_ ZZ).hom
+      = ((G.map (Quiver.Hom.op ZZ)).toFunctor.map
+            ((β.app (op b₁)).toFunctor.map
+              ((α.app (op b₁)).toFunctor.map ((λ_ g).hom ≫ (ρ_ g).inv) ≫
+                (α.naturality (Quiver.Hom.op g)).hom.toNatTrans.app (𝟙 b₀))) ≫
+          ((G.map (Quiver.Hom.op ZZ)).toFunctor.map
+              ((β.naturality (Quiver.Hom.op g)).hom.toNatTrans.app
+                ((α.app (op b₀)).toFunctor.obj (𝟙 b₀))) ≫
+            (G.mapComp (Quiver.Hom.op g) (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+              ((β.app (op b₀)).toFunctor.obj ((α.app (op b₀)).toFunctor.obj (𝟙 b₀))) ≫
+            (β.naturality (Quiver.Hom.op g ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app
+              ((α.app (op b₀)).toFunctor.obj (𝟙 b₀)))) ≫
+        (β.app γ).toFunctor.map
+          ((α.naturality (Quiver.Hom.op (ZZ ≫ g))).inv.toNatTrans.app (𝟙 b₀) ≫
+            (α.app γ).toFunctor.map (ρ_ (ZZ ≫ g)).hom) :=
+  (unit_top_lhs α β g ZZ).trans
+    ((congrArg (fun t => (β.naturality (Quiver.Hom.op ZZ)).inv.toNatTrans.app
+        ((α.app (op b₁)).toFunctor.obj (𝟙 b₁ ≫ g)) ≫ (β.app γ).toFunctor.map t)
+      (unit_top_alpha α g ZZ)).trans (unit_top_rhs α β g ZZ).symm)
+
+end UnitTop
+
 /-- The unit, built in the `StrongTransIntoCats` world.
 
 This is the whole mathematical content of `yonedaHomInvId`, and it is stated where the
@@ -288,7 +440,13 @@ no associators, and only the forward direction (the inverse comes for free). -/
 def yonedaHomInvIdIso :
     (yonedaLemmaForwardsData.comp yonedaLemmaBackwardsData) ≅
       (StrongTransIntoCats.Id (F := @yonedaPairing B _)) :=
-  ModificationIntoCats.isoMk (fun a ↦ yonedaHomInvIdNatIso a) (fun {a b} f x ↦ by sorry)
+  ModificationIntoCats.isoMk (fun a ↦ yonedaHomInvIdNatIso a) (fun {a b} f x ↦ by
+    apply homCategory.ext
+    intro γ
+    apply Cat.Hom₂.ext_app
+    intro ZZ
+    change _ ≫ _ = _ ≫ _
+    exact Eq.trans (Category.comp_id _) (unit_top_core x f.2 f.1.unop ZZ))
 
 /--
 The *unit isomorphism* `yonedaLemmaForwards ≫ yonedaLemmaBackwards ≅ 𝟙 yonedaPairing`.

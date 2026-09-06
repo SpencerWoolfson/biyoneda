@@ -226,8 +226,15 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms Biyoneda.yonedaHomInvIdNatIso
 #print axioms Biyoneda.yonedaInvHomIdNatIso
 
--- Still contaminated: the unit's top square and the counit.  `yonedaHomInvId` carries no
--- `sorry` warning -- it delegates to `yonedaHomInvIdIso` -- so only the axiom check sees it.
+-- The unit's modification square closes (2026-09-05), and with it the unit.  `unit_top_lhs`
+-- and `unit_top_rhs` strip the outer strong transformation from each side of the square;
+-- `unit_top_alpha` is what is left, and ends in a 2-cell identity `bicategory` discharges.
+#print axioms Biyoneda.unit_top_lhs
+#print axioms Biyoneda.unit_top_rhs
+#print axioms Biyoneda.unit_top_alpha
+#print axioms Biyoneda.unit_top_core
 #print axioms Biyoneda.yonedaHomInvIdIso
 #print axioms Biyoneda.yonedaHomInvId
+
+-- Still contaminated: the counit, and nothing else.
 #print axioms Biyoneda.yonedaInvHomId
