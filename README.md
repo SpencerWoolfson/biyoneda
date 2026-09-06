@@ -20,67 +20,37 @@ on the product bicategory $\mathcal{B}^{\mathrm{op}} \times [\mathcal{B}^{\mathr
 
 ## Status
 
-**This is work in progress. The main theorem is not yet fully proved.**
-
-The project builds with no errors, but 1 declaration still contains `sorry`, and the
-headline `yonedaLemma` depends on `sorryAx` through it. Concretely:
+**Complete.** `yonedaLemma` is proved: no `sorry` anywhere in the development, and
+`#print axioms Biyoneda.yonedaLemma` reports only `propext`, `Classical.choice` and
+`Quot.sound`.
 
 | | |
 |---|---|
 | Build | 0 errors |
-| Declarations using `sorry` | 1 |
-| `yonedaLemma` axioms | `propext`, `sorryAx`, `Classical.choice`, `Quot.sound` |
+| Declarations using `sorry` | 0 |
+| `yonedaLemma` axioms | `propext`, `Classical.choice`, `Quot.sound` |
 
-**Both sides of the equivalence are now `sorryAx`-free.** `yonedaPairing` and
-`yonedaEvaluation` — and the three gadgets under them, `catPseudoULift` (`UniverseLift.lean`),
-`homPseudo` (`Gadgets.lean`) and `evaluationPseudo` (`Evaluation.lean`) — all depend only on
-`propext`, `Classical.choice` and `Quot.sound`. There is no longer any root of `sorryAx` in a
-coherence field.
-
-What remains is entirely in the **assembly layers**: the two strong transformations between
-those pseudofunctors (`Forwards.lean`, `Backwards.lean`) and the unit/counit isomorphisms
-(`Unit.lean`). Each `sorry` is marked at its site with the residual goal and what has been
-tried.
-
-`BackwardsNaturality.lean` — the naturality isomorphism of the backward transformation — is
-sorry-free as of 2026-09-02.  On 2026-09-03 the forward direction's three coherence *cores*
-closed, and then the assembly layer: `yonedaLemmaForwardsData` is now sorry-free in its own
-body, and `yonedaLemmaBackwardsData` is down to one field.
-
-**Both directions are finished.**  `yonedaLemmaForwards` and `yonedaLemmaBackwards` — and the
-two records they are lifted from — depend only on `propext`, `Classical.choice` and
-`Quot.sound`.  Everything that remains is in `Unit.lean`: the unit and counit isomorphisms.
-
-The last two coherences were the two halves of one statement.  `backwards_comp_core` reduces to
+The development closed in dependency order.  The three pseudofunctor gadgets under the
+statement went first — `catPseudoULift` (`UniverseLift.lean`), `homPseudo` (`Gadgets.lean`,
+which took `yonedaPairingComposite` and `yonedaPairing` with it), and `evaluationPseudo`
+(`Evaluation.lean`, which took `yonedaEvaluation`).  Then the two strong transformations:
+`yonedaLemmaBackwards` on 2026-09-03 and `yonedaLemmaForwards` on 2026-09-05, each reduced to
+one fibre lemma (`backwards_comp_core`, `forwards_naturality_comp_core`) through
 `naturality_comp_assoc_core` — the associativity coherence a strong transformation's
-`naturality` satisfies against the two pseudofunctors' `mapComp`s, at a point.
-`forwards_naturality_comp_core` reduces, through the same funnel, to a pure 2-cell identity in
-`B` that `bicategory` discharges.  Both needed `yonedaPairing.mapComp` evaluated at a point
-(`yonedaPairing_mapComp_app`), which together with its unit analogue are the only two places
-where the composite pairing had to be *computed* rather than re-spelled; both come out as pure
-structural data, a right unitor and an associator.
+`naturality` satisfies against the two pseudofunctors' `mapComp`s, at a point.  Finally the
+unit and the counit, both on 2026-09-05.
 
-**The unit is finished.**  `yonedaHomInvId` — `yonedaLemmaForwards ≫ yonedaLemmaBackwards ≅ 𝟙
-yonedaPairing` — depends only on `propext`, `Classical.choice` and `Quot.sound`.  It closed on
-2026-09-05, inside out: the components at a point, at a fibre and at an object
+The unit was built inside out: the components at a point, at a fibre and at an object
 (`yonedaHomInvIdFunctorIso`, `yonedaHomInvIdObjIso`, `yonedaHomInvIdNatIso`), then the
-modification square itself (`yonedaHomInvIdIso`).  Each layer rests on a core stated in
-unbundled variables, because inside the definitions the evaluation point `𝟙 b₀` is not
-type-correct at `implicit` transparency and no rewriting tactic can fire; the four cores are
-the transformation's `naturality_naturality` solved for the bare `map₂` image, its
-`naturality_comp` against the codomain's `mapComp`, the modification axiom at the identity, and
-naturality of the whole thing in the pair `(b₀, F)`.  All four end in a 2-cell identity in `B`.
+modification square (`yonedaHomInvIdIso`).  Each layer rests on a core stated in unbundled
+variables, because inside the definitions the evaluation point `𝟙 b₀` is not type-correct at
+`implicit` transparency and no rewriting tactic can fire there.  The counit reduces to
+`counit_core`, a coherence between a strong transformation's `naturality_comp`, its
+`naturality_id`, and the two `mapComp`-against-unitor identities of the codomain.
 
-The counit is all that remains.
-
-Note on reading the sorry count: a declaration whose own body is sorry-free but which delegates
-to a named sorried lemma emits no `sorry` warning at all, so the ratchet stops counting it while
-`#print axioms` still shows `sorryAx`.  `CONTAMINATED_DECLS` in `scripts/verify-build.sh` exists
-to assert such dependencies explicitly.
-
-`scripts/verify-build.sh` gates CI on both a sorry ratchet and a per-declaration axiom
-check, so neither the count nor the set of `sorryAx`-dependent declarations can grow
-unnoticed. A green CI badge means "did not regress", not "fully proved".
+`scripts/verify-build.sh` gates CI on a sorry ratchet (now at zero) and a per-declaration
+axiom check asserted by `#print axioms` lines in `Biyoneda/CompositePairing.lean`, so neither
+a `sorry` nor a `sorryAx` dependency can reappear unnoticed.
 
 ## Key Definitions
 
@@ -153,7 +123,7 @@ Specifically, the formalization builds on:
 
 ## Notes on AI
 
-This project makes substantial use of AI assistance, including for proofs, not just comments, documentation, and CI setup. Everything that is proved is machine-checked by Lean — but see **Status** above: a number of results are still `sorry`, so "it builds" is not the same as "it is proved". Please apply appropriate scrutiny, and check `#print axioms` on anything you intend to rely on.
+This project makes substantial use of AI assistance, including for proofs, not just comments, documentation, and CI setup. Everything here is machine-checked by Lean, and `#print axioms Biyoneda.yonedaLemma` reports no `sorryAx` — but "the kernel accepts it" is not the same as "the statement says what you think it says". Please apply appropriate scrutiny to the *definitions*, and check `#print axioms` on anything you intend to rely on.
 
 ## License
 

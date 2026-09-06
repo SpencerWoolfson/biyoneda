@@ -42,8 +42,9 @@ BASELINE_FILE="$ROOT/.github/sorry-baseline"
 # depends on `sorryAx` does so through the assembly layers, and after 2026-09-05 those are
 # exactly the unit's top square and the counit -- two sorries, both in Unit.lean.
 #
-# The unit closed on 2026-09-05, taking `yonedaHomInvIdIso` and `yonedaHomInvId` with it.
-# CONTAMINATED_DECLS is down to one entry: the counit.
+# The counit closed on 2026-09-05, and with it the whole development: `yonedaLemma` itself is
+# in CLEAN_DECLS, the sorry baseline is 0, and CONTAMINATED_DECLS is empty for good. If it ever
+# needs an entry again, something regressed.
 CLEAN_DECLS=(
   "CategoryTheory.Bicategory.StrongTransIntoCats.lift"
   "CategoryTheory.Bicategory.StrongTransIntoCats.liftDom"
@@ -168,6 +169,16 @@ CLEAN_DECLS=(
   "Biyoneda.unit_top_core"
   "Biyoneda.yonedaHomInvIdIso"
   "Biyoneda.yonedaHomInvId"
+  # The counit, and the assembled theorem (2026-09-05).
+  "Biyoneda.mapComp_id_left_app"
+  "Biyoneda.counit_core"
+  "Biyoneda.counit_square_lhs_app"
+  "Biyoneda.counit_id_naturality_app"
+  "Biyoneda.counit_square_rhs_app"
+  "Biyoneda.counit_backwards_app"
+  "Biyoneda.counit_forwards_app"
+  "Biyoneda.yonedaInvHomId"
+  "Biyoneda.yonedaLemma"
 )
 
 # Emptied on 2026-08-30, repopulated on 2026-09-03, and emptied again on 2026-09-05 when
@@ -176,10 +187,7 @@ CLEAN_DECLS=(
 # remaining debt is in `Unit.lean`, whose declarations still carry literal `sorry`s and are
 # therefore visible to the sorry ratchet.  Keep the array: the moment a `Unit.lean` obligation
 # is delegated to a named lemma, its warning disappears and its entry belongs here.
-CONTAMINATED_DECLS=(
-  # The counit, still parked on its own naturality square.  The last one.
-  "Biyoneda.yonedaInvHomId"
-)
+CONTAMINATED_DECLS=()
 
 fail=0
 note() {

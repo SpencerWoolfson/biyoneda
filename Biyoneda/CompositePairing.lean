@@ -236,5 +236,18 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms Biyoneda.yonedaHomInvIdIso
 #print axioms Biyoneda.yonedaHomInvId
 
--- Still contaminated: the counit, and nothing else.
+-- The counit closes (2026-09-05), and with it the whole development.  `counit_core` is the
+-- content of its naturality square: `β`'s `naturality_comp` in inverse form exposes a hom/inv
+-- pair, `β`'s `naturality_id` turns what survives into `G.mapId`, and the residue is a
+-- coherence of `F` alone against the two unitors.
+#print axioms Biyoneda.mapComp_id_left_app
+#print axioms Biyoneda.counit_core
+#print axioms Biyoneda.counit_square_lhs_app
+#print axioms Biyoneda.counit_id_naturality_app
+#print axioms Biyoneda.counit_square_rhs_app
+#print axioms Biyoneda.counit_backwards_app
+#print axioms Biyoneda.counit_forwards_app
 #print axioms Biyoneda.yonedaInvHomId
+
+-- The headline theorem.  Nothing in the development depends on `sorryAx` any more.
+#print axioms Biyoneda.yonedaLemma

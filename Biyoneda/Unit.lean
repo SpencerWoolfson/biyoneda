@@ -499,6 +499,131 @@ def yonedaInvHomIdNatIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
     dsimp at h
     exact Quiver.homOfEq_injective rfl rfl (congrArg (ULiftHom.up.map) h)
 
+
+/-! ### The counit's naturality square
+
+The counit is the other half of the equivalence, and unlike the unit it is *not* routed through
+`ModificationIntoCats`: `yonedaLemmaBackwards ≫ yonedaLemmaForwards` is `liftDom d ≫ lift d'`,
+and the `StrongTransIntoCats` bridge that exists (`lift_comp_liftDom_naturality_app`) is for the
+other order.  So the square is descended by hand, with five `rfl` bridges naming the folded
+pieces, and the content is `counit_core`.
+
+Every bridge is stated at an **unlifted** point `⟨s⟩`: writing the universe-lift as the
+anonymous constructor rather than as `catLiftUnit` keeps the lift's universe parameters pinned
+by the goal instead of leaving one of them undetermined.
+-/
+
+section CounitCore
+
+variable {F G : Bᵒᵖ ⥤ᵖ Cat.{w, v}} (β : F ⟶ G) {x y : Bᵒᵖ} (u : x ⟶ y) (s : ↑(F.obj x))
+
+/-- `mapComp_id_left_hom` at a point, with the two identities of the `Cat` form stripped.
+The mirror of `mapComp_id_app`, which is the `_right` case. -/
+lemma mapComp_id_left_app (H : Bᵒᵖ ⥤ᵖ Cat.{w, v}) {p q : Bᵒᵖ} (v : p ⟶ q) (e : ↑(H.obj p)) :
+    (H.mapComp (𝟙 p) v).hom.toNatTrans.app e ≫
+      (H.map v).toFunctor.map ((H.mapId p).hom.toNatTrans.app e)
+      = (H.map₂ (λ_ v).hom).toNatTrans.app e := by
+  have h := Cat.Hom₂.congr_app (H.mapComp_id_left_hom v) e
+  have hb : ((H.map₂ (λ_ v).hom) ≫ (λ_ (H.map v)).inv ≫
+        (H.mapId p).inv ▷ H.map v).toNatTrans.app e
+      = (H.map₂ (λ_ v).hom).toNatTrans.app e ≫ (𝟙 _) ≫
+        (H.map v).toFunctor.map ((H.mapId p).inv.toNatTrans.app e) := rfl
+  rw [hb] at h
+  rw [h]
+  simp only [Category.id_comp, Category.assoc, ← Functor.map_comp]
+  simp
+
+set_option backward.isDefEq.respectTransparency false in
+/-- The content of the counit's naturality square, in clean unbundled variables.
+
+Three moves.  `β`'s `naturality_comp` for `u` and `𝟙 y`, in inverse form, exposes a `hom`/`inv`
+pair under `G.map (𝟙 y)`; `β`'s `naturality_id` turns the surviving factor into `G.mapId`; and
+what is left is a coherence of `F` alone -- `mapComp_id_left_app` and `mapComp_id_app` reduce
+both `mapComp`s against the unitors, and the two unitor 2-cells cancel. -/
+lemma counit_core :
+    (G.mapId y).hom.toNatTrans.app ((β.app y).toFunctor.obj ((F.map u).toFunctor.obj s))
+      = (((G.map (𝟙 y)).toFunctor.map ((β.naturality u).hom.toNatTrans.app s) ≫
+            (G.mapComp u (𝟙 y)).inv.toNatTrans.app ((β.app x).toFunctor.obj s) ≫
+            (β.naturality (u ≫ 𝟙 y)).inv.toNatTrans.app s) ≫
+          (β.app y).toFunctor.map
+            ((F.map₂ ((ρ_ u).hom ≫ (λ_ u).inv)).toNatTrans.app s ≫
+              (F.mapComp (𝟙 x) u).hom.toNatTrans.app s)) ≫
+        (β.app y).toFunctor.map ((F.map u).toFunctor.map ((F.mapId x).hom.toNatTrans.app s)) := by
+  have h1 : (G.map (𝟙 y)).toFunctor.map ((β.naturality u).hom.toNatTrans.app s) ≫
+        (G.mapComp u (𝟙 y)).inv.toNatTrans.app ((β.app x).toFunctor.obj s) ≫
+        (β.naturality (u ≫ 𝟙 y)).inv.toNatTrans.app s
+      = (β.naturality (𝟙 y)).inv.toNatTrans.app ((F.map u).toFunctor.obj s) ≫
+        (β.app y).toFunctor.map ((F.mapComp u (𝟙 y)).inv.toNatTrans.app s) := by
+    rw [strongTrans_naturality_comp_inv_app β u (𝟙 y) s,
+      map_comp_cancel_assoc (G.map (𝟙 y)).toFunctor _ _
+        (Cat.Hom.hom_inv_id_toNatTrans_app (β.naturality u) s)]
+  have h2 : (G.mapId y).hom.toNatTrans.app ((β.app y).toFunctor.obj ((F.map u).toFunctor.obj s))
+      = (β.naturality (𝟙 y)).inv.toNatTrans.app ((F.map u).toFunctor.obj s) ≫
+        (β.app y).toFunctor.map
+          ((F.mapId y).hom.toNatTrans.app ((F.map u).toFunctor.obj s)) := by
+    rw [strongTrans_naturality_id_app β y ((F.map u).toFunctor.obj s), ← Category.assoc,
+      Cat.Hom.inv_hom_id_toNatTrans_app, Category.id_comp]
+  rw [h1, h2]
+  simp only [Category.assoc]
+  refine congrArg (fun t => (β.naturality (𝟙 y)).inv.toNatTrans.app
+    ((F.map u).toFunctor.obj s) ≫ t) ?_
+  rw [← Functor.map_comp, ← Functor.map_comp]
+  refine congrArg (β.app y).toFunctor.map ?_
+  simp only [Category.assoc]
+  rw [mapComp_id_left_app F u s]
+  have hm := Cat.Hom₂.congr_app
+    (show (F.map₂ ((ρ_ u).hom ≫ (λ_ u).inv)) ≫ (F.map₂ (λ_ u).hom) = F.map₂ (ρ_ u).hom by
+      rw [← PrelaxFunctor.map₂_comp]; congr 1; simp) s
+  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app] at hm
+  rw [hm]
+  have hr : (F.mapComp u (𝟙 y)).hom.toNatTrans.app s ≫
+      (F.mapId y).hom.toNatTrans.app ((F.map u).toFunctor.obj s)
+      = (F.map₂ (ρ_ u).hom).toNatTrans.app s := by
+    simp
+  rw [← hr, ← Category.assoc, Cat.Hom.inv_hom_id_toNatTrans_app]
+  exact (Category.id_comp _).symm
+
+end CounitCore
+
+section CounitBridges
+
+variable {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (s : ↑(yonedaEvaluation'.obj a))
+
+/-- The left-hand side of the counit square at a point: the counit component of the transported
+element.  A `rfl` bridge. -/
+lemma counit_square_lhs_app :
+    (yonedaEvaluation.map f ◁ (Cat.Hom.isoMk (yonedaInvHomIdNatIso b)).hom).toNatTrans.app
+        (⟨s⟩ : ↑(yonedaEvaluation.obj a))
+      = ⟨(b.2.mapId b.1).hom.toNatTrans.app
+          ((f.2.app b.1).toFunctor.obj ((a.2.map f.1).toFunctor.obj s))⟩ := rfl
+
+lemma counit_id_naturality_app :
+    ((show (@yonedaEvaluation B _) ⟶ yonedaEvaluation from
+      𝟙 yonedaEvaluation).naturality f).hom.toNatTrans.app (⟨s⟩ : ↑(yonedaEvaluation.obj a))
+      = 𝟙 _ ≫ 𝟙 _ := rfl
+
+lemma counit_square_rhs_app :
+    ((Cat.Hom.isoMk (yonedaInvHomIdNatIso a)).hom ▷ yonedaEvaluation.map f).toNatTrans.app
+        (⟨s⟩ : ↑(yonedaEvaluation.obj a))
+      = ⟨(f.2.app b.1).toFunctor.map
+          ((a.2.map f.1).toFunctor.map ((a.2.mapId a.1).hom.toNatTrans.app s))⟩ := rfl
+
+lemma counit_backwards_app :
+    (yonedaLemmaForwards.app b).toFunctor.map
+        ((yonedaLemmaBackwards.naturality f).hom.toNatTrans.app
+          (⟨s⟩ : ↑(yonedaEvaluation.obj a)))
+      = ⟨((backwardsNaturalityIso f s).hom.as.app b.1).toNatTrans.app (𝟙 (unop b.1))⟩ := rfl
+
+lemma counit_forwards_app :
+    (yonedaLemmaForwards.naturality f).hom.toNatTrans.app
+        ((yonedaLemmaBackwards.app a).toFunctor.obj (⟨s⟩ : ↑(yonedaEvaluation.obj a)))
+      = ⟨(f.2.app b.1).toFunctor.map
+          ((a.2.map₂ (op2 ((λ_ f.1.unop).hom ≫ (ρ_ f.1.unop).inv))).toNatTrans.app s ≫
+            (a.2.mapComp (Quiver.Hom.op (𝟙 (unop a.1))) f.1).hom.toNatTrans.app s) ≫ 𝟙 _⟩ := rfl
+
+end CounitBridges
+
+set_option backward.isDefEq.respectTransparency false in
 /--
 The *counit isomorphism* `yonedaLemmaBackwards ≫ yonedaLemmaForwards ≅ 𝟙 yonedaEvaluation`.
 
@@ -509,31 +634,15 @@ of `yonedaLemma`.
 def yonedaInvHomId : yonedaLemmaBackwards ≫ yonedaLemmaForwards ≅ 𝟙 (@yonedaEvaluation B _) := by
   refine StrongTrans.isoMk (fun a ↦ Cat.Hom.isoMk (yonedaInvHomIdNatIso a)) ?_
   intro a b f
-  -- `rw1`/`rw3` used to strip the `fun a ↦ …` applications; Lean beta-reduces them on its own
-  -- now, so `erw` finds no pattern for them.  Only the `isoMk`-to-`toCatHom₂` step is real.
-  have rw2 : (Cat.Hom.isoMk (yonedaInvHomIdNatIso b)).hom =
-      NatTrans.toCatHom₂ ((yonedaInvHomIdNatIso b).hom) := rfl
-  erw [rw2]
-  clear rw2
-  refine Cat.Hom₂.ext_iff.mpr ?_
-  ext x
-  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app,
-    Cat.Hom.isoMk_hom, NatTrans.toCatHom₂_toNatTrans]
-  dsimp [CategoryStruct.id,StrongTrans.id]
-  rw [Category.comp_id]
-  erw [Category.comp_id]
-  -- Parked (2026-07-29): same shape and size as yonedaHomInvId's naturality goal (see the note
-  -- there). After the descent above, the goal is
-  --   (yonedaInvHomIdNatIso b).hom.app ((yonedaEvaluation.map f).obj x) ≫
-  --     ((𝟙 yonedaEvaluation).naturality f).hom.app x
-  --   = ((yonedaLemmaBackwards ≫ yonedaLemmaForwards).naturality f).hom.app x ≫
-  --     (yonedaEvaluation.map f).map ((yonedaInvHomIdNatIso a).hom.app x)
-  -- Next step if resumed: the same `dsimp only [CategoryStruct.id, CategoryStruct.comp,
-  -- StrongTrans.categoryStruct, StrongTrans.id, StrongTrans.vcomp, StrongTrans.mkOfOplax,
-  -- Oplax.StrongTrans.mkOfOplax, Oplax.StrongTrans.vcomp]` unfold used there (~5 min/cycle),
-  -- then the ingredient-square recipe applied to `yonedaLemmaBackwards.naturality f` and
-  -- `yonedaLemmaForwards.naturality f` in turn.
-  sorry
+  apply Cat.Hom₂.ext_app
+  rintro ⟨s⟩
+  -- Split the composite's naturality, then let the five bridges name every folded piece.
+  change _ ≫ _ = _ ≫ _
+  rw [strongTrans_comp_naturality_app yonedaLemmaBackwards yonedaLemmaForwards f ⟨s⟩,
+    counit_square_lhs_app f s, counit_id_naturality_app f s, counit_backwards_app f s,
+    counit_forwards_app f s, counit_square_rhs_app f s]
+  simp only [Category.comp_id]
+  rw [counit_core f.2 f.1]
+  exact rfl
 
 end Biyoneda
