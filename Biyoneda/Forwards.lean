@@ -432,7 +432,7 @@ lemma forwards_naturality_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, 
   refine congrArg (f.2.app c.1).toFunctor.map ?_
   refine Eq.trans (Category.assoc _ _ _) ?_
   refine Eq.trans (congrArg (CategoryStruct.comp _)
-    (strongTrans_naturality_comp_hom_app Z f.1 g.1 (𝟙 (unop a.1))).symm) ?_
+    (Pseudofunctor.StrongTrans.naturality_comp_app Z f.1 g.1 (𝟙 (unop a.1)))) ?_
   simp
   have hsl : (Z.naturality g.1).hom.toNatTrans.app
         (((postcomp₂ f.1.unop).app b.1).toFunctor.obj (𝟙 (unop b.1))) ≫

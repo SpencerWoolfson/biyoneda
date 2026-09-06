@@ -156,7 +156,7 @@ lemma unit_obj_core {b₀ : B} {G : Bᵒᵖ ⥤ᵖ Cat.{w, v}} (α : yoneda₀ b
         (G.map f).toFunctor.map
           ((α.naturality (Quiver.Hom.op W)).inv.toNatTrans.app (𝟙 b₀) ≫
             (α.app c).toFunctor.map (ρ_ W).hom) := by
-  have hcomp := strongTrans_naturality_comp_hom_app α (Quiver.Hom.op W) f (𝟙 b₀)
+  have hcomp := (Pseudofunctor.StrongTrans.naturality_comp_app α (Quiver.Hom.op W) f (𝟙 b₀)).symm
   have hPH := Cat.Hom.inv_hom_id_toNatTrans_app (α.naturality (Quiver.Hom.op W ≫ f)) (𝟙 b₀)
   have hHN := Cat.Hom.hom_inv_id_toNatTrans_app (α.naturality (Quiver.Hom.op W)) (𝟙 b₀)
   have hNH := Cat.Hom.inv_hom_id_toNatTrans_app (α.naturality f) W
@@ -561,7 +561,8 @@ lemma counit_core :
       = (β.naturality (𝟙 y)).inv.toNatTrans.app ((F.map u).toFunctor.obj s) ≫
         (β.app y).toFunctor.map
           ((F.mapId y).hom.toNatTrans.app ((F.map u).toFunctor.obj s)) := by
-    rw [strongTrans_naturality_id_app β y ((F.map u).toFunctor.obj s), ← Category.assoc,
+    rw [← Pseudofunctor.StrongTrans.naturality_id_app β y ((F.map u).toFunctor.obj s),
+      ← Category.assoc,
       Cat.Hom.inv_hom_id_toNatTrans_app, Category.id_comp]
   rw [h1, h2]
   simp only [Category.assoc]

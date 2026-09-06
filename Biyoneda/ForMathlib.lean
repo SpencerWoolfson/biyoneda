@@ -6,6 +6,7 @@ Authors: Spencer Woolfson
 import Mathlib.CategoryTheory.Category.Cat
 import Mathlib.CategoryTheory.Bicategory.Yoneda
 import Mathlib.CategoryTheory.Bicategory.FunctorBicategory.Pseudo
+import Mathlib.Tactic.CategoryTheory.ToApp
 
 /-!
 # Lemmas staged for upstreaming to Mathlib
@@ -112,19 +113,31 @@ lemma Cat.naturality_2 {C D : Cat} {F G : C ⟶ D} (ι : F ≅ G) {X Y : ↑C} (
       = F.toFunctor.map m :=
   NatIso.naturality_2 (Cat.Hom.toNatIso ι) m
 
-/-- Component form of `StrongTrans.naturality_naturality`.  Mathlib tags most of the
-`Pseudofunctor` coherence lemmas `@[to_app]`, which auto-generates these `_app` versions, but
-this one is not tagged — so it has to be stated by hand.  Tagging it upstream would remove the
-need for this. -/
-lemma Pseudofunctor.StrongTrans.naturality_naturality_app {B : Type u₁} [Bicategory.{w₁, v₁} B]
-    {F G : B ⥤ᵖ Cat.{w, v}} (α : F ⟶ G) {a b : B} {f g : a ⟶ b} (η : f ⟶ g) (X : ↑(F.obj a)) :
-    (α.app b).toFunctor.map ((F.map₂ η).toNatTrans.app X) ≫
-      (α.naturality g).hom.toNatTrans.app X =
-    (α.naturality f).hom.toNatTrans.app X ≫
-      (G.map₂ η).toNatTrans.app ((α.app a).toFunctor.obj X) := by
-  simpa only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app]
-    using Cat.Hom₂.congr_app (α.naturality_naturality η) X
+/-! ### The three `StrongTrans` coherence fields, at a point
+
+Mathlib tags most bicategory coherence lemmas `@[to_app]`, which generates the component form
+automatically — but the three `StrongTrans` structure fields are tagged only
+`@[reassoc (attr := simp)]`, while the `whiskerLeft_`/`whiskerRight_` variants a few lines below
+them in `Mathlib/CategoryTheory/Bicategory/NaturalTransformation/Pseudo.lean` *are* tagged
+`to_app`.  That looks like an oversight rather than a decision.
+
+Applying the attribute downstream works and produces exactly the three lemmas this development
+had otherwise written by hand:
+
+* `naturality_naturality_app` — was stated here explicitly;
+* `naturality_id_app` — was `Bicategory.strongTrans_naturality_id_app` in `Evaluation.lean`,
+  modulo `.symm`;
+* `naturality_comp_app` — was `Bicategory.strongTrans_naturality_comp_hom_app`, modulo `.symm`,
+  and that one needed a twenty-line proof writing `Cat`'s three associators in by hand and
+  stripping them again.  `to_app`'s own cleanup pass does that work.
+
+**Staged for upstream.** The proposed change is three names added to the existing `attribute`
+line in Mathlib; when that lands, delete this block. -/
+
+attribute [to_app] Pseudofunctor.StrongTrans.naturality_naturality
+attribute [to_app] Pseudofunctor.StrongTrans.naturality_id
+attribute [to_app] Pseudofunctor.StrongTrans.naturality_comp
+
 
 
 /-- Taking the component at `b` is a functor from the hom-category of pseudofunctors `B ⥤ᵖ C`
