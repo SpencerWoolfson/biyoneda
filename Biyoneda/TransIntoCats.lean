@@ -407,8 +407,11 @@ This is what lets a unit/counit be built in the `IntoCats` world and then crosse
 naturality isomorphisms agree too.
 
 Note the shape of the proof.  `≫` of strong transformations expands to a five-factor
-associator sandwich, which is exactly the obstacle the `yonedaHomInvId` sorry has been fighting
--- but here it is fought once, with `d1` and `d2` abstract.  `Cat` is strict, so
+associator sandwich, which is exactly the obstacle `yonedaHomInvId` was parked on for weeks --
+but here it is fought once, with `d1` and `d2` abstract.  (The counit needs the mirror of this
+lemma, for `liftDom ≫ lift`; it was never written, because `strongTrans_comp_naturality_app`
+strips the same padding at a point and the hand-rolled descent turned out shorter.)  `Cat` is
+strict, so
 `Strict.associator_eqToIso` turns the three associators into identities; after that everything
 is `erw`, because the two spellings of `Cat`'s hom-category composition differ by an instance
 path that `rw`/`simp` will not cross at reducible transparency. -/
