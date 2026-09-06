@@ -44,11 +44,37 @@ makes each golf a guaranteed *localized* net improvement. Flip them to `@[simp]`
 
 open CategoryTheory Bicategory Pseudofunctor StrongTrans Functor
 
-universe w v u₁ v₁ w₁ u₂ v₂ w₂
+universe w v u u₁ v₁ w₁ u₂ v₂ w₂
 
 namespace CategoryTheory.Cat
 
 variable {B C D E : Cat}
+
+/-! ### The same six, at the level of 2-cells
+
+Mathlib has no 2-cell-level statement of `Cat`'s strictness at all -- only the `Strict`
+instance, whose `associator_eqToIso` / `leftUnitor_eqToIso` / `rightUnitor_eqToIso` route
+through `eqToIso`.  These are strictly stronger, hold by `rfl`, and are what makes a structural
+block collapse in one `simp only`.
+
+**Not `@[simp]`, and that is a measured decision** (2026-08-29): tagging them globally shifts
+the simp normal form enough to break an unrelated proof in this development.  Any upstream
+version should either stay un-tagged, matching the existing `Cat.leftUnitor_hom_app` and
+friends, or be tagged only after benchmarking. -/
+
+theorem leftUnitor_hom_eq_id {X Y : Cat.{v, u}} (f : X ⟶ Y) : (λ_ f).hom = 𝟙 f := rfl
+
+theorem leftUnitor_inv_eq_id {X Y : Cat.{v, u}} (f : X ⟶ Y) : (λ_ f).inv = 𝟙 f := rfl
+
+theorem rightUnitor_hom_eq_id {X Y : Cat.{v, u}} (f : X ⟶ Y) : (ρ_ f).hom = 𝟙 f := rfl
+
+theorem rightUnitor_inv_eq_id {X Y : Cat.{v, u}} (f : X ⟶ Y) : (ρ_ f).inv = 𝟙 f := rfl
+
+theorem associator_hom_eq_id {X Y Z W : Cat.{v, u}} (f : X ⟶ Y) (g : Y ⟶ Z) (h : Z ⟶ W) :
+    (α_ f g h).hom = 𝟙 _ := rfl
+
+theorem associator_inv_eq_id {X Y Z W : Cat.{v, u}} (f : X ⟶ Y) (g : Y ⟶ Z) (h : Z ⟶ W) :
+    (α_ f g h).inv = 𝟙 _ := rfl
 
 theorem associator_hom_toNatTrans_app (F : B ⟶ C) (G : C ⟶ D) (H : D ⟶ E) (X : B) :
     (α_ F G H).hom.toNatTrans.app X = 𝟙 _ := rfl

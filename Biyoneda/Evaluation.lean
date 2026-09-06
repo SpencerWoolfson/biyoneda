@@ -144,40 +144,15 @@ def evalMapComp (u : x ⟶ y) (α : F ⟶ G) (v : y ⟶ z) (β : G ⟶ H) :
 
 /-! ### `Cat` is strict, definitionally
 
-Every associator and unitor of the bicategory `Cat` is the *identity* 2-cell, by `rfl`.  That is
-what makes the coherence residuals collapse: they are built entirely from `α_`, `λ_`, `ρ_`, and
-in `Cat` those are not merely invertible but definitionally trivial.  `simp only` with these six
-turns any structural block into identities.  Mathlib records `Cat`'s strictness as a `Strict`
-instance, whose `associator_eqToIso` and friends go through `eqToIso` -- a strictly weaker
-statement than these.
+The six lemmas that said so -- `(λ_ f).hom = 𝟙 f` and its five siblings, each by `rfl` -- have
+moved to `Biyoneda/ForMathlib.lean`, where the upstream-candidate material lives.  Mathlib
+records `Cat`'s strictness only as a `Strict` instance, whose `associator_eqToIso` and friends
+go through `eqToIso`, which is strictly weaker.
 
-Deliberately **not** `@[simp]`: measured 2026-08-29, tagging them globally changes the simp
-normal form enough to break `BackwardsFunctor.lean:69`.  Cite them explicitly. -/
-
-lemma cat_associator_hom {X Y Z W : Cat.{v, u}} (f : X ⟶ Y) (g : Y ⟶ Z) (h : Z ⟶ W) :
-    (α_ f g h).hom = 𝟙 _ := rfl
-lemma cat_associator_inv {X Y Z W : Cat.{v, u}} (f : X ⟶ Y) (g : Y ⟶ Z) (h : Z ⟶ W) :
-    (α_ f g h).inv = 𝟙 _ := rfl
-lemma cat_leftUnitor_hom {X Y : Cat.{v, u}} (f : X ⟶ Y) : (λ_ f).hom = 𝟙 f := rfl
-lemma cat_leftUnitor_inv {X Y : Cat.{v, u}} (f : X ⟶ Y) : (λ_ f).inv = 𝟙 f := rfl
-lemma cat_rightUnitor_hom {X Y : Cat.{v, u}} (f : X ⟶ Y) : (ρ_ f).hom = 𝟙 f := rfl
-lemma cat_rightUnitor_inv {X Y : Cat.{v, u}} (f : X ⟶ Y) : (ρ_ f).inv = 𝟙 f := rfl
-
-lemma cat_id_comp {X Y : Cat.{v, u}} {f g : X ⟶ Y} (η : f ⟶ g) : 𝟙 f ≫ η = η := by simp
-lemma cat_comp_id {X Y : Cat.{v, u}} {f g : X ⟶ Y} (η : f ⟶ g) : η ≫ 𝟙 g = η := by simp
-lemma cat_id_whiskerRight {X Y Z : Cat.{v, u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    𝟙 f ▷ g = 𝟙 (f ≫ g) := by simp
-lemma cat_whiskerLeft_id {X Y Z : Cat.{v, u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    f ◁ 𝟙 g = 𝟙 (f ≫ g) := rfl
-
-lemma bicat_id_comp {B : Type*} [Bicategory B] {a b : B} {f g : a ⟶ b} (η : f ⟶ g) :
-    𝟙 f ≫ η = η := Category.id_comp η
-lemma bicat_comp_id {B : Type*} [Bicategory B] {a b : B} {f g : a ⟶ b} (η : f ⟶ g) :
-    η ≫ 𝟙 g = η := Category.comp_id η
-lemma bicat_id_whiskerRight {B : Type*} [Bicategory B] {a b c : B} (f : a ⟶ b) (g : b ⟶ c) :
-    𝟙 f ▷ g = 𝟙 (f ≫ g) := Bicategory.id_whiskerRight f g
-lemma bicat_whiskerLeft_id {B : Type*} [Bicategory B] {a b c : B} (f : a ⟶ b) (g : b ⟶ c) :
-    f ◁ 𝟙 g = 𝟙 (f ≫ g) := Bicategory.whiskerLeft_id f g
+Eight further re-statements that used to sit here (`cat_id_comp`, `cat_comp_id`,
+`cat_id_whiskerRight`, `cat_whiskerLeft_id` and their `bicat_` counterparts) were verbatim
+copies of `Category.id_comp`, `Category.comp_id`, `Bicategory.id_whiskerRight` and
+`Bicategory.whiskerLeft_id`, and had no call sites left.  Deleted. -/
 
 lemma cat_unitor_block {X Y Z : Cat.{v, u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
     ((ρ_ f).hom ≫ (λ_ f).inv) ▷ g = 𝟙 (f ≫ g) := by aesop_cat
@@ -363,7 +338,7 @@ The proof shape that works -- and that the other four cores should follow -- is:
 4. let `simp` finish, now that no unitor has to be rewritten.
 
 Step 3 is the one that matters.  Earlier attempts normalised the unitors away with
-`simp only [cat_leftUnitor_hom, ...]` first and were dead on arrival. -/
+`simp only [Cat.leftUnitor_hom_eq_id, ...]` first and were dead on arrival. -/
 lemma eval_left_unitor (u : x ⟶ y) (α : F ⟶ G) :
     evalMap₂ (λ_ u).hom (λ_ α).hom
       = (evalMapComp (𝟙 x) (𝟙 F) u α).hom ≫
