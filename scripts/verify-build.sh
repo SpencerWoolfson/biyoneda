@@ -39,8 +39,14 @@ BASELINE_FILE="$ROOT/.github/sorry-baseline"
 # are both now fully proved -- the latter took `yonedaPairingComposite` and `yonedaPairing`
 # clean. The third, `evaluationPseudo` (Evaluation.lean), closed on 2026-09-02 and took
 # `yonedaEvaluation` with it. There is now NO remaining root: every declaration that still
-# depends on `sorryAx` does so through the assembly layers (Forwards, Backwards*, Unit), not
-# through a parked coherence field. CONTAMINATED_DECLS is empty.
+# depends on `sorryAx` does so through the assembly layers, and after 2026-09-05 those are
+# exactly the unit's top square and the counit -- two sorries, both in Unit.lean.
+#
+# CONTAMINATED_DECLS is non-empty again, and this is the case its comment warns about:
+# `yonedaHomInvId` and `yonedaInvHomId` carry no `sorry` warning of their own, because each
+# delegates its remaining obligation to a *named* declaration (`yonedaHomInvIdIso`, and the
+# parked square inside `yonedaInvHomId` itself). The sorry ratchet cannot see that; only
+# `#print axioms` can.
 CLEAN_DECLS=(
   "CategoryTheory.Bicategory.StrongTransIntoCats.lift"
   "CategoryTheory.Bicategory.StrongTransIntoCats.liftDom"
@@ -147,6 +153,17 @@ CLEAN_DECLS=(
   "Biyoneda.backwards_id_core"
   "Biyoneda.backwards_id_lhs_app"
   "Biyoneda.backwards_id_rhs_app"
+  # The unit's three nested isomorphisms, and the three cores they rest on (2026-09-05).
+  # Every layer below the top square is now real; what remains sorried is the modification
+  # square itself (`yonedaHomInvIdIso`) and the counit.
+  "Biyoneda.yonedaUnitAppIso"
+  "Biyoneda.unit_functor_core"
+  "Biyoneda.unit_obj_core"
+  "Biyoneda.unit_natiso_core"
+  "Biyoneda.yonedaHomInvIdFunctorIso"
+  "Biyoneda.yonedaHomInvIdObjIso"
+  "Biyoneda.yonedaHomInvIdNatIso"
+  "Biyoneda.yonedaInvHomIdNatIso"
 )
 
 # Emptied on 2026-08-30, repopulated on 2026-09-03, and emptied again on 2026-09-05 when
@@ -155,7 +172,14 @@ CLEAN_DECLS=(
 # remaining debt is in `Unit.lean`, whose declarations still carry literal `sorry`s and are
 # therefore visible to the sorry ratchet.  Keep the array: the moment a `Unit.lean` obligation
 # is delegated to a named lemma, its warning disappears and its entry belongs here.
-CONTAMINATED_DECLS=()
+CONTAMINATED_DECLS=(
+  # The unit's top square: `ModificationIntoCats.isoMk`'s naturality obligation.
+  "Biyoneda.yonedaHomInvIdIso"
+  # Sorry-free by the ratchet's reckoning -- it delegates to the named lemma above.
+  "Biyoneda.yonedaHomInvId"
+  # The counit, still parked on its own naturality square.
+  "Biyoneda.yonedaInvHomId"
+)
 
 fail=0
 note() {

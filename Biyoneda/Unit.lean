@@ -69,7 +69,51 @@ def yonedaUnitAppIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) (b : Bᵒᵖ) (x : �
     (Iso.symm (Iso.app (Cat.Hom.toNatIso (x.naturality (Quiver.Hom.op f))) (𝟙 (unop a.1))))
     ((x.app b).toFunctor.mapIso (rightUnitor f)))
 
-set_option linter.flexible false in
+
+/-- The naturality square of `yonedaUnitAppIso`, in clean unbundled variables.
+
+For a 2-cell `θ : X ⟶ Y` in the hom-category `unop b ⟶ b₀`, the roundtrip functor acts by
+`G.map₂ θ.op` at the evaluation point, and the claim is that this commutes with the two
+copies of the unit component.  `strongTrans_naturality_conj` solves `α`'s
+`naturality_naturality` for the bare `map₂` image, which turns the left-hand side into the
+right one up to a single 2-cell identity in `B` -- `rightUnitor_naturality`.
+
+Stated against an arbitrary `α : yoneda₀ b₀ ⟶ G` rather than inside the definition: the goal
+there mentions `(α.app _).obj (𝟙 b₀)`, which is not type-correct at `implicit` transparency,
+so no rewriting tactic can fire on it.  Every step below is therefore a term. -/
+lemma unit_functor_core {b₀ : B} {G : Bᵒᵖ ⥤ᵖ Cat.{w, v}} (α : yoneda₀ b₀ ⟶ G) (b : Bᵒᵖ)
+    {X Y : unop b ⟶ b₀} (θ : X ⟶ Y) :
+    (G.map₂ (op2 θ)).toNatTrans.app ((α.app (op b₀)).toFunctor.obj (𝟙 b₀)) ≫
+      ((α.naturality (Quiver.Hom.op Y)).inv.toNatTrans.app (𝟙 b₀) ≫
+        (α.app b).toFunctor.map (ρ_ Y).hom)
+      = ((α.naturality (Quiver.Hom.op X)).inv.toNatTrans.app (𝟙 b₀) ≫
+          (α.app b).toFunctor.map (ρ_ X).hom) ≫ (α.app b).toFunctor.map θ := by
+  have hconj : (α.app b).toFunctor.map (θ ▷ 𝟙 b₀)
+      = (α.naturality (Quiver.Hom.op X)).hom.toNatTrans.app (𝟙 b₀) ≫
+        (G.map₂ (op2 θ)).toNatTrans.app ((α.app (op b₀)).toFunctor.obj (𝟙 b₀)) ≫
+        (α.naturality (Quiver.Hom.op Y)).inv.toNatTrans.app (𝟙 b₀) :=
+    strongTrans_naturality_conj α (op2 θ) (𝟙 b₀)
+  have hcancel := Cat.Hom.inv_hom_id_toNatTrans_app (α.naturality (Quiver.Hom.op X)) (𝟙 b₀)
+  have hkey : (α.naturality (Quiver.Hom.op X)).inv.toNatTrans.app (𝟙 b₀) ≫
+        (α.app b).toFunctor.map (θ ▷ 𝟙 b₀)
+      = (G.map₂ (op2 θ)).toNatTrans.app ((α.app (op b₀)).toFunctor.obj (𝟙 b₀)) ≫
+        (α.naturality (Quiver.Hom.op Y)).inv.toNatTrans.app (𝟙 b₀) :=
+    (congrArg (fun t => (α.naturality (Quiver.Hom.op X)).inv.toNatTrans.app (𝟙 b₀) ≫ t)
+        hconj).trans
+      ((Category.assoc _ _ _).symm.trans
+        ((congrArg (fun t => t ≫ _) hcancel).trans (Category.id_comp _)))
+  have hunit : (α.app b).toFunctor.map (θ ▷ 𝟙 b₀) ≫ (α.app b).toFunctor.map (ρ_ Y).hom
+      = (α.app b).toFunctor.map (ρ_ X).hom ≫ (α.app b).toFunctor.map θ :=
+    ((α.app b).toFunctor.map_comp _ _).symm.trans
+      ((congrArg (α.app b).toFunctor.map (rightUnitor_naturality θ)).trans
+        ((α.app b).toFunctor.map_comp _ _))
+  refine Eq.trans (Category.assoc _ _ _).symm ?_
+  refine Eq.trans (congrArg (fun t => t ≫ (α.app b).toFunctor.map (ρ_ Y).hom) hkey.symm) ?_
+  refine Eq.trans (Category.assoc _ _ _) ?_
+  refine Eq.trans (congrArg (fun t =>
+    (α.naturality (Quiver.Hom.op X)).inv.toNatTrans.app (𝟙 b₀) ≫ t) hunit) ?_
+  exact (Category.assoc _ _ _).symm
+
 /--
 For a pair `a = (b₀, F)`, a component `b : Bᵒᵖ`, and a strong transformation
 `x : yoneda₀ b₀ ⟶ F`, the natural transformation from the `b`-component of the roundtrip
@@ -85,8 +129,77 @@ def yonedaHomInvIdFunctorIso {a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)} (b : Bᵒᵖ)
         ((yonedaLemmaForwards.app a).toFunctor.obj x)).app b).toFunctor ≅
     (x.app b).toFunctor := by
     refine NatIso.ofComponents (fun y ↦ yonedaUnitAppIso a b x y) ?_
-    -- Pending: goal shape changed with the composite pairing.
-    sorry
+    intro X Y θ
+    exact unit_functor_core x b θ
+
+
+set_option backward.isDefEq.respectTransparency false in
+/-- The modification square of `yonedaHomInvIdObjIso`, at a point, in clean unbundled variables.
+
+For `f : c ⟶ d` in `Bᵒᵖ` and `W : unop c ⟶ b₀`, the roundtrip's naturality at `f` is `G`'s own
+`mapComp` constraint, and the claim is that the two unit components -- at `W` and at
+`f.unop ≫ W` -- intertwine it with `α`'s naturality.  Three moves: `α`'s `naturality_comp`
+solved for the `mapComp` (`hA`), the `hom`/`inv` cancellation it exposes (`hK`), and one
+naturality square of `α.naturality f` (`hS`, from `strongTrans_naturality_slide`).  What is
+left is the bicategory identity `(ρ_ (f ≫ g)).hom = (α_ f g (𝟙 _)).hom ≫ f ◁ (ρ_ g).hom`.
+
+The `backward.isDefEq.respectTransparency` opt-out is what lets `rw` fire at all: the statement
+mentions `(α.app _).obj (𝟙 b₀)`, which is not type-correct at `implicit` transparency, so every
+pattern whose instantiation has to elaborate that subterm is otherwise rejected. -/
+lemma unit_obj_core {b₀ : B} {G : Bᵒᵖ ⥤ᵖ Cat.{w, v}} (α : yoneda₀ b₀ ⟶ G) {c d : Bᵒᵖ}
+    (f : c ⟶ d) (W : unop c ⟶ b₀) :
+    ((α.naturality (Quiver.Hom.op W ≫ f)).inv.toNatTrans.app (𝟙 b₀) ≫
+        (α.app d).toFunctor.map (ρ_ (f.unop ≫ W)).hom) ≫
+      (α.naturality f).hom.toNatTrans.app W
+      = (G.mapComp (Quiver.Hom.op W) f).hom.toNatTrans.app
+          ((α.app (op b₀)).toFunctor.obj (𝟙 b₀)) ≫
+        (G.map f).toFunctor.map
+          ((α.naturality (Quiver.Hom.op W)).inv.toNatTrans.app (𝟙 b₀) ≫
+            (α.app c).toFunctor.map (ρ_ W).hom) := by
+  have hcomp := strongTrans_naturality_comp_hom_app α (Quiver.Hom.op W) f (𝟙 b₀)
+  have hPH := Cat.Hom.inv_hom_id_toNatTrans_app (α.naturality (Quiver.Hom.op W ≫ f)) (𝟙 b₀)
+  have hHN := Cat.Hom.hom_inv_id_toNatTrans_app (α.naturality (Quiver.Hom.op W)) (𝟙 b₀)
+  have hNH := Cat.Hom.inv_hom_id_toNatTrans_app (α.naturality f) W
+  have hslide : (α.naturality f).hom.toNatTrans.app
+        (((yoneda₀ b₀).map (Quiver.Hom.op W)).toFunctor.obj (𝟙 b₀)) ≫
+      (G.map f).toFunctor.map ((α.app c).toFunctor.map (ρ_ W).hom) ≫
+        (α.naturality f).inv.toNatTrans.app W
+      = (α.app d).toFunctor.map (f.unop ◁ (ρ_ W).hom) :=
+    strongTrans_naturality_slide α f (ρ_ W).hom
+  have hA : (G.mapComp (Quiver.Hom.op W) f).hom.toNatTrans.app
+        ((α.app (op b₀)).toFunctor.obj (𝟙 b₀))
+      = (α.naturality (Quiver.Hom.op W ≫ f)).inv.toNatTrans.app (𝟙 b₀) ≫
+        ((α.app d).toFunctor.map
+            (((yoneda₀ b₀).mapComp (Quiver.Hom.op W) f).hom.toNatTrans.app (𝟙 b₀)) ≫
+          (α.naturality f).hom.toNatTrans.app
+              (((yoneda₀ b₀).map (Quiver.Hom.op W)).toFunctor.obj (𝟙 b₀)) ≫
+            (G.map f).toFunctor.map
+              ((α.naturality (Quiver.Hom.op W)).hom.toNatTrans.app (𝟙 b₀))) := by
+    rw [hcomp, ← Category.assoc, hPH, Category.id_comp]
+  have hK : (G.map f).toFunctor.map
+        ((α.naturality (Quiver.Hom.op W)).hom.toNatTrans.app (𝟙 b₀)) ≫
+      (G.map f).toFunctor.map
+        ((α.naturality (Quiver.Hom.op W)).inv.toNatTrans.app (𝟙 b₀) ≫
+          (α.app c).toFunctor.map (ρ_ W).hom)
+      = (G.map f).toFunctor.map ((α.app c).toFunctor.map (ρ_ W).hom) := by
+    rw [← Functor.map_comp, ← Category.assoc, hHN, Category.id_comp]
+  have hS : (α.naturality f).hom.toNatTrans.app
+        (((yoneda₀ b₀).map (Quiver.Hom.op W)).toFunctor.obj (𝟙 b₀)) ≫
+      (G.map f).toFunctor.map ((α.app c).toFunctor.map (ρ_ W).hom)
+      = (α.app d).toFunctor.map (f.unop ◁ (ρ_ W).hom) ≫
+        (α.naturality f).hom.toNatTrans.app W := by
+    rw [← hslide, Category.assoc, Category.assoc, hNH]
+    exact (congrArg (fun t => (α.naturality f).hom.toNatTrans.app
+      (((yoneda₀ b₀).map (Quiver.Hom.op W)).toFunctor.obj (𝟙 b₀)) ≫ t)
+      (Category.comp_id ((G.map f).toFunctor.map ((α.app c).toFunctor.map (ρ_ W).hom)))).symm
+  rw [hA, Category.assoc, Category.assoc, Category.assoc, Category.assoc, hK, hS]
+  refine congrArg
+    (fun t => (α.naturality (Quiver.Hom.op W ≫ f)).inv.toNatTrans.app (𝟙 b₀) ≫ t) ?_
+  rw [← Category.assoc, ← Functor.map_comp]
+  refine congrArg
+    (fun t => (α.app d).toFunctor.map t ≫ (α.naturality f).hom.toNatTrans.app W) ?_
+  exact (by bicategory :
+    (ρ_ (f.unop ≫ W)).hom = (α_ f.unop W (𝟙 b₀)).hom ≫ f.unop ◁ (ρ_ W).hom)
 
 /--
 At a fixed pair `a = (b₀, F)` and a strong transformation `x : yoneda₀ b₀ ⟶ F`, the
@@ -101,8 +214,51 @@ def yonedaHomInvIdObjIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) (x : ↑(yonedaPa
     (yonedaLemmaForwards.app a ≫ yonedaLemmaBackwards.app a).toFunctor.obj x ≅
     (𝟭 ↑(yonedaPairing.obj a)).obj x := by
     refine StrongTrans.isoMk (fun b ↦ (Cat.Hom.isoMk (yonedaHomInvIdFunctorIso b x))) ?_
-    -- Pending: goal shape changed with the composite pairing.
-    sorry
+    intro c d f
+    refine Cat.Hom₂.ext_iff.mpr ?_
+    ext W
+    simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+      Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app]
+    exact unit_obj_core x f W
+
+
+set_option backward.isDefEq.respectTransparency false in
+/-- The naturality square of `yonedaHomInvIdObjIso` in the *object* variable, at a point.
+
+For a modification `m : X ⟶ Y` between two strong transformations `yoneda₀ b₀ ⟶ G`, the
+roundtrip sends `m` to `G.map V.op` applied to `m`'s component at the identity.  The
+modification axiom at `𝟙 b₀` (`hM`) turns that into `m`'s component at `V ≫ 𝟙 b₀`, conjugated
+by the two naturality isos; the residual is one naturality square of the natural
+transformation `m.as.app b` at `(ρ_ V).hom` (`hnat`). -/
+lemma unit_natiso_core {b₀ : B} {G : Bᵒᵖ ⥤ᵖ Cat.{w, v}} {X Y : yoneda₀ b₀ ⟶ G} (m : X ⟶ Y)
+    (b : Bᵒᵖ) (V : unop b ⟶ b₀) :
+    (G.map (Quiver.Hom.op V)).toFunctor.map ((m.as.app (op b₀)).toNatTrans.app (𝟙 b₀)) ≫
+      ((Y.naturality (Quiver.Hom.op V)).inv.toNatTrans.app (𝟙 b₀) ≫
+        (Y.app b).toFunctor.map (ρ_ V).hom)
+      = ((X.naturality (Quiver.Hom.op V)).inv.toNatTrans.app (𝟙 b₀) ≫
+          (X.app b).toFunctor.map (ρ_ V).hom) ≫ (m.as.app b).toNatTrans.app V := by
+  have hmod := Cat.Hom₂.congr_app (m.as.naturality (Quiver.Hom.op V)) (𝟙 b₀)
+  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
+    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app] at hmod
+  have hnat : (X.app b).toFunctor.map (ρ_ V).hom ≫ (m.as.app b).toNatTrans.app V
+      = (m.as.app b).toNatTrans.app (((yoneda₀ b₀).map (Quiver.Hom.op V)).toFunctor.obj (𝟙 b₀)) ≫
+        (Y.app b).toFunctor.map (ρ_ V).hom :=
+    (m.as.app b).toNatTrans.naturality (ρ_ V).hom
+  have hXi := Cat.Hom.inv_hom_id_toNatTrans_app (X.naturality (Quiver.Hom.op V)) (𝟙 b₀)
+  have hYh := Cat.Hom.hom_inv_id_toNatTrans_app (Y.naturality (Quiver.Hom.op V)) (𝟙 b₀)
+  have hM : (G.map (Quiver.Hom.op V)).toFunctor.map ((m.as.app (op b₀)).toNatTrans.app (𝟙 b₀))
+      = (X.naturality (Quiver.Hom.op V)).inv.toNatTrans.app (𝟙 b₀) ≫
+        (m.as.app b).toNatTrans.app (((yoneda₀ b₀).map (Quiver.Hom.op V)).toFunctor.obj (𝟙 b₀)) ≫
+        (Y.naturality (Quiver.Hom.op V)).hom.toNatTrans.app (𝟙 b₀) := by
+    rw [hmod, ← Category.assoc, hXi, Category.id_comp]
+  have hcancel : (Y.naturality (Quiver.Hom.op V)).hom.toNatTrans.app (𝟙 b₀) ≫
+      (Y.naturality (Quiver.Hom.op V)).inv.toNatTrans.app (𝟙 b₀) ≫
+        (Y.app b).toFunctor.map (ρ_ V).hom
+      = (Y.app b).toFunctor.map (ρ_ V).hom := by
+    rw [← Category.assoc, hYh, Category.id_comp]
+  rw [hM]
+  simp only [Category.assoc]
+  rw [hcancel, ← hnat]
 
 /--
 For a pair `a = (b₀, F)`, the modification
@@ -116,8 +272,12 @@ def yonedaHomInvIdNatIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
     (yonedaLemmaForwards.app a ≫ yonedaLemmaBackwards.app a).toFunctor ≅
     (𝟭 ↑(yonedaPairing.obj a)) := by
   refine NatIso.ofComponents (fun x ↦ yonedaHomInvIdObjIso a x) ?_
-  -- Pending: goal shape changed with the composite pairing.
-  sorry
+  intro X Y m
+  apply homCategory.ext
+  intro b
+  apply Cat.Hom₂.ext_app
+  intro V
+  exact unit_natiso_core m b V
 
 /-- The unit, built in the `StrongTransIntoCats` world.
 

@@ -209,3 +209,25 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms Biyoneda.yonedaPairing_mapObj_app_map
 #print axioms Biyoneda.yonedaPairing_mapObj_naturality_app
 #print axioms Biyoneda.forwards_naturality_comp_core
+
+-- The unit's three nested isomorphisms close (2026-09-05).  `unit_functor_core` is `α`'s
+-- `naturality_naturality` solved for the bare `map₂` image; `unit_obj_core` is its
+-- `naturality_comp` against `G.mapComp`, ending in the bicategory identity
+-- `(ρ_ (f ≫ g)).hom = (α_ f g (𝟙 _)).hom ≫ f ◁ (ρ_ g).hom`; `unit_natiso_core` is the
+-- modification axiom at the identity.  All three are stated in unbundled variables, because
+-- inside the definitions the evaluation point `𝟙 b₀` is not type-correct at `implicit`
+-- transparency and no rewriting tactic can fire.
+#print axioms Biyoneda.yonedaUnitAppIso
+#print axioms Biyoneda.unit_functor_core
+#print axioms Biyoneda.unit_obj_core
+#print axioms Biyoneda.unit_natiso_core
+#print axioms Biyoneda.yonedaHomInvIdFunctorIso
+#print axioms Biyoneda.yonedaHomInvIdObjIso
+#print axioms Biyoneda.yonedaHomInvIdNatIso
+#print axioms Biyoneda.yonedaInvHomIdNatIso
+
+-- Still contaminated: the unit's top square and the counit.  `yonedaHomInvId` carries no
+-- `sorry` warning -- it delegates to `yonedaHomInvIdIso` -- so only the axiom check sees it.
+#print axioms Biyoneda.yonedaHomInvIdIso
+#print axioms Biyoneda.yonedaHomInvId
+#print axioms Biyoneda.yonedaInvHomId
