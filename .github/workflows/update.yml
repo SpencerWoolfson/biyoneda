@@ -1,8 +1,19 @@
 name: Update Dependencies
 
+# Drift alarm, not an auto-updater.
+#
+# The pin (`lakefile.toml`, `lean-toolchain`) is deliberate and bumping it is a human decision:
+# measured twice on this project, a bump breaks every hand-rolled coherence field while leaving
+# every `:= rfl` bridge alone, so it needs a budget rather than a merge. What this workflow is
+# for is making the cost *visible early* -- a weekly attempt that tells you whether the next
+# bump is free or expensive, while there is still only a week of Mathlib to bisect.
+#
+# Configured to NOTIFY ONLY. Both outcomes open an issue; neither opens a pull request and
+# neither writes to a branch. The `permissions:` block below grants `issues: write` and nothing
+# else, so even a misconfiguration cannot push code -- it would fail loudly instead.
 on:
-  # schedule:             # Sets a schedule to trigger the workflow
-  #   - cron: "0 8 * * *" # Every day at 08:00 AM UTC (see https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#schedule)
+  schedule:
+    - cron: "0 8 * * 1" # Mondays, 08:00 UTC. Weekly, not daily: a bump here is never routine.
   workflow_dispatch:    # Allows the workflow to be triggered manually via the GitHub interface
 
 jobs:
@@ -20,9 +31,8 @@ jobs:
   do-update: # Runs the upgrade, tests it, and makes a PR/issue/commit.
     runs-on: ubuntu-latest
     permissions:
-      contents: write      # Grants permission to push changes to the repository
-      issues: write        # Grants permission to create or update issues
-      pull-requests: write # Grants permission to create or update pull requests
+      contents: read       # Read only: this workflow reports, it does not update the pin
+      issues: write        # Its one output is an issue saying what it found
     needs: check-for-updates
     if: ${{ needs.check-for-updates.outputs.is-update-available == 'true' }}
     strategy: # Runs for each update discovered by the `check-for-updates` job.
@@ -36,6 +46,12 @@ jobs:
         with:
           tag: ${{ matrix.tag }}
           # START CONFIGURATION BLOCK 2
-          on_update_succeeds: pr # Create a pull request if the update succeeds
-          on_update_fails: issue # Create an issue if the update fails
+          # Both outcomes are notifications. `issue` on success is deliberate: a green
+          # bump is still a decision, not something to land unattended.
+          # NOTE (2026-09-06): `issue` is documented for `on_update_fails`; that it is also
+          # accepted for `on_update_succeeds` has NOT been verified here -- GitHub Actions
+          # cannot be run from a local session. Confirm on the first manual dispatch before
+          # trusting the schedule.
+          on_update_succeeds: issue
+          on_update_fails: issue
           # END CONFIGURATION BLOCK 2

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Gate a build log on the two things `lake build` exiting 0 does NOT prove:
+# Gate a build log on the three things `lake build` exiting 0 does NOT prove:
 #   1. the sorry count has not grown
 #   2. the sorryAx dependencies of load-bearing declarations are exactly the recorded ones
+#   3. the warning count has not grown
 #
 # Both matter here because sorries are warnings, not errors, and because a
 # coherence field can be silently discharged by an autoparam riding on a sorry
@@ -20,6 +21,7 @@ set -uo pipefail
 LOG="${1:-build.log}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BASELINE_FILE="$ROOT/.github/sorry-baseline"
+WARN_BASELINE_FILE="$ROOT/.github/warning-baseline"
 
 # Every `#print axioms` we require to have actually run. A gate that greps for
 # bad output passes vacuously if the output disappears, so assert presence too.
@@ -283,6 +285,43 @@ done
 if [ "${#CLEAN_DECLS[@]}" -eq 0 ]; then
   note ""
   note "⚠️  \`CLEAN_DECLS\` is empty: no declaration is currently asserted sorryAx-free."
+fi
+
+# ── 3. warning ratchet ──────────────────────────────────────────────────────
+# Warnings are the early-warning system for two things this project actually cares about:
+# a Mathlib bump deprecating something we use, and simp sets drifting out from under a
+# `simp only` list. Neither is an error, so neither is visible without a ratchet.
+#
+# `declaration uses` lines are excluded: section 1 already gates those, by DECLARATION rather
+# than by line, and counting them here too would report one regression twice.
+#
+# Same two-way discipline as the sorry ratchet -- but note the asymmetry with it. A rising
+# sorry count can be legitimate (splitting invisible debt into named lemmas); a rising warning
+# count is not, so this one has no "sometimes fine" escape hatch. If a bump makes it rise,
+# fix the warnings or raise the baseline deliberately, in a commit that says why.
+note ""
+warnings=$(grep -c 'warning:' "$LOG" || true)
+sorry_warns=$(grep -c 'declaration uses' "$LOG" || true)
+warn_count=$(( warnings - sorry_warns ))
+warn_baseline=$(tr -dc '0-9' < "$WARN_BASELINE_FILE" 2>/dev/null || echo "")
+if [ -z "$warn_baseline" ]; then
+  echo "::error::missing or unreadable baseline: $WARN_BASELINE_FILE"
+  fail=1
+elif [ "$warn_count" -gt "$warn_baseline" ]; then
+  note "**Warnings: $warn_count — up from $warn_baseline.** ❌"
+  note ""
+  note "New warnings:"
+  grep 'warning:' "$LOG" | grep -v 'declaration uses' \
+    | sed -E 's/.*warning: //' | cut -c1-110 | sort -u | sed 's/^/    /'
+  echo "::error::warning count rose from $warn_baseline to $warn_count"
+  fail=1
+elif [ "$warn_count" -lt "$warn_baseline" ]; then
+  note "**Warnings: $warn_count — down from $warn_baseline.** ✅"
+  note ""
+  note "Lower the ratchet so it keeps protecting: put \`$warn_count\` in \`.github/warning-baseline\`."
+  echo "::notice::warning count fell to $warn_count; update .github/warning-baseline"
+else
+  note "**Warnings: $warn_count**, matching the baseline. ✅"
 fi
 
 note ""
