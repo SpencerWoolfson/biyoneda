@@ -48,10 +48,8 @@ The equivalence is witnessed by:
 * `homInvId` (`yonedaHomInvId`): the unit iso, `backwards ∘ forwards ≅ id` on the pairing side.
 * `invHomId` (`yonedaInvHomId`): the counit iso, `forwards ∘ backwards ≅ id` on evaluation.
 -/
-def yonedaLemma : BiEquiv (@yonedaPairing B _) (@yonedaEvaluation B _) where
-  map := yonedaLemmaForwards
-  inv := yonedaLemmaBackwards
-  homInvId := yonedaHomInvId
-  invHomId := yonedaInvHomId
+def yonedaLemma : (@yonedaPairing B _) ≌ (@yonedaEvaluation B _)
+  := Equivalence.mkOfAdjointifyCounit yonedaHomInvId.symm yonedaInvHomId
+
 
 end Biyoneda
