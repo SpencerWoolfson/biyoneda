@@ -3,7 +3,9 @@ Copyright (c) 2026 Spencer Woolfson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Spencer Woolfson
 -/
-import Biyoneda.BackwardsNaturality
+module
+
+public import Biyoneda.BackwardsNaturality
 
 /-!
 # The backward direction: transport along the pseudofunctor
@@ -20,6 +22,8 @@ This file holds only the last layer: the two remaining coherence ingredients
 transformation itself.  The component functor is in `Biyoneda/BackwardsFunctor.lean` and the
 naturality isomorphism in `Biyoneda/BackwardsNaturality.lean`.
 -/
+
+@[expose] public section
 
 namespace Biyoneda
 

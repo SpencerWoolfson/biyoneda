@@ -3,10 +3,12 @@ Copyright (c) 2026 Spencer Woolfson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Spencer Woolfson
 -/
-import Mathlib.CategoryTheory.Bicategory.Product
-import Mathlib.CategoryTheory.Functor.Currying
-import Biyoneda.ForMathlib
-import Biyoneda.StrongTransLemmas
+module
+
+public import Mathlib.CategoryTheory.Bicategory.Product
+public import Mathlib.CategoryTheory.Functor.Currying
+public import Biyoneda.ForMathlib
+public import Biyoneda.StrongTransLemmas
 
 /-!
 # The evaluation pseudofunctor
@@ -51,6 +53,8 @@ an explicit unitor, which changes the term and is a separate (non-definitional) 
 Note the diagonal switch moves which unitor is being leaned on.  The old diagonal needed
 `𝟙 ≫ f`; this one needs `f ≫ 𝟙`.  See the comment at `mapId`.
 -/
+
+@[expose] public section
 
 namespace CategoryTheory.Bicategory
 

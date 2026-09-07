@@ -3,16 +3,18 @@ Copyright (c) 2026 Spencer Woolfson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Spencer Woolfson
 -/
-import Mathlib.CategoryTheory.Bicategory.Product
-import Mathlib.CategoryTheory.Bicategory.Adjunction.Basic
-import Mathlib.CategoryTheory.Bicategory.Yoneda
-import Mathlib.CategoryTheory.Category.ULift
-import Mathlib.Tactic.CategoryTheory.Bicategory.Basic
-import Mathlib.Tactic.CategoryTheory.Slice
-import Biyoneda.Evaluation
-import Biyoneda.UniverseLift
-import Biyoneda.Gadgets
-import Biyoneda.TransIntoCats
+module
+
+public import Mathlib.CategoryTheory.Bicategory.Product
+public import Mathlib.CategoryTheory.Bicategory.Adjunction.Basic
+public import Mathlib.CategoryTheory.Bicategory.Yoneda
+public import Mathlib.CategoryTheory.Category.ULift
+public import Mathlib.Tactic.CategoryTheory.Bicategory.Basic
+public import Mathlib.Tactic.CategoryTheory.Slice
+public import Biyoneda.Evaluation
+public import Biyoneda.UniverseLift
+public import Biyoneda.Gadgets
+public import Biyoneda.TransIntoCats
 
 /-!
 # The Yoneda pairing and evaluation pseudofunctors
@@ -31,6 +33,8 @@ composite-built `yonedaPairing` be used in its hand-rolled spelling.
 `Cat.{max u (max v w), max u (max v w)}`.  `catPseudoULift` promotes the former to the
 latter, yielding `yonedaEvaluation`.
 -/
+
+@[expose] public section
 
 namespace Biyoneda
 

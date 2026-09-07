@@ -3,7 +3,9 @@ Copyright (c) 2026 Spencer Woolfson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Spencer Woolfson
 -/
-import Biyoneda.Pairing
+module
+
+public import Biyoneda.Pairing
 
 /-!
 # The backward direction: the component functor
@@ -21,6 +23,8 @@ an object, used by `backwardsTrans`'s coherence fields.
 
 The naturality machinery is in `Biyoneda/BackwardsNaturality.lean`.
 -/
+
+@[expose] public section
 
 namespace Biyoneda
 

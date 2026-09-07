@@ -3,7 +3,9 @@ Copyright (c) 2026 Spencer Woolfson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Spencer Woolfson
 -/
-import Biyoneda.BackwardsFunctor
+module
+
+public import Biyoneda.BackwardsFunctor
 
 /-!
 # The backward direction: the naturality isomorphism
@@ -32,6 +34,8 @@ The three cores, in increasing depth:
 * `backwards_square_core` -- the strong-transformation naturality square;
 * `backwards_natural_core` -- naturality in the evaluation point.
 -/
+
+@[expose] public section
 
 namespace Biyoneda
 

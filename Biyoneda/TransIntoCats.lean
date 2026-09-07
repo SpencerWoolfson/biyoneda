@@ -3,9 +3,11 @@ Copyright (c) 2026 Spencer Woolfson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Spencer Woolfson
 -/
-import Mathlib.CategoryTheory.Bicategory.Modification.Pseudo
-import Biyoneda.ForMathlib
-import Biyoneda.UniverseLift
+module
+
+public import Mathlib.CategoryTheory.Bicategory.Modification.Pseudo
+public import Biyoneda.ForMathlib
+public import Biyoneda.UniverseLift
 
 /-!
 # Transformations between `Cat`-valued pseudofunctors
@@ -26,6 +28,8 @@ independent, and the constructions that decide the universe relationship afterwa
 Independent of the composite gadgets in `Biyoneda/Gadgets.lean`; both sit directly on
 `Biyoneda/UniverseLift.lean`.
 -/
+
+@[expose] public section
 
 open CategoryTheory Bicategory Bicategory.Opposite Opposite Pseudofunctor StrongTrans Functor
 open scoped Pseudofunctor.StrongTrans

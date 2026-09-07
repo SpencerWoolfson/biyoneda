@@ -3,12 +3,14 @@ Copyright (c) 2026 Spencer Woolfson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Spencer Woolfson
 -/
-import Mathlib.CategoryTheory.Bicategory.Product
-import Mathlib.CategoryTheory.Functor.Currying
-import Mathlib.CategoryTheory.Bicategory.Opposites
-import Mathlib.CategoryTheory.Bicategory.Yoneda
-import Mathlib.Tactic.CategoryTheory.Bicategory.Basic
-import Biyoneda.ForMathlib
+module
+
+public import Mathlib.CategoryTheory.Bicategory.Product
+public import Mathlib.CategoryTheory.Functor.Currying
+public import Mathlib.CategoryTheory.Bicategory.Opposites
+public import Mathlib.CategoryTheory.Bicategory.Yoneda
+public import Mathlib.Tactic.CategoryTheory.Bicategory.Basic
+public import Biyoneda.ForMathlib
 
 /-!
 # Gadgets for building `yonedaPairing` as a composite
@@ -134,6 +136,8 @@ warnings.
 | `Pseudofunctor.op` | `Bicategory/Opposites.lean` | `Functor.op` |
 | `homPseudo` | new `Bicategory/Functor/Hom.lean` | `Functor.hom` (3 lines!) |
 -/
+
+@[expose] public section
 
 open CategoryTheory Bicategory Bicategory.Opposite Opposite Pseudofunctor StrongTrans Functor
 open scoped Pseudofunctor.StrongTrans

@@ -3,8 +3,10 @@ Copyright (c) 2026 Spencer Woolfson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Spencer Woolfson
 -/
-import Biyoneda.Gadgets
-import Biyoneda.Yoneda
+module
+
+public import Biyoneda.Gadgets
+public import Biyoneda.Yoneda
 
 /-!
 # Regression check: the load-bearing declarations are `sorryAx`-free
@@ -31,6 +33,8 @@ all, `ModificationIntoCats.lift` included.
 
 `scripts/verify-build.sh` gates on all of these; keep the two lists in step.
 -/
+
+@[expose] public section
 
 open CategoryTheory Bicategory Biyoneda
 

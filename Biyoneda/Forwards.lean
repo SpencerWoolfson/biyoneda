@@ -3,7 +3,9 @@ Copyright (c) 2026 Spencer Woolfson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Spencer Woolfson
 -/
-import Biyoneda.Pairing
+module
+
+public import Biyoneda.Pairing
 
 /-!
 # The forward direction: evaluate at the identity
@@ -38,6 +40,8 @@ Three moves get around it, and every proof below is one of them:
   `congrArg`, `Category.assoc` and `Functor.map_comp` by hand.  `exact` checks at default
   transparency, so it bridges the two spellings for free.
 -/
+
+@[expose] public section
 
 namespace Biyoneda
 

@@ -3,7 +3,9 @@ Copyright (c) 2026 Spencer Woolfson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Spencer Woolfson
 -/
-import Biyoneda.ForMathlib
+module
+
+public import Biyoneda.ForMathlib
 
 /-!
 # Strong transformations into `Cat`, at a point
@@ -37,6 +39,8 @@ These belong in three different places upstream — the `Functor` folds under
 `Biyoneda/ForMathlib.lean`'s target, and the rest with `StrongTrans`.  They are kept together
 here because that is how they are *used*; subdivide at PR time, not before.
 -/
+
+@[expose] public section
 
 namespace CategoryTheory.Bicategory
 

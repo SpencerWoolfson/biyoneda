@@ -3,8 +3,10 @@ Copyright (c) 2026 Spencer Woolfson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Spencer Woolfson
 -/
-import Biyoneda.Forwards
-import Biyoneda.Backwards
+module
+
+public import Biyoneda.Forwards
+public import Biyoneda.Backwards
 
 /-!
 # The unit and counit of the Yoneda equivalence
@@ -18,6 +20,8 @@ The two round-trip isomorphisms witnessing that `yonedaLemmaForwards` and
 Each is assembled inside-out: a component iso at a point, then at a fibre, then a natural
 iso, then the modification.
 -/
+
+@[expose] public section
 
 namespace Biyoneda
 

@@ -3,7 +3,9 @@ Copyright (c) 2026 Spencer Woolfson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Spencer Woolfson
 -/
-import Biyoneda.Unit
+module
+
+public import Biyoneda.Unit
 
 /-!
 # The bicategorical Yoneda lemma
@@ -15,6 +17,8 @@ bicategory of pseudofunctors `Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat) ⥤ᵖ Cat`, which
 
 natural in `b` and `F`.
 -/
+
+@[expose] public section
 
 namespace Biyoneda
 
