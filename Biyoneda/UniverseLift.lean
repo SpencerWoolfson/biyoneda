@@ -3,8 +3,10 @@ Copyright (c) 2026 Spencer Woolfson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Spencer Woolfson
 -/
-import Mathlib.CategoryTheory.Category.ULift
-import Biyoneda.ForMathlib
+module
+
+public import Mathlib.CategoryTheory.Category.ULift
+public import Biyoneda.ForMathlib
 
 /-!
 # Universe lifting for `Cat`
@@ -29,6 +31,8 @@ Nothing here mentions the Yoneda development; this is general `Cat` universe mac
 candidate for upstreaming (Mathlib has `uliftFunctor` for `Type`, and this is its `Cat`
 analogue).
 -/
+
+@[expose] public section
 
 namespace CategoryTheory.Bicategory
 

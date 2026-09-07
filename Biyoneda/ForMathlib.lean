@@ -3,10 +3,12 @@ Copyright (c) 2026 Spencer Woolfson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Spencer Woolfson
 -/
-import Mathlib.CategoryTheory.Category.Cat
-import Mathlib.CategoryTheory.Bicategory.Yoneda
-import Mathlib.CategoryTheory.Bicategory.FunctorBicategory.Pseudo
-import Mathlib.Tactic.CategoryTheory.ToApp
+module
+
+public import Mathlib.CategoryTheory.Category.Cat
+public import Mathlib.CategoryTheory.Bicategory.Yoneda
+public import Mathlib.CategoryTheory.Bicategory.FunctorBicategory.Pseudo
+public import Mathlib.Tactic.CategoryTheory.ToApp
 
 /-!
 # Lemmas staged for upstreaming to Mathlib
@@ -50,6 +52,8 @@ are not `@[simp]` either, so un-tagged also matches precedent. Any upstream vers
 un-tagged, or be tagged only after benchmarking — do not flip them on the way out.
 
 -/
+
+@[expose] public section
 
 open CategoryTheory Bicategory Pseudofunctor StrongTrans Functor
 
