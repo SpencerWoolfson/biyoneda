@@ -265,7 +265,8 @@ def StrongTransIntoCats.precomposeCounit {A : Type u} [Bicategory A]
     d.naturality_naturality' η ((catLiftCounit (F.obj a)).obj x)
   naturality_id' a x := by
     dsimp only [Pseudofunctor.comp, Functor.comp_map, Functor.comp_obj]
-    simp only [Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.trans_hom,Functor.whiskerLeft]
+    simp only [Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.trans_hom,
+      Functor.whiskerLeft]
     dsimp [Functor.comp ]
     let check := d.naturality_id' a (((catLiftCounit (F.obj a)).obj x))
     erw [check]
@@ -277,7 +278,8 @@ def StrongTransIntoCats.precomposeCounit {A : Type u} [Bicategory A]
 
   naturality_comp' {a b c} f g x := by
     dsimp only [Pseudofunctor.comp, Functor.comp_map, Functor.comp_obj]
-    simp only [Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.trans_hom,Functor.whiskerLeft]
+    simp only [Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.trans_hom,
+      Functor.whiskerLeft]
     dsimp [Functor.comp ]
     erw [Iso.trans_hom, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
       catPseudoULift_mapComp_hom_app, Category.comp_id]
@@ -316,8 +318,9 @@ written at the functor level and ignore `Cat` entirely.
 
 
 def StrongTransIntoCats.comp {A : Type u} [Bicategory A]
-    {F : Pseudofunctor A Cat.{v₁, u₁}} {G : Pseudofunctor A Cat.{v₂, u₂}} {H : Pseudofunctor A Cat.{v₃, u₃}}
-    (d1 : StrongTransIntoCats F G) (d2 : StrongTransIntoCats G H)  : StrongTransIntoCats F H where
+    {F : Pseudofunctor A Cat.{v₁, u₁}} {G : Pseudofunctor A Cat.{v₂, u₂}}
+    {H : Pseudofunctor A Cat.{v₃, u₃}}
+    (d1 : StrongTransIntoCats F G) (d2 : StrongTransIntoCats G H) : StrongTransIntoCats F H where
     app x := (d1.app x) ⋙ (d2.app x)
     naturality {a b} f := by
       rw [<- Functor.assoc]
@@ -447,7 +450,8 @@ lemma StrongTransIntoCats.lift_comp_liftDom_app {A : Type u} [Bicategory A]
 
 `lift`, `liftDom` and `toStrongTransMax` all exist to reconcile *different* universes.  When
 `F` and `G` already land in the same one there is nothing to reconcile, and the translation is
-definitional -- each field of `toStrongTrans` is a bare `exact`.  Prefer these over `toStrongTransMax`
+definitional -- each field of `toStrongTrans` is a bare `exact`.  Prefer these over
+`toStrongTransMax`
 whenever the universes already agree: `toStrongTransMax` lands on `F.comp catPseudoULift`,
 a *different* pseudofunctor, which forces a counit at every downstream `.app`.
 -/
