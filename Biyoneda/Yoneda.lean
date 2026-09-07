@@ -41,12 +41,19 @@ which unpacks to the natural equivalence of categories
 
 for all `b : Bᵒᵖ` and `F : Bᵒᵖ ⥤ᵖ Cat`.
 
+This is Mathlib's `Bicategory.Equivalence` (notation `≌`), an *adjoint* equivalence: it carries
+a `left_triangle` law relating the unit and the counit.  The two round-trip isomorphisms proved
+in `Biyoneda/Unit.lean` satisfy no such law on their own, so they are fed to
+`Equivalence.mkOfAdjointifyCounit`, which repairs the counit until the triangle holds.
+
 The equivalence is witnessed by:
-* `map` (`yonedaLemmaForwards`): evaluate a strong transformation at the identity morphism.
+* `hom` (`yonedaLemmaForwards`): evaluate a strong transformation at the identity morphism.
 * `inv` (`yonedaLemmaBackwards`): send an element `s : F.obj b` to the strong transformation
   `(a, f) ↦ (F.map f).obj s`.
-* `homInvId` (`yonedaHomInvId`): the unit iso, `backwards ∘ forwards ≅ id` on the pairing side.
-* `invHomId` (`yonedaInvHomId`): the counit iso, `forwards ∘ backwards ≅ id` on evaluation.
+* `unit` (`yonedaHomInvId.symm`): `id ≅ forwards ≫ backwards` on the pairing side.  The `.symm`
+  is orientation: Mathlib writes the unit as `𝟙 a ≅ hom ≫ inv`, while `yonedaHomInvId` is
+  proved in the other direction.
+* `counit` (`yonedaInvHomId`): `backwards ≫ forwards ≅ id` on evaluation.
 -/
 def yonedaLemma : (@yonedaPairing B _) ≌ (@yonedaEvaluation B _)
   := Equivalence.mkOfAdjointifyCounit yonedaHomInvId.symm yonedaInvHomId

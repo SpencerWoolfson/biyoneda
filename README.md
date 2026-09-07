@@ -62,7 +62,7 @@ a `sorry` nor a `sorryAx` dependency can reappear unnoticed.
 | `yonedaLemmaBackwards` | Strong transformation $\Psi : E \to P$, sending $s$ to $(a, f) \mapsto F(f)(s)$ |
 | `yonedaHomInvId` | Unit isomorphism $\Psi \circ \Phi \cong \mathrm{id}_P$ |
 | `yonedaInvHomId` | Counit isomorphism $\Phi \circ \Psi \cong \mathrm{id}_E$ |
-| `yonedaLemma` | The assembled `BiEquiv` witnessing the equivalence |
+| `yonedaLemma` | The assembled `Bicategory.Equivalence` (`≌`) witnessing the equivalence |
 | `catPseudoULift` | Universe-lifting pseudofunctor needed to type-match the two sides |
 
 ## Repository Structure
@@ -79,7 +79,6 @@ biyoneda/
 │   ├── Forwards.lean              # Φ : pairing ⟶ evaluation
 │   ├── Backwards*.lean            # Ψ : evaluation ⟶ pairing
 │   ├── Unit.lean                  # Unit and counit isos
-│   ├── BiEquiv.lean               # Internal equivalence in a bicategory
 │   ├── Yoneda.lean                # The assembled theorem
 │   └── CompositePairing.lean      # `yonedaPairing` as a composite of gadgets; axiom checks
 ├── paper/                         # Paper source (Biyoneda.tex, preamble, references)
