@@ -53,7 +53,8 @@ Note the diagonal switch moves which unitor is being leaned on.  The old diagona
 
 namespace CategoryTheory.Bicategory
 
-open CategoryTheory Bicategory Pseudofunctor StrongTrans Functor
+open CategoryTheory _root_.CategoryTheory.Bicategory Pseudofunctor StrongTrans
+  _root_.CategoryTheory.Functor
 open scoped Pseudofunctor.StrongTrans
 
 universe u v w

@@ -265,7 +265,7 @@ def StrongTransIntoCats.precomposeCounit {A : Type u} [Bicategory A]
     d.naturality_naturality' η ((catLiftCounit (F.obj a)).obj x)
   naturality_id' a x := by
     dsimp only [Pseudofunctor.comp, Functor.comp_map, Functor.comp_obj]
-    simp only [Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.trans_hom,
+    simp only [Functor.isoWhiskerLeft_hom, 
       Functor.whiskerLeft]
     dsimp [Functor.comp ]
     let check := d.naturality_id' a (((catLiftCounit (F.obj a)).obj x))
@@ -278,7 +278,7 @@ def StrongTransIntoCats.precomposeCounit {A : Type u} [Bicategory A]
 
   naturality_comp' {a b c} f g x := by
     dsimp only [Pseudofunctor.comp, Functor.comp_map, Functor.comp_obj]
-    simp only [Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.trans_hom,
+    simp only [Functor.isoWhiskerLeft_hom, 
       Functor.whiskerLeft]
     dsimp [Functor.comp ]
     erw [Iso.trans_hom, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
@@ -426,13 +426,13 @@ lemma StrongTransIntoCats.lift_comp_liftDom_naturality_app {A : Type u} [Bicateg
       = ((d1.comp d2).naturality f).hom.app x := by
   simp only [Pseudofunctor.StrongTrans.categoryStruct_comp_naturality_hom,
     Bicategory.Strict.associator_eqToIso, eqToIso_refl, Iso.refl_hom, Iso.refl_inv,
-    Category.id_comp, Category.comp_id]
+]
   repeat erw [Cat.Hom.toNatTrans_comp]
   repeat erw [Cat.Hom.toNatTrans_id]
-  simp only [NatTrans.comp_app, Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
-    Functor.whiskerLeft_app, Functor.whiskerRight_app, Category.id_comp, Category.comp_id]
+  simp only [Cat.whiskerLeft_toNatTrans, Cat.whiskerRight_toNatTrans,
+    Category.id_comp]
   simp [StrongTransIntoCats.comp, StrongTransIntoCats.lift, StrongTransIntoCats.liftDom,
-    Functor.comp_map, Iso.trans_hom, Iso.refl_hom, isoWhiskerRight_hom, isoWhiskerLeft_hom,
+    Iso.trans_hom, isoWhiskerRight_hom, isoWhiskerLeft_hom,
     Functor.whiskerRight_app, Functor.whiskerLeft_app, Cat.Hom.isoMk_hom,
     NatTrans.toCatHom₂_toNatTrans, Category.comp_id]
   erw [Iso.trans_hom, Category.comp_id]
@@ -574,7 +574,7 @@ lemma StrongTransIntoCats.Id_naturality_app {A : Type u} [Bicategory A]
     {F : Pseudofunctor A Cat.{v₁, u₁}} {a b : A} (f : a ⟶ b) (x : F.obj a) :
     ((show F ⟶ F from 𝟙 F).naturality f).hom.toNatTrans.app x
       = ((StrongTransIntoCats.Id (F := F)).naturality f).hom.app x := by
-  simp [StrongTransIntoCats.Id, StrongTrans.id]
+  simp [StrongTransIntoCats.Id]
   rfl
 
 /-! ### Composing modifications

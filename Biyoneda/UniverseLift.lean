@@ -32,7 +32,8 @@ analogue).
 
 namespace CategoryTheory.Bicategory
 
-open CategoryTheory Bicategory Opposite Pseudofunctor StrongTrans Functor
+open CategoryTheory _root_.CategoryTheory.Bicategory Opposite Pseudofunctor StrongTrans
+  _root_.CategoryTheory.Functor
 
 universe u v w v₁ v₂ u₁ u₂
 
@@ -110,6 +111,29 @@ its middle object, so the composite never distributes -- not under `simp`, `simp
 @[simp] lemma catLiftCounit_comp_catLiftUnit (A : Cat.{v₁, u₁}) :
     catLiftCounit.{v₁, v₂, u₁, u₂} A ⋙ catLiftUnit A = 𝟭 _ := rfl
 
+/-- The descent shared by all five of `catPseudoULift`'s `map₂_*` coherence fields.
+
+The five proofs were byte-identical, 795 characters each.  Strip `Cat`'s strictness isos, put
+both sides at the same spelling of `catLift.map` (see `catLift_map_comp` above), then let the
+composite distribute and the identities drop out.  Written once here; the fields are one line
+each below. -/
+local macro "catLift_map₂_descent" : tactic =>
+  `(tactic|
+    (apply Cat.Hom₂.ext_app
+     intro X
+     simp only [Bicategory.Strict.leftUnitor_eqToIso,
+       Bicategory.Strict.rightUnitor_eqToIso, Bicategory.Strict.associator_eqToIso,
+       eqToIso.hom, eqToHom_refl, Iso.refl_hom, Bicategory.whiskerLeft_eqToHom,
+       Bicategory.eqToHom_whiskerRight, Bicategory.id_whiskerRight,
+       Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
+       Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
+       Category.id_comp, Category.comp_id]
+     simp only [catLift_map_comp, catLift_map_id]
+     repeat erw [Cat.Hom.toNatTrans_comp]
+     repeat erw [Cat.Hom.toNatTrans_id]
+     simp
+     rfl))
+
 /--
 The pseudofunctor `Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂}` that promotes every small
 category to a larger universe.
@@ -161,85 +185,15 @@ def catPseudoULift : Cat.{v₁, u₁} ⥤ᵖ Cat.{max v₁ v₂, max u₁ u₂} 
 
   The v4.30 proofs are worth mining:  git show comp-core:Biyoneda/UniverseLift.lean -/
   map₂_whisker_left {a b c} f g h η := by
-    apply Cat.Hom₂.ext_app; intro X
-    simp only [Bicategory.Strict.leftUnitor_eqToIso,
-      Bicategory.Strict.rightUnitor_eqToIso, Bicategory.Strict.associator_eqToIso,
-      eqToIso.hom, eqToHom_refl, Iso.refl_hom, Bicategory.whiskerLeft_eqToHom,
-      Bicategory.eqToHom_whiskerRight, Bicategory.id_whiskerRight,
-      Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
-      Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
-      Category.id_comp, Category.comp_id]
-    -- put both sides at the same spelling first (see `catLift_map_comp` above), then the
-    -- composite distributes and the `𝟙`s drop out
-    simp only [catLift_map_comp, catLift_map_id]
-    repeat erw [Cat.Hom.toNatTrans_comp]
-    repeat erw [Cat.Hom.toNatTrans_id]
-    simp
-    rfl
+    catLift_map₂_descent
   map₂_whisker_right η h := by
-    apply Cat.Hom₂.ext_app; intro X
-    simp only [Bicategory.Strict.leftUnitor_eqToIso,
-      Bicategory.Strict.rightUnitor_eqToIso, Bicategory.Strict.associator_eqToIso,
-      eqToIso.hom, eqToHom_refl, Iso.refl_hom, Bicategory.whiskerLeft_eqToHom,
-      Bicategory.eqToHom_whiskerRight, Bicategory.id_whiskerRight,
-      Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
-      Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
-      Category.id_comp, Category.comp_id]
-    -- put both sides at the same spelling first (see `catLift_map_comp` above), then the
-    -- composite distributes and the `𝟙`s drop out
-    simp only [catLift_map_comp, catLift_map_id]
-    repeat erw [Cat.Hom.toNatTrans_comp]
-    repeat erw [Cat.Hom.toNatTrans_id]
-    simp
-    rfl
+    catLift_map₂_descent
   map₂_associator {a b c d} f g h := by
-    apply Cat.Hom₂.ext_app; intro X
-    simp only [Bicategory.Strict.leftUnitor_eqToIso,
-      Bicategory.Strict.rightUnitor_eqToIso, Bicategory.Strict.associator_eqToIso,
-      eqToIso.hom, eqToHom_refl, Iso.refl_hom, Bicategory.whiskerLeft_eqToHom,
-      Bicategory.eqToHom_whiskerRight, Bicategory.id_whiskerRight,
-      Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
-      Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
-      Category.id_comp, Category.comp_id]
-    -- put both sides at the same spelling first (see `catLift_map_comp` above), then the
-    -- composite distributes and the `𝟙`s drop out
-    simp only [catLift_map_comp, catLift_map_id]
-    repeat erw [Cat.Hom.toNatTrans_comp]
-    repeat erw [Cat.Hom.toNatTrans_id]
-    simp
-    rfl
+    catLift_map₂_descent
   map₂_left_unitor {a b} f := by
-    apply Cat.Hom₂.ext_app; intro X
-    simp only [Bicategory.Strict.leftUnitor_eqToIso,
-      Bicategory.Strict.rightUnitor_eqToIso, Bicategory.Strict.associator_eqToIso,
-      eqToIso.hom, eqToHom_refl, Iso.refl_hom, Bicategory.whiskerLeft_eqToHom,
-      Bicategory.eqToHom_whiskerRight, Bicategory.id_whiskerRight,
-      Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
-      Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
-      Category.id_comp, Category.comp_id]
-    -- put both sides at the same spelling first (see `catLift_map_comp` above), then the
-    -- composite distributes and the `𝟙`s drop out
-    simp only [catLift_map_comp, catLift_map_id]
-    repeat erw [Cat.Hom.toNatTrans_comp]
-    repeat erw [Cat.Hom.toNatTrans_id]
-    simp
-    rfl
+    catLift_map₂_descent
   map₂_right_unitor {a b} f := by
-    apply Cat.Hom₂.ext_app; intro X
-    simp only [Bicategory.Strict.leftUnitor_eqToIso,
-      Bicategory.Strict.rightUnitor_eqToIso, Bicategory.Strict.associator_eqToIso,
-      eqToIso.hom, eqToHom_refl, Iso.refl_hom, Bicategory.whiskerLeft_eqToHom,
-      Bicategory.eqToHom_whiskerRight, Bicategory.id_whiskerRight,
-      Bicategory.whiskerLeft_id, Cat.Hom.toNatTrans_comp, NatTrans.comp_app,
-      Cat.Hom.toNatTrans_id, NatTrans.id_app, eqToHom_app, eqToHom_map,
-      Category.id_comp, Category.comp_id]
-    -- put both sides at the same spelling first (see `catLift_map_comp` above), then the
-    -- composite distributes and the `𝟙`s drop out
-    simp only [catLift_map_comp, catLift_map_id]
-    repeat erw [Cat.Hom.toNatTrans_comp]
-    repeat erw [Cat.Hom.toNatTrans_id]
-    simp
-    rfl
+    catLift_map₂_descent
 
 /-- Two 2-cells of `Cat` landing in a universe-lifted category are equal as soon as their
 unlifted components agree: morphisms of `ULiftHom (ULift D)` are `ULift`-wrapped, so the

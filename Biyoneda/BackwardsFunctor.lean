@@ -136,7 +136,7 @@ def backwardsTransData (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) (eval : ↑(x.2.obj
     Cat.Hom₂.congr_app (x.2.toOplax.mapComp_naturality_right (Quiver.Hom.op X) η) eval
   naturality_id' a X := by
     have key := mapComp_id_app x.2 X eval
-    simp only [Category.id_comp, Category.comp_id] at key
+    simp only [Category.comp_id] at key
     exact key
   naturality_comp' {a b c} f g X := mapComp_assoc_app' x.2 f g X eval
 
@@ -199,7 +199,7 @@ def yonedaLemmaBackwardsFunctor (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) :
       rw [Cat.Hom.toNatTrans_comp, Cat.Hom.toNatTrans_comp]
       simp only [backwardsTrans_app_toFunctor, backwardsFibreFunctor, op_unop,
         Cat.Hom.comp_toFunctor, comp_obj, Cat.whiskerLeft_toNatTrans,
-        Cat.Hom.isoMk_hom, NatTrans.toCatHom₂_toNatTrans, Cat.whiskerRight_toNatTrans]
+        Cat.whiskerRight_toNatTrans]
       exact (x.2.mapComp (Quiver.Hom.op c) g).hom.toNatTrans.naturality f
   map_id X := by
     apply homCategory.ext
