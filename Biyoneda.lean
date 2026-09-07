@@ -3,6 +3,7 @@
 -- `yonedaEvaluation` is clean and nothing in this group roots a `sorryAx`.
 import Biyoneda.ForMathlib
 import Biyoneda.UniverseLift
+import Biyoneda.StrongTransLemmas
 import Biyoneda.Evaluation
 -- General gadgets the development is built on. `Pairing` imports both, so despite the
 -- "experimental" label these once carried, everything below depends on them. Both are now

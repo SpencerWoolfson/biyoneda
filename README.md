@@ -74,7 +74,8 @@ biyoneda/
 │   ├── UniverseLift.lean          # `catLift` / `catPseudoULift` and their stripping lemmas
 │   ├── Gadgets.lean               # Pseudofunctor `prod`, `op`, `homPseudo`
 │   ├── TransIntoCats.lean         # `StrongTransIntoCats` and its lifts
-│   ├── Evaluation*.lean           # The evaluation pseudofunctor and its coherence cores
+│   ├── StrongTransLemmas.lean     # General strong-transformation lemmas, at a point
+│   ├── Evaluation.lean            # The evaluation pseudofunctor and its coherence cores
 │   ├── Pairing.lean               # `yonedaPairing`
 │   ├── Forwards.lean              # Φ : pairing ⟶ evaluation
 │   ├── Backwards*.lean            # Ψ : evaluation ⟶ pairing
