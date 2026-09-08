@@ -144,7 +144,7 @@ def whiskerRightPseudo {F G : A ⥤ᵖ B} (η : StrongTrans F G) (H : B ⥤ᵖ C
     have e2 : (G.comp H).map₂ θ = H.map₂ (G.map₂ θ) := rfl
     have e3 : (H.map₂Iso (η.naturality g)).hom = H.map₂ (η.naturality g).hom := rfl
     have e4 : (H.map₂Iso (η.naturality f)).hom = H.map₂ (η.naturality f).hom := rfl
-    simp only [Iso.trans_hom, Iso.symm_hom, e1, e2, e3, e4]
+    simp only [Iso.trans_hom, Iso.symm_hom, e1, e2]
     have h := congrArg H.map₂ (η.naturality_naturality θ)
     simp only [H.map₂_comp, Pseudofunctor.map₂_whisker_left,
       Pseudofunctor.map₂_whisker_right] at h
@@ -158,14 +158,11 @@ def whiskerRightPseudo {F G : A ⥤ᵖ B} (η : StrongTrans F G) (H : B ⥤ᵖ C
     have e3 : (H.map₂Iso (η.naturality (𝟙 a))).hom = H.map₂ (η.naturality (𝟙 a)).hom := rfl
     simp only [Iso.trans_hom, Iso.symm_hom, e1, e2, e3, Bicategory.whiskerLeft_comp,
       Bicategory.comp_whiskerRight, Category.assoc]
-    have e5 : H.map₂Iso (ρ_ (η.app a)) = (H.mapComp (η.app a) (𝟙 (G.obj a))) ≪≫
-        whiskerLeftIso (H.map (η.app a)) (H.mapId (G.obj a)) ≪≫ ρ_ (H.map (η.app a)) :=
-      Iso.ext (H.map₂_right_unitor (η.app a))
+    -- `e6` is Mathlib's `whiskerLeft_mapId_inv` solved for `H.map₂ (ρ_ _).inv`.
     have e6 : H.map₂ (ρ_ (η.app a)).inv =
         (ρ_ (H.map (η.app a))).inv ≫ H.map (η.app a) ◁ (H.mapId (G.obj a)).inv ≫
           (H.mapComp (η.app a) (𝟙 (G.obj a))).inv := by
-      have := congrArg Iso.inv e5
-      simpa [Iso.trans_inv, whiskerLeftIso_inv] using this
+      simp [whiskerLeft_mapId_inv]
     have h := congrArg H.map₂ (η.naturality_id a)
     simp only [H.map₂_comp, Pseudofunctor.map₂_whisker_left, Pseudofunctor.map₂_whisker_right,
       Pseudofunctor.map₂_left_unitor, e6, Category.assoc] at h
@@ -187,21 +184,14 @@ def whiskerRightPseudo {F G : A ⥤ᵖ B} (η : StrongTrans F G) (H : B ⥤ᵖ C
     have e5 : (H.map₂Iso (η.naturality f)).hom = H.map₂ (η.naturality f).hom := rfl
     simp only [Iso.trans_hom, Iso.symm_hom, e1, e2, e3, e4, e5,
       Bicategory.whiskerLeft_comp, Bicategory.comp_whiskerRight, Category.assoc]
-    have e6 : H.map₂Iso (α_ (F.map f) (η.app b) (G.map g)) =
-        H.mapComp (F.map f ≫ η.app b) (G.map g) ≪≫
-          whiskerRightIso (H.mapComp (F.map f) (η.app b)) (H.map (G.map g)) ≪≫
-          α_ (H.map (F.map f)) (H.map (η.app b)) (H.map (G.map g)) ≪≫
-          (whiskerLeftIso (H.map (F.map f)) (H.mapComp (η.app b) (G.map g))).symm ≪≫
-          (H.mapComp (F.map f) (η.app b ≫ G.map g)).symm :=
-      Iso.ext (H.map₂_associator (F.map f) (η.app b) (G.map g))
+    -- `e7` is Mathlib's `mapComp_assoc_left_inv` solved for `H.map₂ (α_ _ _ _).inv`.
     have e7 : H.map₂ (α_ (F.map f) (η.app b) (G.map g)).inv =
         (H.mapComp (F.map f) (η.app b ≫ G.map g)).hom ≫
           H.map (F.map f) ◁ (H.mapComp (η.app b) (G.map g)).hom ≫
           (α_ (H.map (F.map f)) (H.map (η.app b)) (H.map (G.map g))).inv ≫
           (H.mapComp (F.map f) (η.app b)).inv ▷ H.map (G.map g) ≫
           (H.mapComp (F.map f ≫ η.app b) (G.map g)).inv := by
-      have := congrArg Iso.inv e6
-      simpa [Iso.trans_inv, whiskerRightIso_inv, whiskerLeftIso_inv, Category.assoc] using this
+      simp [mapComp_assoc_left_inv]
     have h := congrArg H.map₂ (η.naturality_comp f g)
     simp only [H.map₂_comp, Pseudofunctor.map₂_whisker_left, Pseudofunctor.map₂_whisker_right,
       Pseudofunctor.map₂_associator, e7, Category.assoc, Iso.inv_hom_id_assoc] at h
@@ -223,11 +213,11 @@ def whiskerRightPseudo {F G : A ⥤ᵖ B} (η : StrongTrans F G) (H : B ⥤ᵖ C
     -- the *joint* one), and bridging them needs one more instance of Mathlib's `mapComp`
     -- associativity pentagon, `Pseudofunctor.mapComp_assoc_right_hom`/`mapComp_assoc_left_hom`
     -- (`Bicategory/Functor/Pseudofunctor.lean:169,176`), applied at `(η.app a, G.map f, G.map g)`,
-    -- the same way `e6`/`e7` above discharged the *other* leftover associator. That substitution
+    -- the same way `e7` above discharged the *other* leftover associator. That substitution
     -- introduces yet another `H.map₂ (α_ _ _ _)` term and a fresh `mapComp` pair, which then need
     -- the same cancel-by-`apply_fun` treatment as `naturality_naturality`/`naturality_id` above
     -- before it will match the goal. Candidate next step: state that pentagon instance as an
-    -- `e8`/`e9` pair exactly mirroring `e6`/`e7`, `simp` it into `h`, then continue the
+    -- `e8` exactly mirroring `e7`, `simp` it into `h`, then continue the
     -- `apply_fun (· ≫ _)`/`apply_fun (_ ≫ ·)` chain used for the first two fields.
     sorry
 /-! ### Lifting into a product
@@ -314,7 +304,7 @@ The object action is settled: `curryObj F` sends `a` to `(liftToProd a).comp F`,
   the module docstring. -/
 def curryObj (F : A × B ⥤ᵖ C) : A ⥤ᵖ B ⥤ᵖ C where
   obj a := (liftToProd a).comp F
-  map {X Y} f := sorry
+  map {X Y} f := whiskerRightPseudo (liftToProdMap f) F
   map₂ := sorry
   mapId := sorry
   mapComp := sorry
