@@ -249,6 +249,11 @@ def liftToProdMap {X Y : A} (f : X ⟶ Y) : StrongTrans (liftToProd (B := B) X) 
   app b := (f, 𝟙 b)
   naturality {b b'} g := Iso.prod ((λ_ f) ≪≫ (ρ_ f).symm) ((ρ_ g) ≪≫ (λ_ g).symm)
   naturality_naturality {a b f' g} θ := by
+    apply Prod.ext
+    · simp [liftToProd, Iso.prod, Prod.mkHom,CategoryStruct.comp]
+      sorry
+    · simp [liftToProd, Iso.prod, Prod.mkHom,CategoryStruct.comp]
+      sorry
     -- PARKED. Residual goal (`θ : f' ⟶ g` a 2-cell of `B`):
     --   (liftToProd X).map₂ θ ▷ (f, 𝟙 b) ≫ ((λ_ f ≪≫ (ρ_ f).symm).prod (ρ_ g ≪≫ (λ_ g).symm)).hom
     --     = ((λ_ f ≪≫ (ρ_ f).symm).prod (ρ_ f' ≪≫ (λ_ f').symm)).hom
@@ -256,7 +261,6 @@ def liftToProdMap {X Y : A} (f : X ⟶ Y) : StrongTrans (liftToProd (B := B) X) 
     -- First coordinate is `𝟙 (𝟙 X) ▷ f ≫ λ_ f ≫ (ρ_ f).inv = λ_ f ≫ (ρ_ f).inv ≫ f ◁ 𝟙 (𝟙 Y)`,
     -- which `bicategory` should take; second is the same statement with `θ` in place of the
     -- identity 2-cell. Neither is visible to `cat_disch` while they sit inside `Iso.prod`.
-    sorry
   naturality_id b := by
     -- PARKED. Residual goal:
     --   ((λ_ f ≪≫ (ρ_ f).symm).prod (ρ_ (𝟙 b) ≪≫ (λ_ (𝟙 b)).symm)).hom
