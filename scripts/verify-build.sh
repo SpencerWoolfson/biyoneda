@@ -97,7 +97,6 @@ CLEAN_DECLS=(
   "Biyoneda.backwardsFibreFunctor"
   "Biyoneda.backwardsTransData"
   "Biyoneda.backwardsTrans"
-  "Biyoneda.mapComp_assoc_app'"
   "CategoryTheory.Bicategory.homMapIdApp"
   "CategoryTheory.Bicategory.homMapCompApp"
   "CategoryTheory.Bicategory.homMapIdApp_naturality"
@@ -173,7 +172,6 @@ CLEAN_DECLS=(
   "Biyoneda.yonedaHomInvIdIso"
   "Biyoneda.yonedaHomInvId"
   # The counit, and the assembled theorem (2026-09-05).
-  "Biyoneda.mapComp_id_left_app"
   "Biyoneda.counit_core"
   "Biyoneda.counit_square_lhs_app"
   "Biyoneda.counit_id_naturality_app"

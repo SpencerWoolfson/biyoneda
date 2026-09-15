@@ -125,7 +125,6 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms Biyoneda.backwardsFibreFunctor
 #print axioms Biyoneda.backwardsTransData
 #print axioms Biyoneda.backwardsTrans
-#print axioms Biyoneda.mapComp_assoc_app'
 
 -- The backwards naturality isomorphism, rebuilt on 2026-09-02 (Phase 2).  Every square is now
 -- reached by a `rfl` bridge that names the distributed form of each side, so the content lives
@@ -245,7 +244,6 @@ variable {B : Type u} [Bicategory.{w, v} B]
 -- content of its naturality square: `β`'s `naturality_comp` in inverse form exposes a hom/inv
 -- pair, `β`'s `naturality_id` turns what survives into `G.mapId`, and the residue is a
 -- coherence of `F` alone against the two unitors.
-#print axioms Biyoneda.mapComp_id_left_app
 #print axioms Biyoneda.counit_core
 #print axioms Biyoneda.counit_square_lhs_app
 #print axioms Biyoneda.counit_id_naturality_app

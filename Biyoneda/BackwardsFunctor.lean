@@ -18,8 +18,8 @@ to the strong transformation `(a, f) ↦ (F.map f).obj s`.  It is built in three
 * `backwardsTrans` — the strong transformation, via `StrongTransIntoCats.toStrongTrans`;
 * `yonedaLemmaBackwardsFunctor` — and that, functorially in `s`.
 
-`mapComp_id_app` and `mapComp_assoc_app` are general facts about any pseudofunctor evaluated at
-an object, used by `backwardsTrans`'s coherence fields.
+The coherence fields of `backwardsTransData` are Mathlib's `@[to_app]`-generated
+`Pseudofunctor.mapComp_id_right_hom_app` and `Pseudofunctor.mapComp_assoc_right_hom_app`.
 
 The naturality machinery is in `Biyoneda/BackwardsNaturality.lean`.
 -/
@@ -67,52 +67,6 @@ def backwardsFibreFunctor (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat))
   map_id _ := by erw [op2_id, PrelaxFunctor.map₂_id]; rfl
   map_comp _ _ := by erw [op2_comp, PrelaxFunctor.map₂_comp]; rfl
 
-/-- Component form of `mapComp_id_right_hom`, matching the `naturality_id` obligation of
-`backwardsTrans`: composing the `mapComp` coherence with the `mapId` coherence
-is the image of the (opposite of the) left unitor. -/
-lemma mapComp_id_app (F : Bᵒᵖ ⥤ᵖ Cat.{w, v}) {b₀ a : Bᵒᵖ}
-    (X : unop a ⟶ unop b₀) (eval : ↑(F.obj b₀)) :
-    (F.mapComp (Quiver.Hom.op X) (𝟙 a)).hom.toNatTrans.app eval ≫
-      (F.mapId a).hom.toNatTrans.app ((F.map (Quiver.Hom.op X)).toFunctor.obj eval) =
-    (F.map₂ (op2 (λ_ X).hom)).toNatTrans.app eval ≫
-      𝟙 ((F.map (Quiver.Hom.op X)).toFunctor.obj eval) ≫
-        𝟙 ((F.map (Quiver.Hom.op X)).toFunctor.obj eval) := by
-  rw [Pseudofunctor.mapComp_id_right_hom]
-  simp [op2_leftUnitor_hom]
-
-/-- Component form of `mapComp_assoc_right_hom`, matching the `naturality_comp` obligation of
-`backwardsTrans`. -/
-lemma mapComp_assoc_app (F : Bᵒᵖ ⥤ᵖ Cat.{w, v}) {b₀ a b c : Bᵒᵖ}
-    (f : a ⟶ b) (g : b ⟶ c) (X : unop a ⟶ unop b₀) (eval : ↑(F.obj b₀)) :
-    (F.mapComp (Quiver.Hom.op X) (f ≫ g)).hom.toNatTrans.app eval ≫
-      (F.mapComp f g).hom.toNatTrans.app ((F.map (Quiver.Hom.op X)).toFunctor.obj eval) =
-    (F.map₂ (op2 (α_ g.unop f.unop X).hom)).toNatTrans.app eval ≫
-      𝟙 ((F.map ((Quiver.Hom.op X ≫ f) ≫ g)).toFunctor.obj eval) ≫
-        (F.mapComp (Quiver.Hom.op X ≫ f) g).hom.toNatTrans.app eval ≫
-          𝟙 ((F.map g).toFunctor.obj ((F.map (Quiver.Hom.op X ≫ f)).toFunctor.obj eval)) ≫
-            (F.map g).toFunctor.map
-              ((F.mapComp (Quiver.Hom.op X) f).hom.toNatTrans.app eval) ≫
-              𝟙 ((F.map g).toFunctor.obj ((F.map f).toFunctor.obj
-                ((F.map (Quiver.Hom.op X)).toFunctor.obj eval))) := by
-  simp only [op2_associator_hom]
-  simpa using Cat.Hom₂.congr_app
-    (F.mapComp_assoc_right_hom (Quiver.Hom.op X) f g) eval
-
-/-- Padding-free component form of `mapComp_assoc_right_hom`.
-
-`mapComp_assoc_app` above is stated in the shape `StrongTrans`'s whiskered `naturality_comp`
-obligation asks for, which pads the right-hand side with three identities.  The pointwise
-`StrongTransIntoCats` obligation has no padding, so it wants this form. -/
-lemma mapComp_assoc_app' (F : Bᵒᵖ ⥤ᵖ Cat.{w, v}) {b₀ : B} {a b c : Bᵒᵖ}
-    (f : a ⟶ b) (g : b ⟶ c) (X : unop a ⟶ b₀) (eval : ↑(F.obj (op b₀))) :
-    (F.mapComp (Quiver.Hom.op X) (f ≫ g)).hom.toNatTrans.app eval ≫
-      (F.mapComp f g).hom.toNatTrans.app ((F.map (Quiver.Hom.op X)).toFunctor.obj eval) =
-    (F.map₂ (op2 (α_ g.unop f.unop X).hom)).toNatTrans.app eval ≫
-      (F.mapComp (Quiver.Hom.op X ≫ f) g).hom.toNatTrans.app eval ≫
-        (F.map g).toFunctor.map
-          ((F.mapComp (Quiver.Hom.op X) f).hom.toNatTrans.app eval) := by
-  simpa using mapComp_assoc_app F f g X eval
-
 /--
 At a fixed pair `x = (b₀, F)` and an evaluation point `eval : F.obj b₀`, the Yoneda element
 `yoneda₀ b₀ ⟶ F` **as pointwise `StrongTransIntoCats` data**.
@@ -122,8 +76,10 @@ rather than as a `Cat` 2-cell, which is what lets all four fields close in one l
 
 * `naturality`'s own square is `mapComp_naturality_left`;
 * `naturality_naturality'` is `mapComp_naturality_right`;
-* `naturality_id'` is `mapComp_id_app`, unpadded;
-* `naturality_comp'` is `mapComp_assoc_app'`.
+* `naturality_id'` is Mathlib's `Pseudofunctor.mapComp_id_right_hom_app`, with `mapId` moved across
+  by `Iso.eq_comp_inv`;
+* `naturality_comp'` is Mathlib's `Pseudofunctor.mapComp_assoc_right_hom_app`, used as a term: the
+  opposite bicategory's associator is `rfl`-equal to the `op2` form the obligation is stated in.
 
 The hand-rolled `StrongTrans` this replaces had to descend through `Cat.Hom.isoMk` first, and
 its naturality square was parked on a `congr 1` that over-descended into `HEq` goals.
@@ -131,18 +87,18 @@ its naturality square was parked on a `congr 1` that over-descended into `HEq` g
 def backwardsTransData (x : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) (eval : ↑(x.2.obj x.1)) :
     StrongTransIntoCats (yoneda₀ (unop x.1)) x.2 where
   app a := backwardsFibreFunctor x eval a
-  naturality {a b} f :=
+  naturality f :=
     NatIso.ofComponents
       (fun X ↦ (Cat.Hom.toNatIso (x.2.mapComp (Quiver.Hom.op X) f)).app eval)
-      (fun {X Y} g ↦
+      (fun g ↦
         Cat.Hom₂.congr_app (x.2.toOplax.mapComp_naturality_left (op2 g) f) eval)
-  naturality_naturality' {a b} {f g} η X :=
+  naturality_naturality' η X :=
     Cat.Hom₂.congr_app (x.2.toOplax.mapComp_naturality_right (Quiver.Hom.op X) η) eval
-  naturality_id' a X := by
-    have key := mapComp_id_app x.2 X eval
-    simp only [Category.comp_id] at key
-    exact key
-  naturality_comp' {a b c} f g X := mapComp_assoc_app' x.2 f g X eval
+  naturality_id' a X :=
+    (Iso.eq_comp_inv ((Cat.Hom.toNatIso (x.2.mapId a)).app _)).mp
+      (Pseudofunctor.mapComp_id_right_hom_app x.2 (Quiver.Hom.op X) eval)
+  naturality_comp' f g X :=
+    Pseudofunctor.mapComp_assoc_right_hom_app x.2 (Quiver.Hom.op X) f g eval
 
 /--
 At a fixed pair `x = (b₀, F)` and an evaluation point `eval : F.obj b₀`, the strong

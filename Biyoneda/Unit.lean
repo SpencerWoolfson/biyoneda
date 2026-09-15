@@ -521,29 +521,14 @@ section CounitCore
 
 variable {F G : Bᵒᵖ ⥤ᵖ Cat.{w, v}} (β : F ⟶ G) {x y : Bᵒᵖ} (u : x ⟶ y) (s : ↑(F.obj x))
 
-/-- `mapComp_id_left_hom` at a point, with the two identities of the `Cat` form stripped.
-The mirror of `mapComp_id_app`, which is the `_right` case. -/
-lemma mapComp_id_left_app (H : Bᵒᵖ ⥤ᵖ Cat.{w, v}) {p q : Bᵒᵖ} (v : p ⟶ q) (e : ↑(H.obj p)) :
-    (H.mapComp (𝟙 p) v).hom.toNatTrans.app e ≫
-      (H.map v).toFunctor.map ((H.mapId p).hom.toNatTrans.app e)
-      = (H.map₂ (λ_ v).hom).toNatTrans.app e := by
-  have h := Cat.Hom₂.congr_app (H.mapComp_id_left_hom v) e
-  have hb : ((H.map₂ (λ_ v).hom) ≫ (λ_ (H.map v)).inv ≫
-        (H.mapId p).inv ▷ H.map v).toNatTrans.app e
-      = (H.map₂ (λ_ v).hom).toNatTrans.app e ≫ (𝟙 _) ≫
-        (H.map v).toFunctor.map ((H.mapId p).inv.toNatTrans.app e) := rfl
-  rw [hb] at h
-  rw [h]
-  simp only [Category.id_comp, Category.assoc, ← Functor.map_comp]
-  simp
-
 set_option backward.isDefEq.respectTransparency false in
 /-- The content of the counit's naturality square, in clean unbundled variables.
 
 Three moves.  `β`'s `naturality_comp` for `u` and `𝟙 y`, in inverse form, exposes a `hom`/`inv`
 pair under `G.map (𝟙 y)`; `β`'s `naturality_id` turns the surviving factor into `G.mapId`; and
-what is left is a coherence of `F` alone -- `mapComp_id_left_app` and `mapComp_id_app` reduce
-both `mapComp`s against the unitors, and the two unitor 2-cells cancel. -/
+what is left is a coherence of `F` alone: Mathlib's `whiskerRight_mapId_hom_app` cancels the left
+`mapComp` against `mapId`, `simp` reduces the right one against the unitor, and the two unitor
+2-cells cancel. -/
 lemma counit_core :
     (G.mapId y).hom.toNatTrans.app ((β.app y).toFunctor.obj ((F.map u).toFunctor.obj s))
       = (((G.map (𝟙 y)).toFunctor.map ((β.naturality u).hom.toNatTrans.app s) ≫
@@ -575,7 +560,7 @@ lemma counit_core :
   rw [← Functor.map_comp, ← Functor.map_comp]
   refine congrArg (β.app y).toFunctor.map ?_
   simp only [Category.assoc]
-  rw [mapComp_id_left_app F u s]
+  rw [Pseudofunctor.whiskerRight_mapId_hom_app, Cat.Hom.hom_inv_id_toNatTrans_app_assoc]
   have hm := Cat.Hom₂.congr_app
     (show (F.map₂ ((ρ_ u).hom ≫ (λ_ u).inv)) ≫ (F.map₂ (λ_ u).hom) = F.map₂ (ρ_ u).hom by
       rw [← PrelaxFunctor.map₂_comp]; congr 1; simp) s

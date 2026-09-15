@@ -226,8 +226,9 @@ lemma backwards_square_tail_app {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (
 Four coherences, in order: the outer `b.2.mapComp` slides past the diagonal's conversion
 2-cell; `a.2`'s reassociating 2-cell is conjugated through `f.2`'s naturality
 (`strongTrans_naturality_conj`), which leaves a pair to cancel; `b.2`'s own `mapComp`
-associativity (`mapComp_assoc_app'`) is solved for the outer factor; and what remains is
-`f.2`'s composition coherence in inverse form (`strongTrans_naturality_comp_inv_app`). -/
+associativity (Mathlib's `Pseudofunctor.mapComp_assoc_right_hom_app`) is solved for the outer
+factor; and what remains is `f.2`'s composition coherence in inverse form
+(`strongTrans_naturality_comp_inv_app`). -/
 lemma backwards_square_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (X : ↑(a.2.obj a.1))
     {a₁ b₁ : Bᵒᵖ} (f₁ : a₁ ⟶ b₁) (ZZ : unop a₁ ⟶ unop b.1) :
     ((b.2.map (Quiver.Hom.op ZZ ≫ f₁)).toFunctor.map
@@ -287,7 +288,8 @@ lemma backwards_square_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : 
               ((f.2.app a.1).toFunctor.obj X)) :=
     (Iso.eq_inv_comp ((Cat.Hom.toNatIso (b.2.mapComp f.1 (Quiver.Hom.op ZZ ≫ f₁))).app
       ((f.2.app a.1).toFunctor.obj X))).mpr
-        (mapComp_assoc_app' b.2 (Quiver.Hom.op ZZ) f₁ f.1.unop ((f.2.app a.1).toFunctor.obj X))
+        (Pseudofunctor.mapComp_assoc_right_hom_app b.2 f.1 (Quiver.Hom.op ZZ) f₁
+          ((f.2.app a.1).toFunctor.obj X))
   rw [hz]
   simp only [Category.assoc]
   rw [map_comp_cancel_assoc (b.2.map f₁).toFunctor
