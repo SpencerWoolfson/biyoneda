@@ -78,7 +78,7 @@ def yonedaUnitAppIso (a : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat)) (b : Bᵒᵖ) (x : �
 
 For a 2-cell `θ : X ⟶ Y` in the hom-category `unop b ⟶ b₀`, the roundtrip functor acts by
 `G.map₂ θ.op` at the evaluation point, and the claim is that this commutes with the two
-copies of the unit component.  `strongTrans_naturality_conj` solves `α`'s
+copies of the unit component.  `naturality_naturality_conj_app` solves `α`'s
 `naturality_naturality` for the bare `map₂` image, which turns the left-hand side into the
 right one up to a single 2-cell identity in `B` -- `rightUnitor_naturality`.
 
@@ -96,7 +96,7 @@ lemma unit_functor_core {b₀ : B} {G : Bᵒᵖ ⥤ᵖ Cat.{w, v}} (α : yoneda�
       = (α.naturality (Quiver.Hom.op X)).hom.toNatTrans.app (𝟙 b₀) ≫
         (G.map₂ (op2 θ)).toNatTrans.app ((α.app (op b₀)).toFunctor.obj (𝟙 b₀)) ≫
         (α.naturality (Quiver.Hom.op Y)).inv.toNatTrans.app (𝟙 b₀) :=
-    strongTrans_naturality_conj α (op2 θ) (𝟙 b₀)
+    Pseudofunctor.StrongTrans.naturality_naturality_conj_app α (op2 θ) (𝟙 b₀)
   have hcancel := Cat.Hom.inv_hom_id_toNatTrans_app (α.naturality (Quiver.Hom.op X)) (𝟙 b₀)
   have hkey : (α.naturality (Quiver.Hom.op X)).inv.toNatTrans.app (𝟙 b₀) ≫
         (α.app b).toFunctor.map (θ ▷ 𝟙 b₀)
@@ -353,8 +353,8 @@ lemma unit_top_rhs :
               ((α.naturality (Quiver.Hom.op (ZZ ≫ g))).inv.toNatTrans.app (𝟙 b₀) ≫
                 (α.app γ).toFunctor.map (ρ_ (ZZ ≫ g)).hom)) := by
   simp only [Category.assoc]
-  rw [strongTrans_naturality_comp_inv_app_assoc β (Quiver.Hom.op g) (Quiver.Hom.op ZZ)
-    ((α.app (op b₀)).toFunctor.obj (𝟙 b₀))]
+  rw [Pseudofunctor.StrongTrans.naturality_comp_inv_app_assoc β (Quiver.Hom.op g) (Quiver.Hom.op ZZ)
+    ((α.app (op b₀)).toFunctor.obj (𝟙 b₀)), Cat.Hom.inv_hom_id_toNatTrans_app_assoc]
   rw [map_comp_cancel_assoc (G.map (Quiver.Hom.op ZZ)).toFunctor _ _
     (Cat.Hom.hom_inv_id_toNatTrans_app (β.naturality (Quiver.Hom.op g))
       ((α.app (op b₀)).toFunctor.obj (𝟙 b₀)))]
@@ -391,7 +391,8 @@ lemma unit_top_alpha :
           ((α.naturality (Quiver.Hom.op g ≫ Quiver.Hom.op ZZ)).inv.toNatTrans.app (𝟙 b₀) ≫
             (α.app γ).toFunctor.map (ρ_ (ZZ ≫ g)).hom) := by
   simp only [Category.assoc, Functor.map_comp]
-  rw [strongTrans_naturality_comp_inv_app_assoc α (Quiver.Hom.op g) (Quiver.Hom.op ZZ) (𝟙 b₀)]
+  rw [Pseudofunctor.StrongTrans.naturality_comp_inv_app_assoc α (Quiver.Hom.op g) (Quiver.Hom.op ZZ)
+    (𝟙 b₀), Cat.Hom.inv_hom_id_toNatTrans_app_assoc]
   rw [map_comp_cancel_assoc (F.map (Quiver.Hom.op ZZ)).toFunctor _ _
     (Cat.Hom.hom_inv_id_toNatTrans_app (α.naturality (Quiver.Hom.op g)) (𝟙 b₀))]
   rw [map_map_comp_assoc (α.app (op b₁)).toFunctor (F.map (Quiver.Hom.op ZZ)).toFunctor]
@@ -543,7 +544,8 @@ lemma counit_core :
         (β.naturality (u ≫ 𝟙 y)).inv.toNatTrans.app s
       = (β.naturality (𝟙 y)).inv.toNatTrans.app ((F.map u).toFunctor.obj s) ≫
         (β.app y).toFunctor.map ((F.mapComp u (𝟙 y)).inv.toNatTrans.app s) := by
-    rw [strongTrans_naturality_comp_inv_app β u (𝟙 y) s,
+    rw [Pseudofunctor.StrongTrans.naturality_comp_inv_app β u (𝟙 y) s,
+      Cat.Hom.inv_hom_id_toNatTrans_app_assoc,
       map_comp_cancel_assoc (G.map (𝟙 y)).toFunctor _ _
         (Cat.Hom.hom_inv_id_toNatTrans_app (β.naturality u) s)]
   have h2 : (G.mapId y).hom.toNatTrans.app ((β.app y).toFunctor.obj ((F.map u).toFunctor.obj s))

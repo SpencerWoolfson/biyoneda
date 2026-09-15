@@ -101,7 +101,6 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms CategoryTheory.Bicategory.eval_whisker_left
 #print axioms CategoryTheory.Bicategory.eval_whisker_right
 #print axioms CategoryTheory.Bicategory.map_comp_cancel
-#print axioms CategoryTheory.Bicategory.strongTrans_naturality_comp_inv_app
 
 -- Phase 1 complete (2026-09-02): `evaluationPseudo`'s last two coherence fields closed, so the
 -- evaluation side is clean too.  With the pairing already clean, the project now has NO root of
@@ -116,7 +115,8 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms Biyoneda.yonedaEvaluation
 #print axioms CategoryTheory.Bicategory.evalMapComp_hom_app
 #print axioms CategoryTheory.Bicategory.evalMapComp_inv_app
-#print axioms CategoryTheory.Bicategory.strongTrans_naturality_conj
+#print axioms CategoryTheory.Pseudofunctor.StrongTrans.naturality_naturality_conj
+#print axioms CategoryTheory.Pseudofunctor.StrongTrans.naturality_naturality_conj_app
 #print axioms CategoryTheory.Bicategory.modification_naturality_conj
 
 -- The backwards component chain, decoupled from `yonedaEvaluation'` and rebuilt on the gadget

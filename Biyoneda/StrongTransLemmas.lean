@@ -23,10 +23,11 @@ upstreaming plan needs: this file is one PR's worth of general API, and what rem
 
 * **Spelling bridges** — `(𝟙 F).app a` does not elaborate through dot notation, so the identity
   and composite transformations' components have to be named in the spelling that does.
-* **`naturality` at a point**, in every direction the development needed: the conjugated form
-  (`naturality_conj`), the composite's (`comp_naturality_app` and its inverse), `naturality_comp`
-  inverted, the slide-and-cancel form, and the associativity coherence
-  (`naturality_comp_assoc_core`) that both directions of the Yoneda equivalence reduce to.
+* **`naturality` at a point**, in the directions Mathlib does not generate: the composite's
+  (`comp_naturality_app` and its inverse), the slide-and-cancel form, and the associativity
+  coherence (`naturality_comp_assoc_core`) that both directions of the Yoneda equivalence reduce
+  to. The conjugated form is the 2-cell lemma `Pseudofunctor.StrongTrans.naturality_naturality_conj`
+  in `ForMathlib.lean`, and `naturality_comp` inverted is Mathlib's `naturality_comp_inv_app`.
 * **Two folds `simp` will not do** — `map_comp_cancel` and `map_map_comp`.  `← Functor.map_comp`
   is the wrong direction for the default simp set and loops if added to it, so the fold has to
   be named.
@@ -115,17 +116,6 @@ lemma cat_whiskerLeft_leftUnitor_app {X' Y' Z' : Cat.{v, u}} (f : X' ⟶ Y') (g 
     (W : ↑X') : (f ◁ (λ_ g).hom).toNatTrans.app W = 𝟙 _ := by
   rw [cat_whiskerLeft_leftUnitor]; aesop_cat
 
-/-- `StrongTrans.naturality_naturality` solved for the bare `map₂` image: the conjugated form
-is what the whisker cores need, since there the `naturality` iso appears on both sides. -/
-lemma strongTrans_naturality_conj (α : F ⟶ G) {v v' : y ⟶ z} (σ : v ⟶ v') (W : ↑(F.obj y)) :
-    (α.app z).toFunctor.map ((F.map₂ σ).toNatTrans.app W)
-      = (α.naturality v).hom.toNatTrans.app W ≫
-        (G.map₂ σ).toNatTrans.app ((α.app y).toFunctor.obj W) ≫
-        (α.naturality v').inv.toNatTrans.app W := by
-  have h := α.naturality_naturality_app σ W
-  rw [← Category.assoc]
-  exact (Iso.eq_comp_inv ((Cat.Hom.toNatIso (α.naturality v')).app W)).mpr h
-
 /-- Cancel an adjacent inverse/forward pair sitting **under a functor's `.map`**.
 
 `simp` cancels a bare adjacent inv/hom pair happily, but it will not fold through the functor
@@ -140,46 +130,6 @@ lemma map_comp_cancel {D E : Type*} [Category D] [Category E] (P : D ⥤ E) {a b
     (A : a ⟶ b) (B : b ⟶ a) (h : A ≫ B = 𝟙 a) :
     P.map A ≫ P.map B = 𝟙 (P.obj a) := by
   rw [← Functor.map_comp, h, Functor.map_id]
-
-/-- `StrongTrans.naturality_comp` at a point, in **inverse** form.
-
-Mathlib's `naturality_comp_hom_app` gives the forward direction; the whisker/associator cores
-meet the reverse one, and inverting a five-factor equation in place is exactly the kind of
-rewriting the `Cat` diamond blocks.  Stated once here with `f`, `g` and `α` abstract. -/
-@[reassoc]
-lemma strongTrans_naturality_comp_inv_app (α : F ⟶ G) {a b c : C} (f : a ⟶ b) (g : b ⟶ c)
-    (W : ↑(F.obj a)) :
-    (G.mapComp f g).inv.toNatTrans.app ((α.app a).toFunctor.obj W) ≫
-        (α.naturality (f ≫ g)).inv.toNatTrans.app W
-      = (G.map g).toFunctor.map ((α.naturality f).inv.toNatTrans.app W) ≫
-        (α.naturality g).inv.toNatTrans.app ((F.map f).toFunctor.obj W) ≫
-        (α.app c).toFunctor.map ((F.mapComp f g).inv.toNatTrans.app W) := by
-  have h := Cat.Hom₂.congr_app (α.naturality_comp f g) W
-  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_toNatTrans,
-    Cat.whiskerRight_toNatTrans, whiskerLeft_app, whiskerRight_app] at h
-  -- `Cat`'s three associators are identities definitionally.  Write them into a `rfl` bridge
-  -- rather than normalising them away -- letting `simp` fire a strict-`Cat` coherence lemma
-  -- leaves the goal inconsistent at reducible transparency -- then strip them here.
-  have hb : (α.app c).toFunctor.map ((F.mapComp f g).hom.toNatTrans.app W) ≫
-        (α_ (F.map f) (F.map g) (α.app c)).hom.toNatTrans.app W ≫
-          (α.naturality g).hom.toNatTrans.app ((F.map f).toFunctor.obj W) ≫
-            (α_ (F.map f) (α.app b) (G.map g)).inv.toNatTrans.app W ≫
-              (G.map g).toFunctor.map ((α.naturality f).hom.toNatTrans.app W) ≫
-                (α_ (α.app a) (G.map f) (G.map g)).hom.toNatTrans.app W
-      = (α.app c).toFunctor.map ((F.mapComp f g).hom.toNatTrans.app W) ≫ (𝟙 _) ≫
-          (α.naturality g).hom.toNatTrans.app ((F.map f).toFunctor.obj W) ≫ (𝟙 _) ≫
-            (G.map g).toFunctor.map ((α.naturality f).hom.toNatTrans.app W) ≫ (𝟙 _) := rfl
-  rw [hb] at h
-  simp only [Category.id_comp, Category.comp_id] at h
-  -- now invert the whole equation at the `Iso` level, where reversal is structural
-  have key :
-      ((Cat.Hom.toNatIso (α.naturality (f ≫ g))).app W ≪≫
-          (Cat.Hom.toNatIso (G.mapComp f g)).app ((α.app a).toFunctor.obj W))
-        = ((α.app c).toFunctor.mapIso ((Cat.Hom.toNatIso (F.mapComp f g)).app W) ≪≫
-            (Cat.Hom.toNatIso (α.naturality g)).app ((F.map f).toFunctor.obj W) ≪≫
-              (G.map g).toFunctor.mapIso ((Cat.Hom.toNatIso (α.naturality f)).app W)) :=
-    Iso.ext h
-  simpa using congrArg Iso.inv key
 
 /-- The naturality of a **composite** strong transformation, at a point.
 
@@ -208,8 +158,8 @@ lemma map_map_comp {D E W : Type*} [Category D] [Category E] [Category W]
   rw [← Functor.map_comp, ← Functor.map_comp]
 
 /-- Slide a morphism through `α.naturality v` and cancel the pair: the conjugation form for the
-naturality **isomorphism** itself, as opposed to `strongTrans_naturality_conj`, which is the one
-for `map₂`.  This is what collapses the `hom … inv` sandwich the associator core produces. -/
+naturality **isomorphism** itself, as opposed to `naturality_naturality_conj_app`, which is the
+one for `map₂`.  This is what collapses the `hom … inv` sandwich the associator core produces. -/
 @[reassoc]
 lemma strongTrans_naturality_slide (α : G ⟶ H) {a b : C} (v : a ⟶ b) {W W' : ↑(G.obj a)}
     (m : W ⟶ W') :
@@ -244,8 +194,8 @@ agrees with transporting along `u` and then `v ≫ W`, once both are corrected b
 constraints.  Both `naturality_comp` obligations of the Yoneda equivalence come down to this.
 
 The proof is four moves: `simp` turns `F.map₂ (α_ u v W).hom` into `F`'s own `mapComp`
-associativity (`map₂_associator`); then three applications of
-`strongTrans_naturality_comp_inv_app`, each followed by the `hom`/`inv` cancellation it exposes,
+associativity (`map₂_associator`); then three applications of Mathlib's
+`naturality_comp_inv_app`, each followed by the `hom`/`inv` cancellations it exposes,
 strip the `G`-side coherences; what is left is one naturality square of `(α.naturality W).inv`. -/
 lemma naturality_comp_assoc_core (α : F ⟶ G) {p q r s : C} (u : p ⟶ q) (v : q ⟶ r) (W : r ⟶ s)
     (x : ↑(F.obj p)) :
@@ -262,7 +212,8 @@ lemma naturality_comp_assoc_core (α : F ⟶ G) {p q r s : C} (u : p ⟶ q) (v :
           (G.mapComp u (v ≫ W)).inv.toNatTrans.app ((α.app p).toFunctor.obj x) ≫
             (α.naturality (u ≫ v ≫ W)).inv.toNatTrans.app x := by
   simp
-  rw [strongTrans_naturality_comp_inv_app_assoc α (u ≫ v) W x,
+  rw [Pseudofunctor.StrongTrans.naturality_comp_inv_app_assoc α (u ≫ v) W x,
+    Cat.Hom.inv_hom_id_toNatTrans_app_assoc,
     map_comp_cancel_assoc (G.map W).toFunctor
       ((α.naturality (u ≫ v)).hom.toNatTrans.app x)
       ((α.naturality (u ≫ v)).inv.toNatTrans.app x)
@@ -271,12 +222,14 @@ lemma naturality_comp_assoc_core (α : F ⟶ G) {p q r s : C} (u : p ⟶ q) (v :
       ((F.mapComp (u ≫ v) W).inv.toNatTrans.app x)
       ((F.mapComp (u ≫ v) W).hom.toNatTrans.app x)
       (Cat.Hom.inv_hom_id_toNatTrans_app (F.mapComp (u ≫ v) W) _)]
-  rw [strongTrans_naturality_comp_inv_app α u (v ≫ W) x,
+  rw [Pseudofunctor.StrongTrans.naturality_comp_inv_app α u (v ≫ W) x,
+    Cat.Hom.inv_hom_id_toNatTrans_app_assoc,
     map_comp_cancel_assoc (G.map (v ≫ W)).toFunctor
       ((α.naturality u).hom.toNatTrans.app x)
       ((α.naturality u).inv.toNatTrans.app x)
       (Cat.Hom.hom_inv_id_toNatTrans_app (α.naturality u) _)]
-  rw [strongTrans_naturality_comp_inv_app_assoc α v W ((F.map u).toFunctor.obj x),
+  rw [Pseudofunctor.StrongTrans.naturality_comp_inv_app_assoc α v W ((F.map u).toFunctor.obj x),
+    Cat.Hom.inv_hom_id_toNatTrans_app_assoc,
     map_comp_cancel_assoc (G.map W).toFunctor
       ((α.naturality v).hom.toNatTrans.app ((F.map u).toFunctor.obj x))
       ((α.naturality v).inv.toNatTrans.app ((F.map u).toFunctor.obj x))

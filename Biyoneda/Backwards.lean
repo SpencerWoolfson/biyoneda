@@ -336,8 +336,10 @@ lemma backwards_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : 
             ((f.2.app a.1).toFunctor.obj x)) ≫
         (g.2.app (Opposite.op (unop γ))).toFunctor.map
           ((f.2.naturality ((f.1 ≫ g.1) ≫ ZZ.op)).inv.toNatTrans.app x) :=
-    strongTrans_naturality_comp_inv_app_assoc g.2 (f.1 ≫ g.1) ZZ.op
-      ((f.2.app a.1).toFunctor.obj x) _
+    (congrArg (CategoryStruct.comp _)
+      (Pseudofunctor.StrongTrans.naturality_comp_inv_app_assoc g.2 (f.1 ≫ g.1) ZZ.op
+        ((f.2.app a.1).toFunctor.obj x) _)).trans
+      (Cat.Hom.inv_hom_id_toNatTrans_app_assoc _ _ _)
   rw [hslide]
   rw [map_comp_cancel_assoc (c.2.map ZZ.op).toFunctor
     ((g.2.naturality (f.1 ≫ g.1)).hom.toNatTrans.app ((f.2.app a.1).toFunctor.obj x))
@@ -381,8 +383,10 @@ lemma backwards_comp_core {a b c : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : 
           (b.2.mapComp f.1 (ZZ ≫ g.1.unop).op).inv.toNatTrans.app
             ((f.2.app a.1).toFunctor.obj x) ≫
           (f.2.naturality (f.1 ≫ (ZZ ≫ g.1.unop).op)).inv.toNatTrans.app x) :=
-    strongTrans_naturality_comp_inv_app_assoc g.2 g.1 ZZ.op
-      ((f.2.app b.1).toFunctor.obj ((a.2.map f.1).toFunctor.obj x)) _
+    (congrArg (CategoryStruct.comp _)
+      (Pseudofunctor.StrongTrans.naturality_comp_inv_app_assoc g.2 g.1 ZZ.op
+        ((f.2.app b.1).toFunctor.obj ((a.2.map f.1).toFunctor.obj x)) _)).trans
+      (Cat.Hom.inv_hom_id_toNatTrans_app_assoc _ _ _)
   rw [hslideR]
   rw [map_comp_cancel_assoc (c.2.map ZZ.op).toFunctor
     ((g.2.naturality g.1).hom.toNatTrans.app

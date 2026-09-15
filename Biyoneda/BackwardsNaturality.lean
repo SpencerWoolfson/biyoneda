@@ -225,10 +225,10 @@ lemma backwards_square_tail_app {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (
 
 Four coherences, in order: the outer `b.2.mapComp` slides past the diagonal's conversion
 2-cell; `a.2`'s reassociating 2-cell is conjugated through `f.2`'s naturality
-(`strongTrans_naturality_conj`), which leaves a pair to cancel; `b.2`'s own `mapComp`
+(`naturality_naturality_conj_app`), which leaves a pair to cancel; `b.2`'s own `mapComp`
 associativity (Mathlib's `Pseudofunctor.mapComp_assoc_right_hom_app`) is solved for the outer
 factor; and what remains is `f.2`'s composition coherence in inverse form
-(`strongTrans_naturality_comp_inv_app`). -/
+(Mathlib's `naturality_comp_inv_app`). -/
 lemma backwards_square_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : a ⟶ b) (X : ↑(a.2.obj a.1))
     {a₁ b₁ : Bᵒᵖ} (f₁ : a₁ ⟶ b₁) (ZZ : unop a₁ ⟶ unop b.1) :
     ((b.2.map (Quiver.Hom.op ZZ ≫ f₁)).toFunctor.map
@@ -266,7 +266,7 @@ lemma backwards_square_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : 
   rw [← reassoc_of% hslide]
   refine congrArg (CategoryStruct.comp _) ?_
   -- 2. conjugate `a.2`'s reassociating 2-cell through `f.2`, then cancel the pair
-  have hconj := strongTrans_naturality_conj f.2
+  have hconj := Pseudofunctor.StrongTrans.naturality_naturality_conj_app f.2
       (v := f.1 ≫ (Quiver.Hom.op ZZ ≫ f₁)) (v' := (f.1 ≫ Quiver.Hom.op ZZ) ≫ f₁)
       (op2 (α_ f₁.unop ZZ f.1.unop).hom) X
   rw [hconj]
@@ -303,7 +303,8 @@ lemma backwards_square_core {a b : Bᵒᵖ × (Bᵒᵖ ⥤ᵖ Cat.{w, v})} (f : 
     (b.2.mapComp (f.1 ≫ Quiver.Hom.op ZZ) f₁)).app ((f.2.app a.1).toFunctor.obj X))).mp ?_
   change (b.2.mapComp (f.1 ≫ Quiver.Hom.op ZZ) f₁).inv.toNatTrans.app
       ((f.2.app a.1).toFunctor.obj X) ≫ _ = _
-  rw [strongTrans_naturality_comp_inv_app_assoc]
+  rw [Pseudofunctor.StrongTrans.naturality_comp_inv_app_assoc,
+    Cat.Hom.inv_hom_id_toNatTrans_app_assoc]
   rw [map_comp_cancel_assoc (f.2.app b₁).toFunctor
     ((a.2.mapComp (f.1 ≫ Quiver.Hom.op ZZ) f₁).inv.toNatTrans.app X)
     ((a.2.mapComp (f.1 ≫ Quiver.Hom.op ZZ) f₁).hom.toNatTrans.app X) (by simp)]

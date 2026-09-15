@@ -51,6 +51,14 @@ enough to break an unrelated proof in this development. Mathlib's existing `Cat.
 are not `@[simp]` either, so un-tagged also matches precedent. Any upstream version should stay
 un-tagged, or be tagged only after benchmarking — do not flip them on the way out.
 
+## `naturality_naturality`, solved for the whiskered `map₂`
+
+`Pseudofunctor.StrongTrans.naturality_naturality_conj` states a strong transformation's naturality
+at a 2-cell `σ` as a conjugation by its naturality isomorphisms. It is a 2-cell equation for any
+target bicategory, and `@[to_app]` generates the component form for `Cat`-valued pseudofunctors,
+which this development used to state and prove by hand at a point. Mathlib's closest lemma,
+`StrongTrans.naturality_naturality_hom`, needs `σ` to be an isomorphism.
+
 -/
 
 @[expose] public section
@@ -176,6 +184,17 @@ line in Mathlib; when that lands, delete this block. -/
 attribute [to_app] Pseudofunctor.StrongTrans.naturality_naturality
 attribute [to_app] Pseudofunctor.StrongTrans.naturality_id
 attribute [to_app] Pseudofunctor.StrongTrans.naturality_comp
+
+/-- A strong transformation's naturality at a 2-cell `σ`, solved for the whiskered `map₂`: a
+conjugation by the naturality isomorphisms. Unlike `StrongTrans.naturality_naturality_hom`, `σ`
+need not be invertible. `@[to_app]` generates the component form for `Cat`-valued
+pseudofunctors. -/
+@[to_app]
+lemma Pseudofunctor.StrongTrans.naturality_naturality_conj {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {C : Type u₂} [Bicategory.{w₂, v₂} C] {F G : B ⥤ᵖ C} (α : F ⟶ G) {y z : B}
+    {v v' : y ⟶ z} (σ : v ⟶ v') :
+    F.map₂ σ ▷ α.app z = (α.naturality v).hom ≫ α.app y ◁ G.map₂ σ ≫ (α.naturality v').inv := by
+  rw [← Category.assoc, Iso.eq_comp_inv]; exact α.naturality_naturality σ
 
 
 
