@@ -169,7 +169,6 @@ variable {B : Type u} [Bicategory.{w, v} B]
 #print axioms Biyoneda.backwards_nn_lhs_app
 #print axioms Biyoneda.backwards_nn_rhs_app
 #print axioms Biyoneda.backwards_nn_slide
-#print axioms Biyoneda.yonedaPairing_mapId_app
 #print axioms Biyoneda.backwards_id_core
 #print axioms Biyoneda.backwards_id_lhs_app
 #print axioms Biyoneda.backwards_id_rhs_app
