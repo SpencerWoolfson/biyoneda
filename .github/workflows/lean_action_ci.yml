@@ -5,18 +5,15 @@ on:
   pull_request:
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read # Read access to repository contents
-  pages: write # Write access to GitHub Pages
-  id-token: write # Write access to ID tokens
 
 jobs:
+  # Runs on every branch and pull request. It carries no `environment:`, because the
+  # `github-pages` environment only admits the default branch, and GitHub rejects a job that
+  # names it before the job starts -- which is how branch builds used to fail in two seconds.
   build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - uses: actions/checkout@v5
@@ -34,5 +31,22 @@ jobs:
         shell: bash
         run: ./scripts/verify-build.sh build.log
 
+  # Publishes the API docs to GitHub Pages, from pushes to master only, and only once the
+  # gates have passed.
+  docs:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write    # Write access to GitHub Pages
+      id-token: write # Write access to ID tokens
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: leanprover/lean-action@v1 # docgen needs the built project; restored from cache
       - uses: leanprover-community/docgen-action@v1
         id: deployment
