@@ -112,6 +112,8 @@ lake build           # build the project
 
 The first `lake exe cache get` step downloads compiled Mathlib oleans so you do not need to rebuild Mathlib from scratch (~20 min without cache).
 
+Before committing, run the sorry/axiom/warning gates as described in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 ## Dependencies
 
 - [Lean 4](https://github.com/leanprover/lean4) `v4.33.0`
