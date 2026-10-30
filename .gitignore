@@ -4,8 +4,8 @@
 # Working/WIP notes: private, not for the public repo
 /notes/
 
-# Local AI-tooling config: not for the public repo
-/.mcp.json
+# Local AI-tooling config: not for the public repo.
+# `.mcp.json` is the exception: it is tracked, so every clone gets the Lean MCP server.
 /CLAUDE.md
 /CLAUDE.local.md
 /.claude/

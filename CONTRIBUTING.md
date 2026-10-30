@@ -22,6 +22,14 @@ lake env lean Biyoneda/Unit.lean
 `Biyoneda/Probe.lean` is gitignored and never imported. Use it as a scratch file for quick
 experiments.
 
+### MCP server
+
+`.mcp.json` configures [`lean-lsp-mcp`](https://github.com/oOo0oOo/lean-lsp-mcp), which
+gives MCP clients such as Claude Code access to the Lean language server: goals, diagnostics,
+hover information, and theorem search through services such as LeanSearch and Loogle. It needs [`uv`](https://docs.astral.sh/uv/) on your `PATH` and
+a project that has already been built with `lake build`; `ripgrep` (`rg`) is optional but
+recommended. The version is pinned in `.mcp.json`; bump it there deliberately.
+
 ## Checking a change
 
 `lake build` exiting 0 is **not** enough. A `sorry` is only a warning, and a coherence field
